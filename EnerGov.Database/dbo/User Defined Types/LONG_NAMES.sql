@@ -1,0 +1,3 @@
+﻿CREATE TYPE [dbo].[LONG_NAMES] AS TABLE (
+    [NAME] NVARCHAR (500) NULL);
+

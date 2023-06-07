@@ -1,0 +1,190 @@
+﻿CREATE TABLE [dbo].[IPCONDITIONSTATUS] (
+    [IPCONDITIONSTATUSID]       CHAR (36)      NOT NULL,
+    [NAME]                      NVARCHAR (100) NOT NULL,
+    [DESCRIPTION]               NVARCHAR (MAX) NULL,
+    [IPCONDITIONSYSTEMSTATUSID] INT            NOT NULL,
+    [LASTCHANGEDBY]             CHAR (36)      NULL,
+    [LASTCHANGEDON]             DATETIME       CONSTRAINT [DF_IPCONDITIONSTATUS_LastChangedOn] DEFAULT (getutcdate()) NOT NULL,
+    [ROWVERSION]                INT            CONSTRAINT [DF_IPCONDITIONSTATUS_RowVersion] DEFAULT ((1)) NOT NULL,
+    CONSTRAINT [PK_IPCONDITIONSTATUS] PRIMARY KEY CLUSTERED ([IPCONDITIONSTATUSID] ASC) WITH (FILLFACTOR = 90),
+    CONSTRAINT [FK_IPCONDITIONSTATUS_SYSSTATUS] FOREIGN KEY ([IPCONDITIONSYSTEMSTATUSID]) REFERENCES [dbo].[IPCONDITIONSYSTEMSTATUS] ([IPCONDITIONSYSTEMSTATUSID])
+);
+
+
+GO
+CREATE NONCLUSTERED INDEX [IPCONDITIONSTATUS_IX_QUERY]
+    ON [dbo].[IPCONDITIONSTATUS]([IPCONDITIONSTATUSID] ASC, [NAME] ASC);
+
+
+GO
+
+CREATE TRIGGER [dbo].[TG_IPCONDITIONSTATUS_DELETE]
+   ON  [dbo].[IPCONDITIONSTATUS]
+   AFTER DELETE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+	INSERT INTO [HISTORYSYSTEMSETUP]
+	(	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT
+			[deleted].[IPCONDITIONSTATUSID],
+			[deleted].[ROWVERSION],
+			GETUTCDATE(),
+			(SELECT dbo.UFN_GET_USERID_FROM_CONTEXT_INFO()),
+			'Impact Condition Status Deleted',
+			'',
+			'',
+			'Impact Condition Status (' + [deleted].[NAME] + ')',
+			'386060B9-8A1D-43CF-B332-60D10B1AB337',
+			3,
+			1,
+			[deleted].[NAME]
+	FROM [deleted]
+END
+GO
+
+CREATE TRIGGER [dbo].[TG_IPCONDITIONSTATUS_INSERT] ON [dbo].[IPCONDITIONSTATUS]
+   AFTER INSERT
+AS 
+BEGIN
+	SET NOCOUNT ON;
+
+	-- Check if LASTCHANGEDBY contains VALID User Id and it Exists in USERS table, this is in replacement to foreign key reference of IPCONDITIONSTATUS table with USERS table.
+	IF EXISTS (SELECT * FROM inserted 
+		LEFT OUTER JOIN USERS WITH (NOLOCK) ON USERS.SUSERGUID = inserted.LASTCHANGEDBY
+		WHERE inserted.LASTCHANGEDBY IS NOT NULL AND USERS.SUSERGUID IS NULL)
+	BEGIN		
+		RAISERROR ('The INSERT or UPDATE statement conflicted with the FOREIGN KEY to table USERS', 16, 0);
+		ROLLBACK;
+		RETURN;
+	END
+
+	INSERT INTO [HISTORYSYSTEMSETUP]
+    (
+        [ID],
+        [ROWVERSION],
+        [CHANGEDON],
+        [CHANGEDBY],
+        [FIELDNAME],
+        [OLDVALUE],
+        [NEWVALUE],
+        [ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT 
+        [inserted].[IPCONDITIONSTATUSID], 
+        [inserted].[ROWVERSION],
+        GETUTCDATE(),
+        [inserted].[LASTCHANGEDBY],
+        'Impact Condition Status Added',
+        '',
+        '',
+        'Impact Condition Status (' + [inserted].[NAME] + ')',
+		'386060B9-8A1D-43CF-B332-60D10B1AB337',
+		1,
+		1,
+		[inserted].[NAME]
+    FROM [inserted] 
+END
+GO
+
+CREATE TRIGGER [dbo].[TG_IPCONDITIONSTATUS_UPDATE] 
+   ON  [dbo].[IPCONDITIONSTATUS]
+   AFTER UPDATE
+AS 
+BEGIN	
+	SET NOCOUNT ON;
+
+	-- Check if LASTCHANGEDBY contains VALID User Id and it Exists in USERS table, this is in replacement to foreign key reference of IPCONDITIONSTATUS table with USERS table.
+	IF EXISTS (SELECT * FROM inserted 
+		LEFT OUTER JOIN USERS WITH (NOLOCK) ON USERS.SUSERGUID = inserted.LASTCHANGEDBY
+		WHERE inserted.LASTCHANGEDBY IS NOT NULL AND USERS.SUSERGUID IS NULL)
+	BEGIN		
+		RAISERROR ('The INSERT or UPDATE statement conflicted with the FOREIGN KEY to table USERS', 16, 0);
+		ROLLBACK;
+		RETURN;
+	END
+
+	INSERT INTO [HISTORYSYSTEMSETUP]
+    (	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT 
+			[inserted].[IPCONDITIONSTATUSID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Name',
+			[deleted].[NAME],
+			[inserted].[NAME],
+			'Impact Condition Status (' + [inserted].[NAME] + ')',
+			'386060B9-8A1D-43CF-B332-60D10B1AB337',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[IPCONDITIONSTATUSID] = [inserted].[IPCONDITIONSTATUSID]
+	WHERE	[deleted].[NAME] <> [inserted].[NAME]
+	UNION ALL
+	SELECT
+			[inserted].[IPCONDITIONSTATUSID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Description',
+			ISNULL([deleted].[DESCRIPTION],'[none]'),
+			ISNULL([inserted].[DESCRIPTION],'[none]'),
+			'Impact Condition Status (' + [inserted].[NAME] + ')',
+			'386060B9-8A1D-43CF-B332-60D10B1AB337',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[IPCONDITIONSTATUSID] = [inserted].[IPCONDITIONSTATUSID]
+	WHERE	ISNULL([deleted].[DESCRIPTION],'') <> ISNULL([inserted].[DESCRIPTION],'')
+	UNION ALL
+	SELECT
+			[inserted].[IPCONDITIONSTATUSID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'System Status',
+			IPCONDITIONSYSTEMSTATUS_DELETED.[NAME],
+			IPCONDITIONSYSTEMSTATUS_INSERTED.[NAME],
+			'Impact Condition Status (' + [inserted].[NAME] + ')',
+			'386060B9-8A1D-43CF-B332-60D10B1AB337',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted] JOIN [inserted] ON [deleted].[IPCONDITIONSTATUSID] = [inserted].[IPCONDITIONSTATUSID]
+			JOIN [IPCONDITIONSYSTEMSTATUS]  AS IPCONDITIONSYSTEMSTATUS_DELETED WITH (NOLOCK)
+				ON [deleted].[IPCONDITIONSYSTEMSTATUSID]= IPCONDITIONSYSTEMSTATUS_DELETED.[IPCONDITIONSYSTEMSTATUSID] 
+			JOIN [IPCONDITIONSYSTEMSTATUS] AS IPCONDITIONSYSTEMSTATUS_INSERTED WITH (NOLOCK)
+				ON [inserted].[IPCONDITIONSYSTEMSTATUSID] = IPCONDITIONSYSTEMSTATUS_INSERTED.[IPCONDITIONSYSTEMSTATUSID]
+			WHERE	[deleted].[IPCONDITIONSYSTEMSTATUSID]<> [inserted].[IPCONDITIONSYSTEMSTATUSID]
+END

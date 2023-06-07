@@ -1,0 +1,10 @@
+﻿CREATE TABLE [dbo].[AUTONUMBERSETTINGS] (
+    [CLASSNAME]            NVARCHAR (250) NOT NULL,
+    [FORMATSTRING]         NVARCHAR (50)  NOT NULL,
+    [PADWITHZEROSTOLENGTH] INT            NOT NULL,
+    [NEXTVALUE]            INT            NOT NULL,
+    [USERESET]             BIT            DEFAULT ((0)) NOT NULL,
+    [LASTRESET]            DATETIME       NULL,
+    CONSTRAINT [PK_AutoNumberSettings] PRIMARY KEY CLUSTERED ([CLASSNAME] ASC) WITH (FILLFACTOR = 80)
+);
+

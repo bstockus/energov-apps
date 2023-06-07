@@ -1,0 +1,22 @@
+<h3>Current and Past Due Re-Inspections:</h3>
+<ul>
+{% for inspection in model.CurrentAndPastDueReInspectionInfos %}
+  <li><u><b>{{inspection.DisplayScheduledDate}}</b>: {{inspection.BusinessName}} ({{inspection.OccupancyNumber}})</u><br/>
+       Location: <b>{{inspection.Addresses}}</b><br/>
+       Comments: <b>{{inspection.InspectionComments}}</b><br/>
+       Inspection Number: <b>{{inspection.InspectionNumber}}</b><br/>
+       Previous Inspection: <b>{{inspection.ParentInspection}} performed on {{inspection.DisplayParentInspectionDate}}</b></li>
+{% endfor %}
+</ul>
+
+
+<h3>Upcoming Re-Inspections:</h3>
+<ul>
+{% for inspection in model.UpcomingReInspectionInfos %}
+  <li><u><b>{{inspection.DisplayScheduledDate}}</b>: {{inspection.BusinessName}} ({{inspection.OccupancyNumber}})</u><br/>
+       Location: <b>{{inspection.Addresses}}</b><br/>
+       Comments: <b>{{inspection.InspectionComments}}</b><br/>
+       Inspection Number: <b>{{inspection.InspectionNumber}}</b><br/>
+       Previous Inspection: <b>{{inspection.ParentInspection}} performed on {{inspection.DisplayParentInspectionDate}}</b></li>
+{% endfor %}
+</ul>

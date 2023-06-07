@@ -1,0 +1,69 @@
+﻿using System;
+
+namespace EnerGov.Business.ClerksLicensing.Validation.Models; 
+
+public class BusinessEntityInformation {
+    public string EntityType { get; set; }
+    public string BusinessId { get; set; }
+    public string BusinessNumber { get; set; }
+    public string BusinessCompanyTypeId { get; set; }
+    public string BusinessCompanyType { get; set; }
+    public string BusinessStatusId { get; set; }
+    public string BusinessStatus { get; set; }
+    public string Description { get; set; }
+    public string TradeName { get; set; }
+    public string FederalTaxNumber { get; set; }
+    public string StateTaxNumber { get; set; }
+    public string DistrictId { get; set; }
+    public string District { get; set; }
+    public string BusinessLocationId { get; set; }
+    public string BusinessLocation { get; set; }
+    public DateTime? OpenDate { get; set; }
+    public DateTime? CloseDate { get; set; }
+    public string ContactId { get; set; }
+    public string ContactNumber { get; set; }
+    public string CompanyName { get; set; }
+    public string FirstName { get; set; }
+    public string MiddleName { get; set; }
+    public string LastName { get; set; }
+    public string Title { get; set; }
+    public string Email { get; set; }
+    public string WebSite { get; set; }
+    public string BusinessPhoneNumber { get; set; }
+    public string HomePhoneNumber { get; set; }
+    public string MobilePhoneNumber { get; set; }
+    public string FaxNumber { get; set; }
+    public string OtherPhoneNumber { get; set; }
+    public bool? IsCompany { get; set; }
+    public bool? IsContact { get; set; }
+    public string BusinessContactTypeId { get; set; }
+    public string BusinessContactType { get; set; }
+    public string MailingAddressId { get; set; }
+    public string AddressType { get; set; }
+    public string AddressNumber { get; set; }
+    public string PreDirection { get; set; }
+    public string StreetName { get; set; }
+    public string StreetType { get; set; }
+    public string PostDirection { get; set; }
+    public string UnitOrSuite { get; set; }
+    public string AddressLine3 { get; set; }
+    public string City { get; set; }
+    public string State { get; set; }
+    public string ZipCode { get; set; }
+    public bool? IsMain { get; set; }
+    public string ParcelId { get; set; }
+    public string ParcelNumber { get; set; }
+    public string LicenseId { get; set; }
+    public string LicenseNumber { get; set; }
+    public int? LicenseYear { get; set; }
+    public string LicenseTypeId { get; set; }
+    public string LicenseType { get; set; }
+    public string LicenseClassId { get; set; }
+    public string LicenseClass { get; set; }
+    public string LicenseStatusId { get; set; }
+    public string LicenseStatus { get; set; }
+    public DateTime? AppliedDate { get; set; }
+    public DateTime? IssuedDate { get; set; }
+    public DateTime? ExpirationDate { get; set; }
+    public bool? IsBilling { get; set; }
+}

@@ -1,0 +1,394 @@
+﻿CREATE TABLE [dbo].[EXAMTYPE] (
+    [EXAMTYPEID]                CHAR (36)      NOT NULL,
+    [NAME]                      NVARCHAR (50)  NOT NULL,
+    [FRIENDLYNAME]              NVARCHAR (150) NOT NULL,
+    [DESCRIPTION]               NVARCHAR (MAX) NULL,
+    [EXAMFORMATID]              INT            NULL,
+    [DEFAULTEXAMSTATUSID]       CHAR (36)      NULL,
+    [DEFAULTEXAMLOCATIONID]     CHAR (36)      NULL,
+    [CUSTOMFIELDLAYOUTID]       CHAR (36)      NULL,
+    [PREFIX]                    NVARCHAR (20)  NULL,
+    [DAYSUNTILEXPIRE]           INT            NOT NULL,
+    [ACTIVE]                    BIT            NOT NULL,
+    [UNLIMITEDEXPIRATION]       BIT            NOT NULL,
+    [SITTINGDATEAVAILABILITYID] INT            NULL,
+    [RECURRENCEID]              CHAR (36)      NULL,
+    [LASTCHANGEDBY]             CHAR (36)      NULL,
+    [LASTCHANGEDON]             DATETIME       CONSTRAINT [DF_EXAMTYPE_LastChangedOn] DEFAULT (getutcdate()) NOT NULL,
+    [ROWVERSION]                INT            CONSTRAINT [DF_EXAMTYPE_RowVersion] DEFAULT ((1)) NOT NULL,
+    CONSTRAINT [PK_EXAMTYPE] PRIMARY KEY NONCLUSTERED ([EXAMTYPEID] ASC) WITH (FILLFACTOR = 90),
+    CONSTRAINT [FK_EXAMTYPE_CUSTOMFIELDLAYOUT] FOREIGN KEY ([CUSTOMFIELDLAYOUTID]) REFERENCES [dbo].[CUSTOMFIELDLAYOUT] ([GCUSTOMFIELDLAYOUTS]),
+    CONSTRAINT [FK_EXAMTYPE_EXAMFORMAT] FOREIGN KEY ([EXAMFORMATID]) REFERENCES [dbo].[EXAMFORMAT] ([EXAMFORMATID]),
+    CONSTRAINT [FK_EXAMTYPE_LOCATION] FOREIGN KEY ([DEFAULTEXAMLOCATIONID]) REFERENCES [dbo].[EXAMLOCATION] ([EXAMLOCATIONID]),
+    CONSTRAINT [FK_EXAMTYPE_RECURRENCE] FOREIGN KEY ([RECURRENCEID]) REFERENCES [dbo].[RECURRENCE] ([RECURRENCEID]),
+    CONSTRAINT [FK_EXAMTYPE_SITDATEAVAIL] FOREIGN KEY ([SITTINGDATEAVAILABILITYID]) REFERENCES [dbo].[SITTINGDATEAVAILABILITY] ([SITTINGDATEAVAILABILITYID]),
+    CONSTRAINT [FK_EXAMTYPE_STATUS] FOREIGN KEY ([DEFAULTEXAMSTATUSID]) REFERENCES [dbo].[EXAMSTATUS] ([EXAMSTATUSID])
+);
+
+
+GO
+CREATE NONCLUSTERED INDEX [EXAMTYPE_IX_QUERY]
+    ON [dbo].[EXAMTYPE]([EXAMTYPEID] ASC, [NAME] ASC);
+
+
+GO
+
+CREATE TRIGGER [dbo].[TG_EXAMTYPE_DELETE] ON [dbo].[EXAMTYPE]
+   AFTER DELETE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+
+    INSERT INTO [HISTORYSYSTEMSETUP]
+    (	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+
+	SELECT
+			[deleted].[EXAMTYPEID],
+			[deleted].[ROWVERSION],
+			GETUTCDATE(),
+			(SELECT dbo.UFN_GET_USERID_FROM_CONTEXT_INFO()),
+			'Exam Type Deleted',
+			'',
+			'',
+			'Exam Type (' + [deleted].[NAME] + ')',
+			'B4DF1B5F-9A50-4053-8695-EE3A78674DCF',
+			3,
+			1,
+			[deleted].[NAME]
+	FROM	[deleted]
+END
+GO
+
+CREATE TRIGGER [dbo].[TG_EXAMTYPE_INSERT] ON [dbo].[EXAMTYPE]
+   FOR INSERT
+AS 
+BEGIN
+	SET NOCOUNT ON;
+	-- Check if LASTCHANGEDBY contains VALID User Id and it Exists in USERS table, this is in replacement to foreign key reference of EXAMTYPE table with USERS table.
+	IF EXISTS (SELECT * FROM inserted 
+		LEFT OUTER JOIN USERS WITH (NOLOCK) ON USERS.SUSERGUID = inserted.LASTCHANGEDBY
+		WHERE inserted.LASTCHANGEDBY IS NOT NULL AND USERS.SUSERGUID IS NULL)
+	BEGIN		
+		RAISERROR ('The INSERT or UPDATE statement conflicted with the FOREIGN KEY to table USERS', 16, 0);
+		ROLLBACK; 
+		RETURN;
+	END
+
+    INSERT INTO [HISTORYSYSTEMSETUP]
+    (	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT
+			[inserted].[EXAMTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Exam Type Added',
+			'',
+			'',
+			'Exam Type (' + [inserted].[NAME] + ')',
+			'B4DF1B5F-9A50-4053-8695-EE3A78674DCF',
+			1,
+			1,
+			[inserted].[NAME]
+	FROM	[inserted]	
+END
+GO
+
+CREATE TRIGGER [dbo].[TG_EXAMTYPE_UPDATE] ON [dbo].[EXAMTYPE] 
+	AFTER UPDATE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+		
+	-- Check if LASTCHANGEDBY contains VALID User Id and it Exists in USERS table, this is in replacement to foreign key reference of EXAMTYPE table with USERS table.
+	IF EXISTS (SELECT * FROM inserted 
+		LEFT OUTER JOIN USERS WITH (NOLOCK) ON USERS.SUSERGUID = inserted.LASTCHANGEDBY
+		WHERE inserted.LASTCHANGEDBY IS NOT NULL AND USERS.SUSERGUID IS NULL)
+	BEGIN		
+		RAISERROR ('The INSERT or UPDATE statement conflicted with the FOREIGN KEY to table USERS', 16, 0);
+		ROLLBACK;
+		RETURN;
+	END	
+
+    INSERT INTO [HISTORYSYSTEMSETUP]
+    (	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT
+			[inserted].[EXAMTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Exam Name',
+			[deleted].[NAME],
+			[inserted].[NAME],
+			'Exam Type (' + [inserted].[NAME] + ')',
+			'B4DF1B5F-9A50-4053-8695-EE3A78674DCF',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[EXAMTYPEID] = [inserted].[EXAMTYPEID]
+	WHERE	[deleted].[NAME] <> [inserted].[NAME]
+	UNION ALL
+
+	SELECT
+			[inserted].[EXAMTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Friendly Name',
+			[deleted].[FRIENDLYNAME],
+			[inserted].[FRIENDLYNAME],
+			'Exam Type (' + [inserted].[NAME] + ')',
+			'B4DF1B5F-9A50-4053-8695-EE3A78674DCF',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[EXAMTYPEID] = [inserted].[EXAMTYPEID]
+	WHERE	[deleted].[FRIENDLYNAME] <> [inserted].[FRIENDLYNAME]
+	UNION ALL
+
+	SELECT
+			[inserted].[EXAMTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Description',
+			ISNULL([deleted].[DESCRIPTION],'[none]'),
+			ISNULL([inserted].[DESCRIPTION],'[none]'),
+			'Exam Type (' + [inserted].[NAME] + ')',
+			'B4DF1B5F-9A50-4053-8695-EE3A78674DCF',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[EXAMTYPEID] = [inserted].[EXAMTYPEID]
+	WHERE	ISNULL([deleted].[DESCRIPTION], '') <> ISNULL([inserted].[DESCRIPTION], '')	
+	UNION ALL
+
+	SELECT
+			[inserted].[EXAMTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Exam Format',
+			ISNULL([EXAMFORMAT_DELETED].[NAME], '[none]'),
+			ISNULL([EXAMFORMAT_INSERTED].[NAME], '[none]'),
+			'Exam Type (' + [inserted].[NAME] + ')',
+			'B4DF1B5F-9A50-4053-8695-EE3A78674DCF',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[EXAMTYPEID] = [inserted].[EXAMTYPEID]
+			LEFT JOIN [EXAMFORMAT] EXAMFORMAT_DELETED WITH (NOLOCK) ON [deleted].[EXAMFORMATID] = [EXAMFORMAT_DELETED].[EXAMFORMATID]
+			LEFT JOIN [EXAMFORMAT] EXAMFORMAT_INSERTED WITH (NOLOCK) ON [inserted].[EXAMFORMATID] = [EXAMFORMAT_INSERTED].[EXAMFORMATID]
+	WHERE	ISNULL([deleted].[EXAMFORMATID], '') <> ISNULL([inserted].[EXAMFORMATID], '')	
+	UNION ALL
+
+	SELECT
+			[inserted].[EXAMTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Default Status',
+			ISNULL([EXAMSTATUS_DELETED].[NAME], '[none]'),
+			ISNULL([EXAMSTATUS_INSERTED].[NAME], '[none]'),
+			'Exam Type (' + [inserted].[NAME] + ')',
+			'B4DF1B5F-9A50-4053-8695-EE3A78674DCF',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[EXAMTYPEID] = [inserted].[EXAMTYPEID]
+			LEFT JOIN [EXAMSTATUS] EXAMSTATUS_DELETED WITH (NOLOCK) ON [deleted].[DEFAULTEXAMSTATUSID] = [EXAMSTATUS_DELETED].[EXAMSTATUSID]
+			LEFT JOIN [EXAMSTATUS] EXAMSTATUS_INSERTED WITH (NOLOCK) ON [inserted].[DEFAULTEXAMSTATUSID] = [EXAMSTATUS_INSERTED].[EXAMSTATUSID]
+	WHERE	ISNULL([deleted].[DEFAULTEXAMSTATUSID], '') <> ISNULL([inserted].[DEFAULTEXAMSTATUSID], '')	
+	UNION ALL
+
+	SELECT
+			[inserted].[EXAMTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Default Location',
+			ISNULL([EXAMLOCATION_DELETED].[NAME], '[none]'),
+			ISNULL([EXAMLOCATION_INSERTED].[NAME], '[none]'),
+			'Exam Type (' + [inserted].[NAME] + ')',
+			'B4DF1B5F-9A50-4053-8695-EE3A78674DCF',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[EXAMTYPEID] = [inserted].[EXAMTYPEID]
+			LEFT JOIN [EXAMLOCATION] EXAMLOCATION_DELETED WITH (NOLOCK) ON [deleted].[DEFAULTEXAMLOCATIONID] = [EXAMLOCATION_DELETED].[EXAMLOCATIONID]
+			LEFT JOIN [EXAMLOCATION] EXAMLOCATION_INSERTED WITH (NOLOCK) ON [inserted].[DEFAULTEXAMLOCATIONID] = [EXAMLOCATION_INSERTED].[EXAMLOCATIONID]
+	WHERE	ISNULL([deleted].[DEFAULTEXAMLOCATIONID], '') <> ISNULL([inserted].[DEFAULTEXAMLOCATIONID], '')	
+	UNION ALL
+
+	SELECT
+			[inserted].[EXAMTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Custom Field Layout',
+			ISNULL([CUSTOMFIELDLAYOUT_DELETED].[SNAME], '[none]'),
+			ISNULL([CUSTOMFIELDLAYOUT_INSERTED].[SNAME], '[none]'),
+			'Exam Type (' + [inserted].[NAME] + ')',
+			'B4DF1B5F-9A50-4053-8695-EE3A78674DCF',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[EXAMTYPEID] = [inserted].[EXAMTYPEID]
+			LEFT JOIN [CUSTOMFIELDLAYOUT] CUSTOMFIELDLAYOUT_DELETED WITH (NOLOCK) ON [deleted].[CUSTOMFIELDLAYOUTID] = [CUSTOMFIELDLAYOUT_DELETED].[GCUSTOMFIELDLAYOUTS]
+			LEFT JOIN [CUSTOMFIELDLAYOUT] CUSTOMFIELDLAYOUT_INSERTED WITH (NOLOCK) ON [inserted].[CUSTOMFIELDLAYOUTID] = [CUSTOMFIELDLAYOUT_INSERTED].[GCUSTOMFIELDLAYOUTS]
+	WHERE	ISNULL([deleted].[CUSTOMFIELDLAYOUTID], '') <> ISNULL([inserted].[CUSTOMFIELDLAYOUTID], '')	
+	UNION ALL
+
+	SELECT
+			[inserted].[EXAMTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Prefix',
+			ISNULL([deleted].[PREFIX],'[none]'),
+			ISNULL([inserted].[PREFIX],'[none]'),
+			'Exam Type (' + [inserted].[NAME] + ')',
+			'B4DF1B5F-9A50-4053-8695-EE3A78674DCF',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[EXAMTYPEID] = [inserted].[EXAMTYPEID]
+	WHERE	ISNULL([deleted].[PREFIX], '') <> ISNULL([inserted].[PREFIX], '')
+	UNION ALL
+
+	SELECT
+			[inserted].[EXAMTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Days Until Expire',
+			CAST([deleted].[DAYSUNTILEXPIRE] AS NVARCHAR(255)),
+			CAST([inserted].[DAYSUNTILEXPIRE] AS NVARCHAR(255)),
+			'Exam Type (' + [inserted].[NAME] + ')',
+			'B4DF1B5F-9A50-4053-8695-EE3A78674DCF',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[EXAMTYPEID] = [inserted].[EXAMTYPEID]
+	WHERE	[deleted].[DAYSUNTILEXPIRE] <> [inserted].[DAYSUNTILEXPIRE]
+	UNION ALL
+
+	SELECT
+			[inserted].[EXAMTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Active Flag',
+			CASE [deleted].[ACTIVE] WHEN 1 THEN 'Yes' WHEN 0 THEN 'No' END,
+			CASE [inserted].[ACTIVE] WHEN 1 THEN 'Yes' WHEN 0 THEN 'No' END,
+			'Exam Type (' + [inserted].[NAME] + ')',
+			'B4DF1B5F-9A50-4053-8695-EE3A78674DCF',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[EXAMTYPEID] = [inserted].[EXAMTYPEID]
+	WHERE	[deleted].[ACTIVE] <> [inserted].[ACTIVE]
+	UNION ALL
+
+	SELECT
+			[inserted].[EXAMTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Unlimited Expiration Flag',
+			CASE [deleted].[UNLIMITEDEXPIRATION] WHEN 1 THEN 'Yes' WHEN 0 THEN 'No' END,
+			CASE [inserted].[UNLIMITEDEXPIRATION] WHEN 1 THEN 'Yes' WHEN 0 THEN 'No' END,
+			'Exam Type (' + [inserted].[NAME] + ')',
+			'B4DF1B5F-9A50-4053-8695-EE3A78674DCF',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[EXAMTYPEID] = [inserted].[EXAMTYPEID]
+	WHERE	[deleted].[UNLIMITEDEXPIRATION] <> [inserted].[UNLIMITEDEXPIRATION]
+	UNION ALL
+
+	SELECT
+			[inserted].[EXAMTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Sitting Date Availability',
+			ISNULL([SITTINGDATEAVAILABILITY_DELETED].[NAME],'[none]'),
+			ISNULL([SITTINGDATEAVAILABILITY_INSERTED].[NAME],'[none]'),
+			'Exam Type (' + [inserted].[NAME] + ')',
+			'B4DF1B5F-9A50-4053-8695-EE3A78674DCF',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[EXAMTYPEID] = [inserted].[EXAMTYPEID]
+			LEFT JOIN [SITTINGDATEAVAILABILITY] SITTINGDATEAVAILABILITY_INSERTED WITH (NOLOCK) ON [SITTINGDATEAVAILABILITY_INSERTED].[SITTINGDATEAVAILABILITYID] = [inserted].[SITTINGDATEAVAILABILITYID]
+			LEFT JOIN [SITTINGDATEAVAILABILITY] SITTINGDATEAVAILABILITY_DELETED WITH (NOLOCK) ON [SITTINGDATEAVAILABILITY_DELETED].[SITTINGDATEAVAILABILITYID] = [deleted].[SITTINGDATEAVAILABILITYID]
+	WHERE	ISNULL([deleted].[SITTINGDATEAVAILABILITYID], '') <> ISNULL([inserted].[SITTINGDATEAVAILABILITYID], '')	
+	UNION ALL
+
+	SELECT
+			[inserted].[EXAMTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Available Recurrence',
+			ISNULL([RECURRENCE_DELETED].[NAME],'[none]'),
+			ISNULL([RECURRENCE_INSERTED].[NAME],'[none]'),
+			'Exam Type (' + [inserted].[NAME] + ')',
+			'B4DF1B5F-9A50-4053-8695-EE3A78674DCF',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[EXAMTYPEID] = [inserted].[EXAMTYPEID]
+			LEFT JOIN [RECURRENCE] RECURRENCE_INSERTED WITH (NOLOCK) ON [RECURRENCE_INSERTED].[RECURRENCEID] = [inserted].[RECURRENCEID]
+			LEFT JOIN [RECURRENCE] RECURRENCE_DELETED WITH (NOLOCK) ON [RECURRENCE_DELETED].[RECURRENCEID] = [deleted].[RECURRENCEID]
+	WHERE	ISNULL([deleted].[RECURRENCEID], '') <> ISNULL([inserted].[RECURRENCEID], '')			
+END

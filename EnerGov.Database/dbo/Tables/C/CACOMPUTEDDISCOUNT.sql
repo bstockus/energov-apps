@@ -1,0 +1,18 @@
+﻿CREATE TABLE [dbo].[CACOMPUTEDDISCOUNT] (
+    [CACOMPUTEDDISCOUNTID]    CHAR (36)       NOT NULL,
+    [CAFEETEMPLATEDISCOUNTID] CHAR (36)       NOT NULL,
+    [NAME]                    NVARCHAR (50)   NOT NULL,
+    [DESCRIPTION]             NVARCHAR (MAX)  NOT NULL,
+    [AMOUNT]                  MONEY           NOT NULL,
+    [INPUTVALUE]              DECIMAL (20, 4) NULL,
+    [ISMANUAL]                BIT             CONSTRAINT [DF_CAComputedDiscnt_Manual] DEFAULT ((0)) NOT NULL,
+    [ISDELETED]               BIT             CONSTRAINT [DF_CAComputedDiscnt_Deleted] DEFAULT ((0)) NOT NULL,
+    [NOTES]                   NVARCHAR (MAX)  NULL,
+    [ROWVERSION]              INT             CONSTRAINT [DF_CAComputedDiscnt_Row] DEFAULT ((1)) NOT NULL,
+    [LASTCHANGEDBY]           CHAR (36)       NOT NULL,
+    [LASTCHANGEDON]           DATETIME        CONSTRAINT [DF_CAComputedDiscnt_ChangedOn] DEFAULT (getdate()) NOT NULL,
+    CONSTRAINT [PK_CAComputedDiscnt] PRIMARY KEY CLUSTERED ([CACOMPUTEDDISCOUNTID] ASC) WITH (FILLFACTOR = 90),
+    CONSTRAINT [FK_CAComputedDiscnt_ChangedBy] FOREIGN KEY ([LASTCHANGEDBY]) REFERENCES [dbo].[USERS] ([SUSERGUID]),
+    CONSTRAINT [FK_CAComputedDiscnt_TemplDiscnt] FOREIGN KEY ([CAFEETEMPLATEDISCOUNTID]) REFERENCES [dbo].[CAFEETEMPLATEDISCOUNT] ([CAFEETEMPLATEDISCOUNTID])
+);
+

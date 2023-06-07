@@ -1,0 +1,124 @@
+﻿
+CREATE VIEW [dbo].[EntityCustomLayoutRef]
+AS
+SELECT  *
+FROM    (
+         SELECT [AMASSET].[AMASSETID] AS [Id]
+               ,[AMASSETTYPE].[GCUSTOMFIELDLAYOUTS] AS [LayoutId]
+               ,'CUSTOMSAVERASSETMANAGEMENT' AS [CustomTable]
+         FROM   [AMASSET]
+         JOIN   [AMASSETTYPE]
+                ON [AMASSETTYPE].[AMASSETTYPEID] = [AMASSET].[AMASSETTYPEID]
+         UNION
+         SELECT [CMCODECASE].[CMCODECASEID] AS [Id]
+               ,[CUSTOMFIELDID] AS [LayoutId]
+               ,'CUSTOMSAVERCODEMANAGEMENT' AS [CustomTable]
+         FROM   [CMCODECASE]
+         JOIN   [CMCASETYPE]
+                ON [CMCASETYPE].[CMCASETYPEID] = [CMCODECASE].[CMCASETYPEID]
+--UNION
+--SELECT  AS [Id]
+--      , AS [LayoutId]
+--      ,'CUSTOMSAVERCRMMANAGEMENT' AS [CustomTable]
+--FROM   
+--JOIN   
+--UNION
+--SELECT  AS [Id]
+--      , AS [LayoutId]
+--      ,'CUSTOMSAVERDECISIOENGINE' AS [CustomTable]
+--FROM   
+--JOIN   
+--UNION
+--SELECT  AS [Id]
+--      , AS [LayoutId]
+--      ,'CUSTOMSAVERIMPACTMANAGEMENT' AS [CustomTable]
+--FROM   
+--JOIN   
+--UNION
+--SELECT  AS [Id]
+--      , AS [LayoutId]
+--      ,'CUSTOMSAVERINDLICENSE' AS [CustomTable]
+--FROM   
+--JOIN   
+         UNION
+         SELECT [IMINSPECTIONID] AS [Id]
+               ,[IMINSPECTIONTYPE].[GCUSTOMFIELDLAYOUTS] AS [LayoutId]
+               ,'CUSTOMSAVERINSPECTIONS' AS [CustomTable]
+         FROM   [IMINSPECTION]
+         JOIN   [IMINSPECTIONTYPE]
+                ON [IMINSPECTIONTYPE].[IMINSPECTIONTYPEID] = [IMINSPECTION].[IMINSPECTIONTYPEID]
+--UNION
+--SELECT  AS [Id]
+--      , AS [LayoutId]
+--      ,'CUSTOMSAVERINVMANAGEMENT' AS [CustomTable]
+--FROM   
+--JOIN  
+         UNION
+         SELECT [BLLICENSE].[BLLICENSEID]
+               ,[BLLICENSETYPECLASS].[CUSTOMFIELDLAYOUTID]
+               ,'CUSTOMSAVERLICENSEMANAGEMENT' AS [CustomTable]
+         FROM   [BLLICENSE]
+         JOIN   [BLLICENSETYPECLASS]
+                ON [BLLICENSETYPECLASS].[BLLICENSETYPEID] = [BLLICENSE].[BLLICENSETYPEID]
+                   AND [BLLICENSETYPECLASS].[BLLICENSECLASSID] = [BLLICENSE].[BLLICENSECLASSID] 
+		UNION
+		SELECT [ILLICENSE].[ILLICENSEID]
+			, [ILLICENSETYPELICENSECLASS].[CUSTOMFIELDLAYOUTID]
+			, 'CUSTOMSAVERINDLICENSE' AS [CustomTable]
+		FROM [ILLICENSE]
+		JOIN [ILLICENSETYPELICENSECLASS]
+			 ON [ILLICENSETYPELICENSECLASS].[ILLICENSECLASSIFICATIONID] = [ILLICENSE].[ILLICENSECLASSIFICATIONID]
+				AND [ILLICENSETYPELICENSECLASS].[ILLICENSETYPEID] = [ILLICENSE].[ILLICENSETYPEID]
+--UNION
+--SELECT  AS [Id]
+--      , AS [LayoutId]
+--      ,'CUSTOMSAVEROBJECTMANAGEMENT' AS [CustomTable]
+--FROM   
+--JOIN  
+         UNION
+         SELECT [p].[PMPERMITID] AS [Id]
+               ,[p2].[CUSTOMFIELDLAYOUTID] AS [LayoutId]
+               ,'CUSTOMSAVERPERMITMANAGEMENT' AS [CustomTable]
+         FROM   [PMPERMIT] AS [p]
+         JOIN   [PMPERMITTYPEWORKCLASS] AS [p2]
+                ON [p2].[PMPERMITTYPEID] = [p].[PMPERMITTYPEID]
+                   AND [p2].[PMPERMITWORKCLASSID] = [p].[PMPERMITWORKCLASSID]
+         UNION
+         SELECT [plan].[PLPLANID]
+               ,[planwc].[CUSTOMFIELDLAYOUTID]
+               ,'CUSTOMSAVERPLANMANAGEMENT' AS [CustomTable]
+         FROM   [PLPLAN] AS [plan]
+         JOIN   [PLPLANTYPEWORKCLASS] AS [planwc]
+                ON [planwc].[PLPLANTYPEID] = [plan].[PLPLANTYPEID]
+                   AND [planwc].[PLPLANWORKCLASSID] = [plan].[PLPLANWORKCLASSID]
+--UNION
+--SELECT  AS [Id]
+--      , AS [LayoutId]
+--      ,'CUSTOMSAVERPROJMANAGEMENT' AS [CustomTable]
+--FROM   
+--JOIN  
+--UNION
+--SELECT  AS [Id]
+--      , AS [LayoutId]
+--      ,'CUSTOMSAVERPROPMANAGEMENT' AS [CustomTable]
+--FROM   
+--JOIN  
+--UNION
+--SELECT  AS [Id]
+--      , AS [LayoutId]
+--      ,'CUSTOMSAVERPURMANAGEMENT' AS [CustomTable]
+--FROM   
+--JOIN  
+--UNION
+--SELECT  AS [Id]
+--      , AS [LayoutId]
+--      ,'CUSTOMSAVERSYSTEMSETUP' AS [CustomTable]
+--FROM   
+--JOIN  
+--UNION
+--SELECT  AS [Id]
+--      , AS [LayoutId]
+--      ,'CUSTOMSAVERTAXREMMANAGEMENT' AS [CustomTable]
+--FROM   
+--JOIN  
+        ) AS types;

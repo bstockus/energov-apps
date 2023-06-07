@@ -1,0 +1,108 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<SharedDataSet xmlns="http://schemas.microsoft.com/sqlserver/reporting/2010/01/shareddatasetdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <DataSet Name="DataSet1">
+    <Query>
+      <DataSourceReference>EnerGov</DataSourceReference>
+      <DataSetParameters>
+        <DataSetParameter Name="@EndDate">
+          <ReadOnly>false</ReadOnly>
+          <Nullable>false</Nullable>
+          <OmitFromQuery>false</OmitFromQuery>
+          <rd:DbType>DateTime</rd:DbType>
+        </DataSetParameter>
+        <DataSetParameter Name="@StartDate">
+          <ReadOnly>false</ReadOnly>
+          <Nullable>false</Nullable>
+          <OmitFromQuery>false</OmitFromQuery>
+          <rd:DbType>DateTime</rd:DbType>
+        </DataSetParameter>
+        <DataSetParameter Name="@CodeCategory">
+          <ReadOnly>false</ReadOnly>
+          <Nullable>false</Nullable>
+          <OmitFromQuery>false</OmitFromQuery>
+          <rd:DbType>String</rd:DbType>
+        </DataSetParameter>
+      </DataSetParameters>
+      <CommandText>SELECT
+	  c.DESCRIPTION AS "OTCType",
+	  '' AS "OTCCategory",
+	  CASE ISNULL(cscm.RentalProperty, 'efcca56d-724e-4f07-95e5-cf613c612adf') WHEN 'efcca56d-724e-4f07-95e5-cf613c612adf' THEN 1 ELSE 0 END AS "IsRental",
+	  cc.OPENEDDATE AS "StartDate",
+	  ISNULL(viol.RESOLVEDDATE, cc.CLOSEDDATE) AS "EndDate",
+	  DATEDIFF(day, cc.OPENEDDATE, ISNULL(viol.RESOLVEDDATE, cc.CLOSEDDATE)) AS "DaysToResolve",
+	  DATEDIFF(day, cc.OPENEDDATE, ISNULL(ISNULL(viol.RESOLVEDDATE, cc.CLOSEDDATE), @EndDate)) AS "Age",
+	  CASE WHEN cc.OPENEDDATE &lt; @StartDate THEN 1 ELSE 0 END AS "IsStarting",
+	  CASE WHEN (ISNULL(viol.RESOLVEDDATE, cc.CLOSEDDATE) IS NULL OR ISNULL(viol.RESOLVEDDATE, cc.CLOSEDDATE) &gt; @EndDate) THEN 1 ELSE 0 END AS "IsEnding",
+	  CASE WHEN cc.OPENEDDATE BETWEEN @StartDate AND @EndDate THEN 1 ELSE 0 END AS "IsOpened",
+	  CASE WHEN ISNULL(viol.RESOLVEDDATE, cc.CLOSEDDATE) BETWEEN @StartDate AND @EndDate THEN 1 ELSE 0 END AS "IsClosed",
+	  CASE WHEN (ISNULL(viol.RESOLVEDDATE, cc.CLOSEDDATE) IS NULL OR ISNULL(viol.RESOLVEDDATE, cc.CLOSEDDATE) &gt; @EndDate) THEN 0 ELSE 1 END AS "IsCompliant"
+	FROM dbo.CMCODECASE cc
+	INNER JOIN dbo.CMCODEWFSTEP cwfs ON cc.CMCODECASEID = cwfs.CMCODECASEID
+	INNER JOIN dbo.CMCODECASESTATUS ccs ON cc.CMCODECASESTATUSID = ccs.CMCODECASESTATUSID
+	INNER JOIN dbo.CMCASETYPE ct ON cc.CMCASETYPEID = ct.CMCASETYPEID
+	INNER JOIN dbo.CMCODEWFACTIONSTEP cwfas ON cwfs.CMCODEWFSTEPID = cwfas.CMCODEWFSTEPID
+	INNER JOIN dbo.CMVIOLATION viol ON cwfas.CMCODEWFACTIONSTEPID = viol.CMCODEWFACTIONID
+	INNER JOIN dbo.CMCODEREVISION cr ON viol.CMCODEREVISIONID = cr.CMCODEREVISIONID AND cr.[CURRENTREVISION] = 1
+	INNER JOIN dbo.CMCODE c ON cr.CMCODEID = c.CMCODEID
+	INNER JOIN dbo.CMVIOLATIONSTATUS violstat ON viol.CMVIOLATIONSTATUSID = violstat.CMVIOLATIONSTATUSID
+	INNER JOIN dbo.CMCODECASEPARCEL ccp ON cc.CMCODECASEID = ccp.CMCODECASEID AND ccp.[PRIMARY] = 1
+	LEFT OUTER JOIN dbo.CUSTOMSAVERCODEMANAGEMENT cscm ON cc.CMCODECASEID = cscm.ID
+	WHERE
+	  c.CMCODECATEGORYID = @CodeCategory AND
+	  (cc.OPENEDDATE BETWEEN @StartDate AND @EndDate OR
+	  ISNULL(viol.RESOLVEDDATE, cc.CLOSEDDATE) BETWEEN @StartDate AND @EndDate OR
+		(cc.OPENEDDATE &lt; @StartDate AND (ISNULL(viol.RESOLVEDDATE, cc.CLOSEDDATE) IS NULL OR ISNULL(viol.RESOLVEDDATE, cc.CLOSEDDATE) &gt; @EndDate))) AND
+	  cc.CASENUMBER NOT LIKE 'CONV-%';</CommandText>
+    </Query>
+    <Fields>
+      <Field Name="OTCType">
+        <DataField>OTCType</DataField>
+        <rd:TypeName>System.String</rd:TypeName>
+      </Field>
+      <Field Name="OTCCategory">
+        <DataField>OTCCategory</DataField>
+        <rd:TypeName>System.String</rd:TypeName>
+      </Field>
+      <Field Name="IsRental">
+        <DataField>IsRental</DataField>
+        <rd:TypeName>System.Int32</rd:TypeName>
+      </Field>
+      <Field Name="StartDate">
+        <DataField>StartDate</DataField>
+        <rd:TypeName>System.DateTime</rd:TypeName>
+      </Field>
+      <Field Name="EndDate">
+        <DataField>EndDate</DataField>
+        <rd:TypeName>System.DateTime</rd:TypeName>
+      </Field>
+      <Field Name="DaysToResolve">
+        <DataField>DaysToResolve</DataField>
+        <rd:TypeName>System.Int32</rd:TypeName>
+      </Field>
+      <Field Name="Age">
+        <DataField>Age</DataField>
+        <rd:TypeName>System.Int32</rd:TypeName>
+      </Field>
+      <Field Name="IsStarting">
+        <DataField>IsStarting</DataField>
+        <rd:TypeName>System.Int32</rd:TypeName>
+      </Field>
+      <Field Name="IsEnding">
+        <DataField>IsEnding</DataField>
+        <rd:TypeName>System.Int32</rd:TypeName>
+      </Field>
+      <Field Name="IsOpened">
+        <DataField>IsOpened</DataField>
+        <rd:TypeName>System.Int32</rd:TypeName>
+      </Field>
+      <Field Name="IsClosed">
+        <DataField>IsClosed</DataField>
+        <rd:TypeName>System.Int32</rd:TypeName>
+      </Field>
+      <Field Name="IsCompliant">
+        <DataField>IsCompliant</DataField>
+        <rd:TypeName>System.Int32</rd:TypeName>
+      </Field>
+    </Fields>
+  </DataSet>
+</SharedDataSet>

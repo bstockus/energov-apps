@@ -1,0 +1,9 @@
+﻿
+
+CREATE PROCEDURE [dbo].[DELETERECOMMENDELEMENTS]
+-- Add the parameters for the stored procedure here
+@RecommendID char(36)	
+AS
+BEGIN		
+	DELETE FROM ERRECOMMENDATIONELEMENT WHERE PLPLANRECOMMENDATIONID = @RecommendID
+END

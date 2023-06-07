@@ -1,0 +1,77 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  
+
+  <ItemGroup>
+    <PackageReference Include="Autofac" Version="6.3.0" />
+    <PackageReference Include="Dapper" Version="2.0.123" />
+    <PackageReference Include="EmailValidation" Version="1.0.6" />
+    
+    <PackageReference Include="Lax.Business.Authorization.Abstractions" Version="8.1.0" />
+
+    <PackageReference Include="Lax.Business.Bus.Authorization" Version="8.1.0" />
+    <PackageReference Include="Lax.Business.Bus.Logging" Version="8.1.0" />
+    <PackageReference Include="Lax.Business.Bus.UnitOfWork" Version="8.1.0" />
+    <PackageReference Include="Lax.Business.Bus.Validation" Version="8.1.0" />
+
+    <PackageReference Include="Lax.AutoFac.AutoMapper" Version="8.1.0" />
+    <PackageReference Include="Lax.AutoFac.FluentValidation" Version="8.1.0" />
+    <PackageReference Include="Lax.AutoFac.MediatR" Version="8.1.0" />
+    <PackageReference Include="Lax.AutoFac.NodaTime" Version="8.1.0" />
+    <PackageReference Include="Lax.Cli.Common" Version="8.1.0" />
+
+    <PackageReference Include="MailKit" Version="3.1.1" />
+
+    <PackageReference Include="MimeKit" Version="3.1.1" />
+
+    <PackageReference Include="RestSharp" Version="107.3.0" />
+
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EnerGov.Business.Abstractions\EnerGov.Business.Abstractions.csproj" />
+    <ProjectReference Include="..\EnerGov.Data.Configuration\EnerGov.Data.Configuration.csproj" />
+    <ProjectReference Include="..\EnerGov.Data.EnerGov\EnerGov.Data.EnerGov.csproj" />
+    <ProjectReference Include="..\EnerGov.Data.GIS\EnerGov.Data.GIS.csproj" />
+    <ProjectReference Include="..\EnerGov.Security\EnerGov.Security.csproj" />
+    <ProjectReference Include="..\EnerGov.Services.Email\EnerGov.Services.Email.csproj" />
+    <ProjectReference Include="..\EnerGov.Services.Reporting\EnerGov.Services.Reporting.csproj" />
+    <ProjectReference Include="..\EnerGov.Services.Templating\EnerGov.Services.Templating.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="InspectionAutomations\Tasks\ChangeInOccupancyEmail\ChangeInOccupancyEmail.html.liquid" />
+    <EmbeddedResource Include="InspectionAutomations\Tasks\ChangeInOccupancyEmail\ChangeInOccupancyEmail.txt.liquid" />
+    <EmbeddedResource Include="InspectionAutomations\Tasks\ExternalReportEmail\ExternalReportEmail.html.liquid" />
+    <EmbeddedResource Include="InspectionAutomations\Tasks\ExternalReportEmail\ExternalReportEmail.txt.liquid" />
+    <EmbeddedResource Include="InspectionAutomations\Tasks\InternalReportEmail\InternalReportEmail.html.liquid" />
+    <EmbeddedResource Include="InspectionAutomations\Tasks\InternalReportEmail\InternalReportEmail.txt.liquid" />
+    <EmbeddedResource Include="InspectionAutomations\Tasks\ReferredToBuildingSafetyEmail\ReferredToBuildingSafetyEmail.html.liquid" />
+    <EmbeddedResource Include="InspectionAutomations\Tasks\ReferredToBuildingSafetyEmail\ReferredToBuildingSafetyEmail.txt.liquid" />
+    <EmbeddedResource Include="InspectionAutomations\Tasks\ReferredToFirePreventionEmail\ReferredToFirePreventionEmail.html.liquid" />
+    <EmbeddedResource Include="InspectionAutomations\Tasks\ReferredToFirePreventionEmail\ReferredToFirePreventionEmail.txt.liquid" />
+    <EmbeddedResource Include="NotificationAutomations\ReInspectionNotificationEmail.html.liquid" />
+    <EmbeddedResource Include="NotificationAutomations\ReInspectionNotificationEmail.txt.liquid" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="InspectionAutomations\Tasks\ChangeInOccupancyEmail\ChangeInOccupancyEmail.html.liquid" />
+    <None Remove="InspectionAutomations\Tasks\ChangeInOccupancyEmail\ChangeInOccupancyEmail.txt.liquid" />
+    <None Remove="InspectionAutomations\Tasks\ExternalReportEmail\ExternalReportEmail.html.liquid" />
+    <None Remove="InspectionAutomations\Tasks\ExternalReportEmail\ExternalReportEmail.txt.liquid" />
+    <None Remove="InspectionAutomations\Tasks\InternalReportEmail\InternalReportEmail.html.liquid" />
+    <None Remove="InspectionAutomations\Tasks\InternalReportEmail\InternalReportEmail.txt.liquid" />
+    <None Remove="InspectionAutomations\Tasks\ReferredToBuildingSafetyEmail\ReferredToBuildingSafetyEmail.html.liquid" />
+    <None Remove="InspectionAutomations\Tasks\ReferredToBuildingSafetyEmail\ReferredToBuildingSafetyEmail.txt.liquid" />
+    <None Remove="InspectionAutomations\Tasks\ReferredToFirePreventionEmail\ReferredToFirePreventionEmail.html.liquid" />
+    <None Remove="InspectionAutomations\Tasks\ReferredToFirePreventionEmail\ReferredToFirePreventionEmail.txt.liquid" />
+    <None Remove="NotificationAutomations\ReInspectionNotificationEmail.html.liquid" />
+    <None Remove="NotificationAutomations\ReInspectionNotificationEmail.txt.liquid" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,80 @@
+﻿@page
+@using EnerGov.Web.Common.Infrastructure
+@model MarketDriveModel
+
+@{
+    this.UseLayout("Market Drive Export");
+}
+
+@section Header {
+    Market Drive Export
+}
+
+@section Breadcrumbs {
+    <li>Exports</li>
+    <li class="active">Market Drive</li>
+}
+
+<form method="post">
+
+    <bs-row>
+
+        <bs-col xs="12">
+
+            <lte-box>
+
+                <lte-box-header>
+                    <lte-box-title>Market Drive Export</lte-box-title>
+                </lte-box-header>
+
+                <lte-box-body>
+
+                    <dl>
+
+                        <dt>Permit Types to Include:</dt>
+                        <dd>
+                            @foreach (var permitTypeResultItem in Model.PermitTypeResultItems.OrderBy(_ => _.PermitTypeName)) {
+                                <span class="label label-default">@permitTypeResultItem.PermitTypeName</span>
+                                @:&nbsp;
+                            }
+                        </dd>
+                        
+                        <dt>Number of Days to Pull Closed Permits:</dt>
+                        <dd>@Model.MarketDriveExportConfiguration.NumberOfDaysToPullClosedPermits.ToString()</dd>
+                        
+                        <dt>Include Permits with Parcel Number Prefix:</dt>
+                        <dd>@Model.MarketDriveExportConfiguration.IncludePermitsWithParcelNumberPrefix</dd>
+                        
+                        <dt>Exclude Permits with Permit Number Prefix</dt>
+                        <dd>@Model.MarketDriveExportConfiguration.ExcludePermitsWithNumberPrefix</dd>
+
+                    </dl>
+
+                </lte-box-body>
+
+                <lte-box-footer>
+
+                    <span class="pull-right">
+
+                        <button bs-button
+                                asp-page-handler="Export"
+                                bs-context="@ButtonContext.Info"
+                                bs-size="@Size.Small"
+                                role="button"
+                                type="submit">
+
+                            <i class="fa fa-download"></i> Export
+
+                        </button>
+
+                    </span>
+
+                </lte-box-footer>
+
+            </lte-box>
+
+        </bs-col>
+
+    </bs-row>
+
+</form>

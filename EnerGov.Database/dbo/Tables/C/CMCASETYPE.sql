@@ -1,0 +1,332 @@
+﻿CREATE TABLE [dbo].[CMCASETYPE] (
+    [CMCASETYPEID]              CHAR (36)      NOT NULL,
+    [NAME]                      NVARCHAR (50)  NOT NULL,
+    [CUSTOMFIELDID]             CHAR (36)      NULL,
+    [WFTEMPLATEID]              CHAR (36)      NULL,
+    [CAFEETEMPLATEID]           CHAR (36)      NULL,
+    [ACTIVE]                    BIT            CONSTRAINT [DF_CMCaseType_Active] DEFAULT ((1)) NOT NULL,
+    [DEFAULTUSER]               CHAR (36)      NULL,
+    [DEFAULTSTATUS]             CHAR (36)      NULL,
+    [DESCRIPTION]               NVARCHAR (MAX) NULL,
+    [PREFIX]                    NVARCHAR (10)  NULL,
+    [USECASETYPENUMBERING]      BIT            DEFAULT ((0)) NOT NULL,
+    [ONLINECUSTOMFIELDLAYOUTID] CHAR (36)      NULL,
+    [LASTCHANGEDBY]             CHAR (36)      NULL,
+    [LASTCHANGEDON]             DATETIME       CONSTRAINT [DF_CMCASETYPE_LastChangedOn] DEFAULT (getutcdate()) NOT NULL,
+    [ROWVERSION]                INT            CONSTRAINT [DF_CMCASETYPE_RowVersion] DEFAULT ((1)) NOT NULL,
+    CONSTRAINT [PK_CMCaseType] PRIMARY KEY CLUSTERED ([CMCASETYPEID] ASC) WITH (FILLFACTOR = 80),
+    CONSTRAINT [FK_CaseType_Custom] FOREIGN KEY ([CUSTOMFIELDID]) REFERENCES [dbo].[CUSTOMFIELDLAYOUT] ([GCUSTOMFIELDLAYOUTS]),
+    CONSTRAINT [FK_CMCaseType_DefStatus] FOREIGN KEY ([DEFAULTSTATUS]) REFERENCES [dbo].[CMCODECASESTATUS] ([CMCODECASESTATUSID]),
+    CONSTRAINT [FK_CMCaseType_DefUser] FOREIGN KEY ([DEFAULTUSER]) REFERENCES [dbo].[USERS] ([SUSERGUID]),
+    CONSTRAINT [FK_CMCaseType_FeeTemplate] FOREIGN KEY ([CAFEETEMPLATEID]) REFERENCES [dbo].[CAFEETEMPLATE] ([CAFEETEMPLATEID]),
+    CONSTRAINT [FK_CMCASETYPE_ONLINECFLAYOUT] FOREIGN KEY ([ONLINECUSTOMFIELDLAYOUTID]) REFERENCES [dbo].[CUSTOMFIELDLAYOUT] ([GCUSTOMFIELDLAYOUTS]),
+    CONSTRAINT [FK_CMCASETYPE_USERS] FOREIGN KEY ([LASTCHANGEDBY]) REFERENCES [dbo].[USERS] ([SUSERGUID]),
+    CONSTRAINT [FK_CMCaseType_WFTemplate] FOREIGN KEY ([WFTEMPLATEID]) REFERENCES [dbo].[WFTEMPLATE] ([WFTEMPLATEID])
+);
+
+
+GO
+
+CREATE TRIGGER [dbo].[TG_CMCASETYPE_UPDATE]
+   ON  [dbo].[CMCASETYPE]
+   AFTER UPDATE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+	INSERT INTO [HISTORYSYSTEMSETUP]
+    (	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT 
+			[inserted].[CMCASETYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Type Name',
+			[deleted].[NAME],
+			[inserted].[NAME],
+			'Code Case Type (' + [inserted].[NAME] + ')',
+			'9C623A25-C14D-4380-B8E1-3713F569CE94',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].CMCASETYPEID = [inserted].CMCASETYPEID
+	WHERE	[deleted].[NAME] <> [inserted].[NAME]
+	UNION ALL
+
+	SELECT 
+			[inserted].[CMCASETYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],			
+			'Description',
+			ISNULL([deleted].[DESCRIPTION],'[none]'),		
+			ISNULL([inserted].[DESCRIPTION],'[none]'),
+			'Code Case Type (' + [inserted].[NAME] + ')',			
+			'9C623A25-C14D-4380-B8E1-3713F569CE94',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].CMCASETYPEID = [inserted].CMCASETYPEID
+	WHERE	ISNULL([deleted].[DESCRIPTION],'') <> ISNULL([inserted].[DESCRIPTION],'')
+	UNION ALL
+
+	SELECT 
+			[inserted].[CMCASETYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Prefix',
+			ISNULL([deleted].[PREFIX],'[none]'),		
+			ISNULL([inserted].[PREFIX],'[none]'),
+			'Code Case Type (' + [inserted].[NAME] + ')',
+			'9C623A25-C14D-4380-B8E1-3713F569CE94',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].CMCASETYPEID = [inserted].CMCASETYPEID
+	WHERE	ISNULL([deleted].[PREFIX],'') <> ISNULL([inserted].[PREFIX],'')
+	UNION ALL
+
+	SELECT
+			[inserted].[CMCASETYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Assigned To',
+			ISNULL([USERS_DELETED].[LNAME],'[none]')+ ', ' + ISNULL([USERS_DELETED].[FNAME],'[none]'),
+			ISNULL([USERS_INSERTED].[LNAME],'[none]') + ', ' + ISNULL([USERS_INSERTED].[FNAME],'[none]'),
+			'Code Case Type (' + [inserted].[NAME] + ')',
+			'9C623A25-C14D-4380-B8E1-3713F569CE94',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[CMCASETYPEID] = [inserted].[CMCASETYPEID]
+			LEFT JOIN USERS USERS_DELETED WITH (NOLOCK) ON [deleted].DEFAULTUSER = [USERS_DELETED].SUSERGUID
+			LEFT JOIN USERS USERS_INSERTED WITH (NOLOCK) ON [inserted].DEFAULTUSER = [USERS_INSERTED].SUSERGUID
+	WHERE	ISNULL([deleted].[DEFAULTUSER],'') <> ISNULL([inserted].[DEFAULTUSER],'')
+	UNION ALL
+
+	SELECT
+			[inserted].[CMCASETYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Default Status',
+			ISNULL([CMCODECASESTATUS_DELETED].[NAME],'[none]'),
+			ISNULL([CMCODECASESTATUS_INSERTED].[NAME],'[none]'),
+			'Code Case Type (' + [inserted].[NAME] + ')',
+			'9C623A25-C14D-4380-B8E1-3713F569CE94',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[CMCASETYPEID] = [inserted].[CMCASETYPEID]
+			LEFT JOIN CMCODECASESTATUS CMCODECASESTATUS_DELETED WITH (NOLOCK) ON [deleted].DEFAULTSTATUS = [CMCODECASESTATUS_DELETED].CMCODECASESTATUSID
+			LEFT JOIN CMCODECASESTATUS CMCODECASESTATUS_INSERTED WITH (NOLOCK) ON [inserted].DEFAULTSTATUS = [CMCODECASESTATUS_INSERTED].CMCODECASESTATUSID
+	WHERE	ISNULL([deleted].[DEFAULTSTATUS],'') <> ISNULL([inserted].[DEFAULTSTATUS],'')
+	UNION ALL
+
+	SELECT
+			[inserted].[CMCASETYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Custom Field',
+			ISNULL([CUSTOMFIELDLAYOUT_DELETED].[SNAME],'[none]'),
+			ISNULL([CUSTOMFIELDLAYOUT_INSERTED].[SNAME],'[none]'),
+			'Code Case Type (' + [inserted].[NAME] + ')',
+			'9C623A25-C14D-4380-B8E1-3713F569CE94',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[CMCASETYPEID] = [inserted].[CMCASETYPEID]
+			LEFT JOIN CUSTOMFIELDLAYOUT CUSTOMFIELDLAYOUT_DELETED WITH (NOLOCK) ON [deleted].CUSTOMFIELDID = [CUSTOMFIELDLAYOUT_DELETED].GCUSTOMFIELDLAYOUTS
+			LEFT JOIN CUSTOMFIELDLAYOUT CUSTOMFIELDLAYOUT_INSERTED WITH (NOLOCK) ON [inserted].CUSTOMFIELDID = [CUSTOMFIELDLAYOUT_INSERTED].GCUSTOMFIELDLAYOUTS
+	WHERE	ISNULL([deleted].[CUSTOMFIELDID],'') <> ISNULL([inserted].[CUSTOMFIELDID],'')
+	UNION ALL
+
+	SELECT
+			[inserted].[CMCASETYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Online Custom Field',
+			ISNULL([CUSTOMFIELDLAYOUT_DELETED].[SNAME],'[none]'),
+			ISNULL([CUSTOMFIELDLAYOUT_INSERTED].[SNAME],'[none]'),
+			'Code Case Type (' + [inserted].[NAME] + ')',
+			'9C623A25-C14D-4380-B8E1-3713F569CE94',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[CMCASETYPEID] = [inserted].[CMCASETYPEID]
+			LEFT JOIN CUSTOMFIELDLAYOUT CUSTOMFIELDLAYOUT_DELETED WITH (NOLOCK) ON [deleted].ONLINECUSTOMFIELDLAYOUTID = [CUSTOMFIELDLAYOUT_DELETED].GCUSTOMFIELDLAYOUTS
+			LEFT JOIN CUSTOMFIELDLAYOUT CUSTOMFIELDLAYOUT_INSERTED WITH (NOLOCK) ON [inserted].ONLINECUSTOMFIELDLAYOUTID = [CUSTOMFIELDLAYOUT_INSERTED].GCUSTOMFIELDLAYOUTS
+	WHERE	ISNULL([deleted].[ONLINECUSTOMFIELDLAYOUTID],'') <> ISNULL([inserted].[ONLINECUSTOMFIELDLAYOUTID],'')
+	UNION ALL
+
+	SELECT
+			[inserted].[CMCASETYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Workflow Template',
+			ISNULL([WFTEMPLATE_DELETED].[NAME],'[none]'),
+			ISNULL([WFTEMPLATE_INSERTED].[NAME],'[none]'),
+			'Code Case Type (' + [inserted].[NAME] + ')',
+			'9C623A25-C14D-4380-B8E1-3713F569CE94',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[CMCASETYPEID] = [inserted].[CMCASETYPEID]
+			LEFT JOIN WFTEMPLATE WFTEMPLATE_DELETED WITH (NOLOCK) ON [deleted].WFTEMPLATEID = [WFTEMPLATE_DELETED].WFTEMPLATEID
+			LEFT JOIN WFTEMPLATE WFTEMPLATE_INSERTED WITH (NOLOCK) ON [inserted].WFTEMPLATEID = [WFTEMPLATE_INSERTED].WFTEMPLATEID
+	WHERE	ISNULL([deleted].[WFTEMPLATEID],'') <> ISNULL([inserted].[WFTEMPLATEID],'')
+	UNION ALL
+
+	SELECT
+			[inserted].[CMCASETYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Fee Template',
+			ISNULL([CAFEETEMPLATE_DELETED].[CAFEETEMPLATENAME],'[none]'),
+			ISNULL([CAFEETEMPLATE_INSERTED].[CAFEETEMPLATENAME],'[none]'),
+			'Code Case Type (' + [inserted].[NAME] + ')',
+			'9C623A25-C14D-4380-B8E1-3713F569CE94',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[CMCASETYPEID] = [inserted].[CMCASETYPEID]
+			LEFT JOIN CAFEETEMPLATE CAFEETEMPLATE_DELETED WITH (NOLOCK) ON [deleted].CAFEETEMPLATEID = [CAFEETEMPLATE_DELETED].CAFEETEMPLATEID
+			LEFT JOIN CAFEETEMPLATE CAFEETEMPLATE_INSERTED WITH (NOLOCK) ON [inserted].CAFEETEMPLATEID = [CAFEETEMPLATE_INSERTED].CAFEETEMPLATEID
+	WHERE	ISNULL([deleted].[CAFEETEMPLATEID],'') <> ISNULL([inserted].[CAFEETEMPLATEID],'')
+	UNION ALL
+
+	SELECT
+			[inserted].[CMCASETYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Active Flag',
+			CASE [deleted].[ACTIVE] WHEN 1 THEN 'Yes' WHEN 0 THEN 'No'  ELSE '[none]' END,
+			CASE [inserted].[ACTIVE] WHEN 1 THEN 'Yes' WHEN 0 THEN 'No'  ELSE '[none]' END,
+			'Code Case Type (' + [inserted].[NAME] + ')',
+			'9C623A25-C14D-4380-B8E1-3713F569CE94',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].CMCASETYPEID = [inserted].CMCASETYPEID
+	WHERE	([deleted].[ACTIVE] <> [inserted].[ACTIVE]) OR ([deleted].[ACTIVE] IS NULL AND [inserted].[ACTIVE] IS NOT NULL)
+			OR ([deleted].[ACTIVE] IS NOT NULL AND [inserted].[ACTIVE] IS NULL)
+	UNION ALL
+
+	SELECT
+			[inserted].[CMCASETYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Case Type Numbering Flag',
+			CASE [deleted].[USECASETYPENUMBERING] WHEN 1 THEN 'Yes' WHEN 0 THEN 'No' END,
+			CASE [inserted].[USECASETYPENUMBERING] WHEN 1 THEN 'Yes' WHEN 0 THEN 'No' END,
+			'Code Case Type (' + [inserted].[NAME] + ')',
+			'9C623A25-C14D-4380-B8E1-3713F569CE94',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].CMCASETYPEID = [inserted].CMCASETYPEID
+	WHERE	([deleted].[USECASETYPENUMBERING] <> [inserted].[USECASETYPENUMBERING])    
+END
+GO
+CREATE TRIGGER [dbo].[TG_CMCASETYPE_INSERT] 
+   ON   [dbo].[CMCASETYPE]
+   AFTER INSERT
+AS
+BEGIN
+	SET NOCOUNT ON;
+	INSERT INTO [HISTORYSYSTEMSETUP]
+    (
+        [ID],
+        [ROWVERSION],
+        [CHANGEDON],
+        [CHANGEDBY],
+        [FIELDNAME],
+        [OLDVALUE],
+        [NEWVALUE],
+        [ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT
+        [inserted].[CMCASETYPEID], 
+        [inserted].[ROWVERSION],
+        GETUTCDATE(),
+        [inserted].[LASTCHANGEDBY],
+        'Code Case Type Added', 
+        '',
+        '',
+        'Code Case Type (' + [inserted].[NAME] + ')',
+		'9C623A25-C14D-4380-B8E1-3713F569CE94',
+		1,
+		1,
+		[inserted].[NAME]
+    FROM [inserted]	
+END
+GO
+
+CREATE TRIGGER [dbo].[TG_CMCASETYPE_DELETE]
+   ON  [dbo].[CMCASETYPE] 
+   AFTER DELETE
+AS 
+BEGIN	
+	SET NOCOUNT ON;
+	INSERT INTO [HISTORYSYSTEMSETUP]
+	(	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )SELECT
+			[deleted].[CMCASETYPEID],
+			[deleted].[ROWVERSION],
+			GETUTCDATE(),
+			(SELECT dbo.UFN_GET_USERID_FROM_CONTEXT_INFO()),
+			'Code Case Type Deleted',
+			'',
+			'',
+			'Code Case Type (' + [deleted].[NAME] + ')',
+			'9C623A25-C14D-4380-B8E1-3713F569CE94',
+			3,
+			1,
+			[deleted].[NAME]
+	FROM	[deleted]
+END

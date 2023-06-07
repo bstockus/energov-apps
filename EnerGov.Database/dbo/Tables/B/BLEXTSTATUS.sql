@@ -1,0 +1,188 @@
+﻿CREATE TABLE [dbo].[BLEXTSTATUS] (
+    [BLEXTSTATUSID]       CHAR (36)      NOT NULL,
+    [NAME]                NVARCHAR (50)  NOT NULL,
+    [DESCRIPTION]         NVARCHAR (MAX) NULL,
+    [BLEXTSTATUSSYSTEMID] INT            CONSTRAINT [DF_BLExtStatus_BLExtStatusSystem] DEFAULT ((4)) NOT NULL,
+    [LASTCHANGEDBY]       CHAR (36)      NULL,
+    [LASTCHANGEDON]       DATETIME       CONSTRAINT [DF_BLEXTSTATUS_LastChangedOn] DEFAULT (getutcdate()) NOT NULL,
+    [ROWVERSION]          INT            CONSTRAINT [DF_BLEXTSTATUS_RowVersion] DEFAULT ((1)) NOT NULL,
+    CONSTRAINT [PK_BLExtStatus] PRIMARY KEY CLUSTERED ([BLEXTSTATUSID] ASC) WITH (FILLFACTOR = 90),
+    CONSTRAINT [FK_BLExtStatus_StatusSystem] FOREIGN KEY ([BLEXTSTATUSSYSTEMID]) REFERENCES [dbo].[BLEXTSTATUSSYSTEM] ([BLEXTSTATUSSYSTEMID])
+);
+
+
+GO
+CREATE NONCLUSTERED INDEX [BLEXTSTATUS_IX_QUERY]
+    ON [dbo].[BLEXTSTATUS]([BLEXTSTATUSID] ASC, [NAME] ASC);
+
+
+GO
+
+CREATE TRIGGER [dbo].[TG_BLEXTSTATUS_INSERT] ON [dbo].[BLEXTSTATUS]
+   FOR INSERT
+AS 
+BEGIN
+	SET NOCOUNT ON;
+	-- Check if LASTCHANGEDBY contains VALID User Id and it Exists in USERS table, this is in replacement to foreign key reference of BLEXTSTATUS table with USERS table.
+	IF EXISTS (SELECT * FROM inserted 
+		LEFT OUTER JOIN USERS WITH (NOLOCK) ON USERS.SUSERGUID = inserted.LASTCHANGEDBY
+		WHERE inserted.LASTCHANGEDBY IS NOT NULL AND USERS.SUSERGUID IS NULL)
+	BEGIN		
+		RAISERROR ('The INSERT or UPDATE statement conflicted with the FOREIGN KEY to table USERS', 16, 0);
+		ROLLBACK;
+		RETURN;
+	END
+
+    INSERT INTO [HISTORYSYSTEMSETUP]
+    (	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT
+			[inserted].[BLEXTSTATUSID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Business Status Added',
+			'',
+			'',
+			'Business Status (' + [inserted].[NAME] + ')',
+			'E0124A76-D4C1-4D65-AC5D-28D5BC906F4C',
+			1,
+			1,
+			[inserted].[NAME]
+	FROM	[inserted]	
+END
+GO
+
+CREATE TRIGGER [dbo].[TG_BLEXTSTATUS_UPDATE] ON [dbo].[BLEXTSTATUS] 
+	AFTER UPDATE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+		
+	-- Check if LASTCHANGEDBY contains VALID User Id and it Exists in USERS table, this is in replacement to foreign key reference of BLEXTSTATUS table with USERS table.
+	IF EXISTS (SELECT * FROM inserted 
+		LEFT OUTER JOIN USERS WITH (NOLOCK) ON USERS.SUSERGUID = inserted.LASTCHANGEDBY
+		WHERE inserted.LASTCHANGEDBY IS NOT NULL AND USERS.SUSERGUID IS NULL)
+	BEGIN		
+		RAISERROR ('The INSERT or UPDATE statement conflicted with the FOREIGN KEY to table USERS', 16, 0);
+		ROLLBACK;
+		RETURN;
+	END	
+
+    INSERT INTO [HISTORYSYSTEMSETUP]
+    (	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT
+			[inserted].[BLEXTSTATUSID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Name',
+			[deleted].[NAME],
+			[inserted].[NAME],
+			'Business Status (' + [inserted].[NAME] + ')',
+			'E0124A76-D4C1-4D65-AC5D-28D5BC906F4C',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[BLEXTSTATUSID] = [inserted].[BLEXTSTATUSID]
+	WHERE	[deleted].[NAME] <> [inserted].[NAME]
+
+	UNION ALL
+	SELECT
+			[inserted].[BLEXTSTATUSID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Description',
+			ISNULL([deleted].[DESCRIPTION],'[none]'),
+			ISNULL([inserted].[DESCRIPTION],'[none]'),
+			'Business Status (' + [inserted].[NAME] + ')',
+			'E0124A76-D4C1-4D65-AC5D-28D5BC906F4C',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[BLEXTSTATUSID] = [inserted].[BLEXTSTATUSID]
+	WHERE	ISNULL([deleted].[DESCRIPTION], '') <> ISNULL([inserted].[DESCRIPTION], '')
+	UNION ALL
+	SELECT
+			[inserted].[BLEXTSTATUSID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'System Status',
+			[BLEXTSTATUSSYSTEM_DELETED].[NAME],
+			[BLEXTSTATUSSYSTEM_INSERTED].[NAME],
+			'Business Status (' + [inserted].[NAME] + ')',
+			'E0124A76-D4C1-4D65-AC5D-28D5BC906F4C',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[BLEXTSTATUSID] = [inserted].[BLEXTSTATUSID]
+			JOIN BLEXTSTATUSSYSTEM BLEXTSTATUSSYSTEM_DELETED WITH (NOLOCK) ON [deleted].[BLEXTSTATUSSYSTEMID] = [BLEXTSTATUSSYSTEM_DELETED].[BLEXTSTATUSSYSTEMID]
+			JOIN BLEXTSTATUSSYSTEM BLEXTSTATUSSYSTEM_INSERTED WITH (NOLOCK) ON [inserted].[BLEXTSTATUSSYSTEMID] = [BLEXTSTATUSSYSTEM_INSERTED].[BLEXTSTATUSSYSTEMID]
+	WHERE	[deleted].[BLEXTSTATUSSYSTEMID] <> [inserted].[BLEXTSTATUSSYSTEMID]
+END
+GO
+
+CREATE TRIGGER [dbo].[TG_BLEXTSTATUS_DELETE] ON [dbo].[BLEXTSTATUS]
+   AFTER DELETE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+
+    INSERT INTO [HISTORYSYSTEMSETUP]
+    (	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+
+	SELECT
+			[deleted].[BLEXTSTATUSID],
+			[deleted].[ROWVERSION],
+			GETUTCDATE(),
+			(SELECT dbo.UFN_GET_USERID_FROM_CONTEXT_INFO()),
+			'Business Status Deleted',
+			'',
+			'',
+			'Business Status (' + [deleted].[NAME] + ')',
+			'E0124A76-D4C1-4D65-AC5D-28D5BC906F4C',
+			3,
+			1,
+			[deleted].[NAME]
+	FROM	[deleted]
+END

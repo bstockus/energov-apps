@@ -1,0 +1,154 @@
+﻿CREATE TABLE [dbo].[ROLELINK] (
+    [ROLELINKID] CHAR (36)      NOT NULL,
+    [ROLEID]     CHAR (36)      NOT NULL,
+    [URLTEXT]    NVARCHAR (500) NOT NULL,
+    [URLADDRESS] NVARCHAR (MAX) NOT NULL,
+    CONSTRAINT [PK_ROLELINK] PRIMARY KEY CLUSTERED ([ROLELINKID] ASC) WITH (FILLFACTOR = 90),
+    CONSTRAINT [FK_ROLELINK_ROLES] FOREIGN KEY ([ROLEID]) REFERENCES [dbo].[ROLES] ([SROLEGUID])
+);
+
+
+GO
+CREATE NONCLUSTERED INDEX [ROLELINK_IX_ROLEID]
+    ON [dbo].[ROLELINK]([ROLEID] ASC);
+
+
+GO
+
+CREATE TRIGGER [TG_ROLELINK_INSERT] ON [ROLELINK]
+	AFTER INSERT
+AS
+BEGIN
+	SET NOCOUNT ON
+
+	INSERT INTO [HISTORYSYSTEMSETUP]
+	(
+		[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+	)
+	SELECT
+			[ROLES].[SROLEGUID],
+			[ROLES].[ROWVERSION],
+			[ROLES].[LASTCHANGEDON],
+			[ROLES].[LASTCHANGEDBY],
+			'User Role Link Added',
+			'',
+			'',
+			'User Role (' + [ROLES].[ID] + '), Links (' + [inserted].[URLTEXT] +')',			
+			'801F270F-912F-420A-91D6-82EBC3F351F3',
+			1,
+			0,
+			[inserted].[URLTEXT]
+	FROM	[inserted]
+	INNER JOIN [ROLES] ON [inserted].[ROLEID] = [ROLES].[SROLEGUID]
+END
+GO
+
+CREATE TRIGGER [TG_ROLELINK_UPDATE] ON [ROLELINK]
+	AFTER UPDATE
+AS
+BEGIN
+	SET NOCOUNT ON
+
+	INSERT INTO [HISTORYSYSTEMSETUP]
+	(
+		[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+	)
+	SELECT
+			[ROLES].[SROLEGUID],
+			[ROLES].[ROWVERSION],
+			GETUTCDATE(),
+			[ROLES].[LASTCHANGEDBY],
+			'URL Text',
+			[deleted].[URLTEXT],
+			[inserted].[URLTEXT],
+			'User Role (' + [ROLES].[ID] + '), Links (' + [inserted].[URLTEXT] +')',			
+			'801F270F-912F-420A-91D6-82EBC3F351F3',
+			2,
+			0,
+			[inserted].[URLTEXT]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[ROLEID] = [inserted].[ROLEID]		
+			INNER JOIN [ROLES] ON [inserted].[ROLEID] = [ROLES].[SROLEGUID]				
+	WHERE	[deleted].[URLTEXT] <> [inserted].[URLTEXT]
+	UNION ALL
+
+	SELECT
+			[ROLES].[SROLEGUID],
+			[ROLES].[ROWVERSION],
+			[ROLES].[LASTCHANGEDON],
+			[ROLES].[LASTCHANGEDBY],
+			'URL Address',
+			[deleted].[URLADDRESS],
+			[inserted].[URLADDRESS],			
+			'User Role (' + [ROLES].[ID] + '), Links (' + [inserted].[URLTEXT] +')',			
+			'801F270F-912F-420A-91D6-82EBC3F351F3',
+			2,
+			0,
+			[inserted].[URLTEXT]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[ROLEID] = [inserted].[ROLEID]		
+			INNER JOIN [ROLES] ON [inserted].[ROLEID] = [ROLES].[SROLEGUID]				
+	WHERE	[deleted].[URLADDRESS] <> [inserted].[URLADDRESS]
+
+END
+GO
+
+CREATE TRIGGER [TG_ROLELINK_DELETE] ON [ROLELINK]
+	AFTER DELETE
+AS
+BEGIN
+	SET NOCOUNT ON
+
+	INSERT INTO [HISTORYSYSTEMSETUP]
+	(
+		[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+	)
+	SELECT
+			[ROLES].[SROLEGUID],
+			[ROLES].[ROWVERSION],
+			GETUTCDATE(),
+			(SELECT dbo.UFN_GET_USERID_FROM_CONTEXT_INFO()),
+			'User Role Link Deleted',
+			'',
+			'',
+			'User Role (' + [ROLES].[ID] + '), Links (' + [deleted].[URLTEXT] +')',
+			'801F270F-912F-420A-91D6-82EBC3F351F3',
+			3,
+			0,
+			[deleted].[URLTEXT]
+	FROM	[deleted]
+	INNER JOIN [ROLES] ON [deleted].[ROLEID] = [ROLES].[SROLEGUID]
+END

@@ -1,0 +1,156 @@
+﻿CREATE TABLE [dbo].[AMPMTIME] (
+    [AMPMTIMEID]    INT       NOT NULL,
+    [STARTTIME]     DATETIME  NOT NULL,
+    [ENDTIME]       DATETIME  NOT NULL,
+    [LASTCHANGEDBY] CHAR (36) NULL,
+    [LASTCHANGEDON] DATETIME  CONSTRAINT [DF_AMPMTIME_LastChangedOn] DEFAULT (getutcdate()) NOT NULL,
+    [ROWVERSION]    INT       CONSTRAINT [DF_AMPMTIME_RowVersion] DEFAULT ((1)) NOT NULL,
+    CONSTRAINT [PK_AMPMTime] PRIMARY KEY CLUSTERED ([AMPMTIMEID] ASC) WITH (FILLFACTOR = 90)
+);
+
+
+GO
+CREATE TRIGGER [TG_AMPMTIME_DELETE] ON [dbo].[AMPMTIME]
+   AFTER DELETE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+	
+    INSERT INTO [HISTORYSYSTEMSETUP]
+    (	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )	
+	SELECT
+			[deleted].[AMPMTIMEID],
+			[deleted].[ROWVERSION],
+			GETUTCDATE(),
+			(SELECT dbo.UFN_GET_USERID_FROM_CONTEXT_INFO()),
+			'A.M and P.M Time Settings Deleted',
+			'',
+			'',
+			CASE [deleted].[AMPMTIMEID] WHEN 1 THEN 'AM' ELSE 'PM' END,
+			'09A43BA0-3A36-4D2B-95AE-A2C13B97185A',
+			3,
+			0,
+			CASE [deleted].[AMPMTIMEID] WHEN 1 THEN 'AM' ELSE 'PM' END
+	FROM	[deleted]
+END
+GO
+CREATE TRIGGER [TG_AMPMTIME_INSERT] ON [dbo].[AMPMTIME]
+   AFTER INSERT
+AS 
+BEGIN
+	SET NOCOUNT ON;	
+	-- Check if LASTCHANGEDBY contains VALID User Id and it Exists in USERS table, this is in replacement to foreign key reference of AMPMTIME table with USERS table.
+	IF EXISTS (SELECT * FROM inserted 
+		LEFT OUTER JOIN USERS WITH (NOLOCK) ON USERS.SUSERGUID = inserted.LASTCHANGEDBY
+		WHERE inserted.LASTCHANGEDBY IS NOT NULL AND USERS.SUSERGUID IS NULL)
+	BEGIN		
+		RAISERROR ('The INSERT or UPDATE statement conflicted with the FOREIGN KEY to table USERS', 16, 0);
+		ROLLBACK;
+		RETURN;
+	END
+
+    INSERT INTO [HISTORYSYSTEMSETUP]
+    (	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT
+			[inserted].[AMPMTIMEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'A.M and P.M Time Settings Added',
+			'',
+			'',
+			CASE [inserted].[AMPMTIMEID] WHEN 1 THEN 'AM' ELSE 'PM' END,
+			'09A43BA0-3A36-4D2B-95AE-A2C13B97185A',
+			1,
+			0,
+			CASE [inserted].[AMPMTIMEID] WHEN 1 THEN 'AM' ELSE 'PM' END
+	FROM	[inserted]
+END
+GO
+CREATE TRIGGER [TG_AMPMTIME_UPDATE] ON [dbo].[AMPMTIME]
+   AFTER UPDATE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+	-- Check if LASTCHANGEDBY contains VALID User Id and it Exists in USERS table, this is in replacement to foreign key reference of AMPMTIME table with USERS table.
+	IF EXISTS (SELECT * FROM inserted 
+		LEFT OUTER JOIN USERS WITH (NOLOCK) ON USERS.SUSERGUID = inserted.LASTCHANGEDBY
+		WHERE inserted.LASTCHANGEDBY IS NOT NULL AND USERS.SUSERGUID IS NULL)
+	BEGIN		
+		RAISERROR ('The INSERT or UPDATE statement conflicted with the FOREIGN KEY to table USERS', 16, 0);
+		ROLLBACK;
+		RETURN;
+	END
+    INSERT INTO [HISTORYSYSTEMSETUP]
+    (	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )	
+	SELECT
+			[inserted].[AMPMTIMEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Start Time',
+			CONVERT(NVARCHAR(MAX),FORMAT([deleted].[STARTTIME],'hh:mm tt')),
+			CONVERT(NVARCHAR(MAX),FORMAT([inserted].[STARTTIME],'hh:mm tt')),
+			CASE [inserted].[AMPMTIMEID] WHEN 1 THEN 'AM' ELSE 'PM' END,
+			'09A43BA0-3A36-4D2B-95AE-A2C13B97185A',
+			2,
+			0,
+			CASE [inserted].[AMPMTIMEID] WHEN 1 THEN 'AM' ELSE 'PM' END
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[AMPMTIMEID] = [inserted].[AMPMTIMEID]
+	WHERE	[deleted].[STARTTIME] <> [inserted].[STARTTIME]
+	UNION ALL
+
+	SELECT
+			[inserted].[AMPMTIMEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'End Time',
+			CONVERT(NVARCHAR(MAX),FORMAT([deleted].[ENDTIME],'hh:mm tt')),
+			CONVERT(NVARCHAR(MAX),FORMAT([inserted].[ENDTIME],'hh:mm tt')),
+			CASE [inserted].[AMPMTIMEID] WHEN 1 THEN 'AM' ELSE 'PM' END,
+			'09A43BA0-3A36-4D2B-95AE-A2C13B97185A',
+			2,
+			0,
+			CASE [inserted].[AMPMTIMEID] WHEN 1 THEN 'AM' ELSE 'PM' END
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[AMPMTIMEID] = [inserted].[AMPMTIMEID]
+	WHERE	ISNULL([deleted].[ENDTIME], '') <> ISNULL([inserted].[ENDTIME], '')
+END

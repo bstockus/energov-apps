@@ -1,0 +1,21 @@
+﻿
+CREATE PROCEDURE [GISVALIDATION_GEORULE_VALID]
+AS
+  BEGIN
+      -- SET NOCOUNT ON added to prevent extra result sets from
+      -- interfering with SELECT statements.
+      SET NOCOUNT ON;
+
+      -- Insert statements for procedure here
+      SELECT GEORULE.RULENAME,
+             WORKFLOW.WORKFLOWNAME AS [WORKFLOWNAME],
+             WORKFLOW.ISCLIENT,
+			 WORKFLOW.ISPOSTPROCESS,
+             WORKFLOW.ISENABLED
+      FROM   WORKFLOW
+             INNER JOIN WORKFLOWACTION
+                     ON WORKFLOW.WORKFLOWID = WORKFLOWACTION.WORKFLOWID
+             RIGHT OUTER JOIN GEORULE
+                           ON WORKFLOWACTION.CUSTOMMESSAGE = GEORULE.GEORULEID
+      ORDER  BY RULENAME
+  END

@@ -1,0 +1,396 @@
+﻿@page
+@using EnerGov.Web.Common.Infrastructure
+@using EnerGov.Web.UtilityExcavation.Constants
+@using EnerGov.Web.UtilityExcavation.Helpers
+@model InvoiceDetailsModel
+
+@{
+    this.UseLayout("Invoice Details");
+
+    var groupedPermits = Model.InvoiceFees.GroupBy(_ => (
+        permitNumber: _.PermitNumber,
+            permitDate: _.PermitApplyDate ?? DateTime.Today,
+            description: _.PermitDescription,
+            typeOfWork: _.TypeOfWork));
+}
+
+@section Header {
+    Details for Invoice <strong>@Model.InvoiceNumber</strong>
+}
+
+@section Breadcrumbs {
+    <li>Invoices</li>
+    <li>@Model.InvoiceNumber</li>
+    <li class="active">Details</li>
+}
+
+<form method="post">
+
+    <input type="hidden" asp-for="InvoiceId" />
+
+    <bs-row>
+
+        <bs-col md="4" sm="12" xs="12">
+            <div class="info-box bg-green">
+                <span class="info-box-icon">
+                    <i class="fa fa-dollar"></i>
+                </span>
+                <div class="info-box-content">
+                    <span class="info-box-text">Invoice Total</span>
+                    <span class="info-box-number" style="font-size: 30px;">@Model.InvoiceTotal.ToString("C")</span>
+                </div>
+            </div>
+        </bs-col>
+
+        <bs-col md="4" sm="12" xs="12">
+            <div class="info-box bg-green">
+                <span class="info-box-icon">
+                    <i class="fa fa-dollar"></i>
+                </span>
+                <div class="info-box-content">
+                    <span class="info-box-text">Amount Paid</span>
+                    <span class="info-box-number" style="font-size: 30px;">@Model.InvoicePaid.ToString("C")</span>
+                </div>
+            </div>
+        </bs-col>
+
+        <bs-col md="4" sm="12" xs="12">
+            <div class="info-box bg-green">
+                <span class="info-box-icon">
+                    <i class="fa fa-dollar"></i>
+                </span>
+                <div class="info-box-content">
+                    <span class="info-box-text">Amount Due</span>
+                    <span class="info-box-number" style="font-size: 30px;">@Model.InvoiceAmountDue.ToString("C")</span>
+                </div>
+            </div>
+        </bs-col>
+
+        <bs-col xs="12">
+
+            <lte-box>
+
+                <lte-box-header>
+                    <lte-box-title>Invoice Information</lte-box-title>
+                </lte-box-header>
+
+                <lte-box-body>
+                    <dl class="dl-horizontal">
+
+                        <dt>Invoice Number</dt>
+                        <dd>@Model.InvoiceNumber</dd>
+
+                        <dt>Invoice Date</dt>
+                        <dd>@Model.InvoiceDate.ToShortDateString()</dd>
+
+                        <dt>Status</dt>
+                        <dd>@Model.InvoiceStatus</dd>
+
+                        <dt>Customer</dt>
+                        <dd>@Model.GlobalEntityName - @Model.GlobalEntityFirstName</dd>
+
+                        <dt>Description</dt>
+                        <dd>@Model.InvoiceDescription</dd>
+
+                    </dl>
+                </lte-box-body>
+
+                <lte-box-footer>
+
+                    <button bs-button
+                            asp-page-handler="JournalImportFile"
+                            bs-context="@ButtonContext.Info"
+                            bs-size="@Size.Small"
+                            role="button"
+                            type="submit">
+
+                        <i class="fa fa-download"></i> Munis Import File
+
+                    </button>
+
+                    <button bs-button
+                            asp-page-handler="JournalEntryFile"
+                            bs-context="@ButtonContext.Info"
+                            bs-size="@Size.Small"
+                            role="button"
+                            type="submit">
+
+                        <i class="fa fa-file-excel-o"></i> Excel File
+
+                    </button>
+
+                    <span class="pull-right">
+
+                        @if (Model.InvoiceAmountDue > 0.00m) {
+
+                            <a bs-button
+                               bs-context="@ButtonContext.Warning"
+                               bs-size="@Size.Small"
+                               asp-page="@PageConstants.Modals.MarkInvoicePaid"
+                               asp-route-invoiceId="@Model.InvoiceId"
+                               role="button"
+                               bs-remote>
+
+                                <i class="fa fa-gears"></i> Mark Invoice Paid
+
+                            </a>
+
+                        }
+
+                    </span>
+
+                </lte-box-footer>
+
+            </lte-box>
+
+        </bs-col>
+
+        <bs-col xs="12">
+
+            <lte-box>
+
+                <lte-box-header>
+                    <lte-box-title>Permit Fees</lte-box-title>
+                    <lte-box-tools>
+                        <span class="badge">@groupedPermits.Count()</span>
+                    </lte-box-tools>
+                </lte-box-header>
+
+                <lte-box-body>
+
+                    @foreach (var groupedPermitFees in groupedPermits) {
+
+                        <div class="box box-default box-solid">
+                            <div class="box-header with-border">
+                                <h3 class="box-title">
+                                    Permit <strong>@groupedPermitFees.Key.permitNumber</strong>
+                                    <span> <span class="label label-info">@groupedPermitFees.Key.typeOfWork</span></span>
+                                    <span> <em>(Permit Date: @groupedPermitFees.Key.permitDate.ToShortDateString())</em></span>
+                                </h3>
+                                <div class="box-tools">
+                                    <span class="badge">
+                                        @(groupedPermitFees.Sum(_ => (_.FeeAmount ?? 0.00m) - (_.PaidAmount ?? 0.00m)).ToString("C"))
+                                    </span>
+                                </div>
+                            </div>
+
+                            @if (!string.IsNullOrWhiteSpace(groupedPermitFees.Key.description)) {
+                                <div class="box-body">
+                                    <p class="lead" style="margin-bottom: 0;">@groupedPermitFees.Key.description</p>
+                                </div>
+                            }
+                            <div class="box-body no-padding">
+
+                                <datatable table-id="permitFees-@groupedPermitFees.Key.permitNumber" table-type="Basic">
+
+                                    <datatable-headers>
+
+                                        <datatable-header>Fee</datatable-header>
+                                        <datatable-header>Input Amount</datatable-header>
+                                        <datatable-header>Fee Amount</datatable-header>
+                                        <datatable-header>Paid Amount</datatable-header>
+                                        <datatable-header>Amount Due</datatable-header>
+                                        <datatable-header>Status</datatable-header>
+
+                                    </datatable-headers>
+
+                                    <datatable-body>
+
+                                        @foreach (var permitFee in groupedPermitFees) {
+
+                                            <datatable-row>
+
+                                                <datatable-cell>
+                                                    <strong>@permitFee.FeeName</strong>
+                                                </datatable-cell>
+
+                                                <datatable-cell>
+                                                    <span class="pull-right">
+                                                        @(permitFee.InputValue?.ToString("F2") ?? "") @permitFee.InputValueName
+                                                    </span>
+                                                </datatable-cell>
+
+                                                <datatable-cell>
+                                                    <span class="pull-right">
+                                                        @(permitFee.FeeAmount?.ToString("C") ?? "")
+                                                    </span>
+                                                </datatable-cell>
+
+                                                <datatable-cell>
+                                                    <span class="pull-right">
+                                                        @(permitFee.PaidAmount?.ToString("C") ?? "")
+                                                    </span>
+                                                </datatable-cell>
+
+                                                <datatable-cell>
+                                                    <strong class="pull-right">
+                                                        @(((permitFee.FeeAmount ?? 0.00m) - (permitFee.PaidAmount ?? 0.00m)).ToString("C"))
+                                                    </strong>
+                                                </datatable-cell>
+
+                                                <datatable-cell>
+                                                    @permitFee.FeeStatus
+                                                </datatable-cell>
+
+                                            </datatable-row>
+
+                                        }
+
+                                    </datatable-body>
+
+                                </datatable>
+
+                            </div>
+                        </div>
+
+                    }
+
+                </lte-box-body>
+
+            </lte-box>
+
+        </bs-col>
+
+        <bs-col xs="12">
+            <lte-box>
+                <lte-box-header>
+                    <lte-box-title>Invoice Fees</lte-box-title>
+                    <lte-box-tools>
+                        <span class="badge">@Model.GroupedInvoiceFees.Count()</span>
+                    </lte-box-tools>
+                </lte-box-header>
+
+                <lte-box-body padding="false">
+
+                    <datatable table-id="invoiceFees" table-type="Basic">
+
+                        <datatable-headers>
+
+                            <datatable-header>Work Type</datatable-header>
+                            <datatable-header>Fee</datatable-header>
+                            <datatable-header>Revenue Account</datatable-header>
+                            <datatable-header>Expense Account</datatable-header>
+                            <datatable-header>Amount</datatable-header>
+
+                        </datatable-headers>
+
+                        <datatable-body>
+
+                            @foreach (var groupedInvoiceFee in Model.GroupedInvoiceFees) {
+
+                                var feeAmount = groupedInvoiceFee.Fees.Sum(_ => _.FeeAmount ?? 0.00m) - groupedInvoiceFee.Fees.Sum(_ => _.PaidAmount ?? 0.00m);
+
+                                <datatable-row>
+
+                                    <datatable-cell>
+                                        @groupedInvoiceFee.FeeInformation.WorkType.WorkTypeName
+                                    </datatable-cell>
+
+                                    <datatable-cell>
+                                        @groupedInvoiceFee.FeeInformation.Fee.FeeName
+                                    </datatable-cell>
+
+                                    <datatable-cell>
+                                        @groupedInvoiceFee.FeeInformation.RevenueAccount.ToMunisAccountDisplayBlock()
+                                        <br />
+                                        @groupedInvoiceFee.FeeInformation.RevenueCashAccount.ToMunisAccountDisplayBlock()
+                                    </datatable-cell>
+
+                                    <datatable-cell>
+                                        @groupedInvoiceFee.FeeInformation.ExpenseAccount.ToMunisAccountDisplayBlock()
+                                        <br />
+                                        @groupedInvoiceFee.FeeInformation.ExpenseCashAccount.ToMunisAccountDisplayBlock()
+                                    </datatable-cell>
+
+                                    <datatable-cell>
+                                        <strong class="pull-right">@feeAmount.ToString("C")</strong>
+                                    </datatable-cell>
+
+                                </datatable-row>
+
+                            }
+
+                        </datatable-body>
+
+                    </datatable>
+
+                </lte-box-body>
+            </lte-box>
+        </bs-col>
+
+        <bs-col xs="12">
+            <lte-box>
+                <lte-box-header>
+                    <lte-box-title>Journal Entries</lte-box-title>
+                    <lte-box-tools>
+                        <span class="badge">@Model.JournalEntryLines.Count()</span>
+                    </lte-box-tools>
+                </lte-box-header>
+
+                <lte-box-body padding="false">
+
+                    <datatable table-id="journalEntries" table-type="Basic">
+
+                        <datatable-headers>
+
+                            <datatable-header>Account</datatable-header>
+                            <datatable-header>Account Org Name</datatable-header>
+                            <datatable-header>Account Name</datatable-header>
+                            <datatable-header>Amount</datatable-header>
+
+                        </datatable-headers>
+
+                        <datatable-body>
+
+                            @foreach (var journalEntryLine in Model.JournalEntryLines) {
+
+                                var accountNumber = $"{journalEntryLine.AccountOrg}-{journalEntryLine.AccountObject}";
+                                if (!string.IsNullOrWhiteSpace(journalEntryLine.AccountProject)) {
+                                    accountNumber += $"-{journalEntryLine.AccountProject}";
+                                }
+
+                                <datatable-row>
+
+                                    <datatable-cell>
+                                        <strong>@accountNumber</strong>
+                                    </datatable-cell>
+
+                                    <datatable-cell>
+                                        @journalEntryLine.AccountOrgName
+                                    </datatable-cell>
+
+                                    <datatable-cell>
+                                        @journalEntryLine.AccountName
+                                    </datatable-cell>
+
+                                    <datatable-cell>
+                                        <span class="text-@(journalEntryLine.Amount > 0.00m ? "success" : "danger")">
+                                            <span class="pull-right">
+                                                <strong>
+                                                    @Math.Abs(journalEntryLine.Amount).ToString("C")
+                                                </strong>
+                                            </span>
+                                            @if (journalEntryLine.Amount > 0.00m) {
+                                                @:CR
+                                            } else {
+                                                @:DR
+                                            }
+                                        </span>
+                                    </datatable-cell>
+
+                                </datatable-row>
+
+                            }
+
+                        </datatable-body>
+
+                    </datatable>
+
+                </lte-box-body>
+            </lte-box>
+        </bs-col>
+
+    </bs-row>
+
+</form>
+

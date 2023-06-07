@@ -1,0 +1,187 @@
+﻿CREATE TABLE [dbo].[OMOBJECTSTATUS] (
+    [OMOBJECTSTATUSID]       CHAR (36)      NOT NULL,
+    [NAME]                   NVARCHAR (50)  NOT NULL,
+    [DESCRIPTION]            NVARCHAR (MAX) NULL,
+    [OMOBJECTSTATUSSYSTEMID] INT            NULL,
+    [LASTCHANGEDBY]          CHAR (36)      NULL,
+    [LASTCHANGEDON]          DATETIME       CONSTRAINT [DF_OMOBJECTSTATUS_LastChangedOn] DEFAULT (getutcdate()) NOT NULL,
+    [ROWVERSION]             INT            CONSTRAINT [DF_OMOBJECTSTATUS_RowVersion] DEFAULT ((1)) NOT NULL,
+    CONSTRAINT [PK_OMOBJECTSTATUS] PRIMARY KEY CLUSTERED ([OMOBJECTSTATUSID] ASC) WITH (FILLFACTOR = 90),
+    CONSTRAINT [FK_OMOBJECTSTATUS_OMOBJECTSTAT] FOREIGN KEY ([OMOBJECTSTATUSSYSTEMID]) REFERENCES [dbo].[OMOBJECTSTATUSSYSTEM] ([OMOBJECTSTATUSSYSTEMID])
+);
+
+
+GO
+CREATE NONCLUSTERED INDEX [OMOBJECTSTATUS_IX_QUERY]
+    ON [dbo].[OMOBJECTSTATUS]([OMOBJECTSTATUSID] ASC, [NAME] ASC);
+
+
+GO
+
+CREATE TRIGGER [dbo].[TG_OMOBJECTSTATUS_DELETE] ON  [dbo].[OMOBJECTSTATUS]
+	AFTER DELETE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+	INSERT INTO [HISTORYSYSTEMSETUP]
+		(	[ID],
+			[ROWVERSION],
+			[CHANGEDON],
+			[CHANGEDBY],
+			[FIELDNAME],
+			[OLDVALUE],
+			[NEWVALUE],
+			[ADDITIONALINFO],
+			[FORMID],
+			[ACTION],
+			[ISROOT],
+			[RECORDNAME]
+		)
+	SELECT
+			[deleted].[OMOBJECTSTATUSID],
+			[deleted].[ROWVERSION],
+			GETUTCDATE(),
+			(SELECT dbo.UFN_GET_USERID_FROM_CONTEXT_INFO()),
+			'Object Status Deleted',
+			'',
+			'',
+			'Object Status (' + [deleted].[NAME] + ')',
+			'61FF9B20-4FF5-4995-8C99-97D193B85B40',
+			3,
+			1,
+			[deleted].[NAME]
+	FROM	[deleted]
+END
+GO
+
+CREATE TRIGGER [dbo].[TG_OMOBJECTSTATUS_INSERT] ON [dbo].[OMOBJECTSTATUS]
+   AFTER INSERT
+AS 
+BEGIN
+	SET NOCOUNT ON;
+
+	-- Check if LASTCHANGEDBY contains VALID User Id and it Exists in USERS table, this is in replacement to foreign key reference of OMOBJECTSTATUS table with USERS table.
+	IF EXISTS (SELECT * FROM inserted 
+		LEFT OUTER JOIN USERS WITH (NOLOCK) ON USERS.SUSERGUID = inserted.LASTCHANGEDBY
+		WHERE inserted.LASTCHANGEDBY IS NOT NULL AND USERS.SUSERGUID IS NULL)
+	BEGIN		
+		RAISERROR ('The INSERT or UPDATE statement conflicted with the FOREIGN KEY to table USERS', 16, 0);
+		ROLLBACK;
+		RETURN;
+	END
+
+	INSERT INTO [HISTORYSYSTEMSETUP]
+		(
+			[ID],
+			[ROWVERSION],
+			[CHANGEDON],
+			[CHANGEDBY],
+			[FIELDNAME],
+			[OLDVALUE],
+			[NEWVALUE],
+			[ADDITIONALINFO],
+			[FORMID],
+			[ACTION],
+			[ISROOT],
+			[RECORDNAME]
+		)
+	SELECT 
+			[inserted].[OMOBJECTSTATUSID], 
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Object Status Added',
+			'',
+			'',
+			'Object Status (' + [inserted].[NAME] + ')',
+			'61FF9B20-4FF5-4995-8C99-97D193B85B40',
+			1,
+			1,
+			[inserted].[NAME]
+    FROM	[inserted] 
+END
+GO
+
+CREATE TRIGGER [dbo].[TG_OMOBJECTSTATUS_UPDATE] ON  [dbo].[OMOBJECTSTATUS]
+	AFTER UPDATE
+AS 
+BEGIN	
+	SET NOCOUNT ON;
+
+	-- Check if LASTCHANGEDBY contains VALID User Id and it Exists in USERS table, this is in replacement to foreign key reference of OMOBJECTSTATUS table with USERS table.
+	IF EXISTS (SELECT * FROM inserted 
+		LEFT OUTER JOIN USERS WITH (NOLOCK) ON USERS.SUSERGUID = inserted.LASTCHANGEDBY
+		WHERE inserted.LASTCHANGEDBY IS NOT NULL AND USERS.SUSERGUID IS NULL)
+	BEGIN		
+		RAISERROR ('The INSERT or UPDATE statement conflicted with the FOREIGN KEY to table USERS', 16, 0);
+		ROLLBACK;
+		RETURN;
+	END
+
+	INSERT INTO [HISTORYSYSTEMSETUP]
+		(	[ID],
+			[ROWVERSION],
+			[CHANGEDON],
+			[CHANGEDBY],
+			[FIELDNAME],
+			[OLDVALUE],
+			[NEWVALUE],
+			[ADDITIONALINFO],
+			[FORMID],
+			[ACTION],
+			[ISROOT],
+			[RECORDNAME]
+		)
+	SELECT 
+			[inserted].[OMOBJECTSTATUSID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Name',
+			[deleted].[NAME],
+			[inserted].[NAME],
+			'Object Status (' + [inserted].[NAME] + ')',
+			'61FF9B20-4FF5-4995-8C99-97D193B85B40',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[OMOBJECTSTATUSID] = [inserted].[OMOBJECTSTATUSID]
+	WHERE	[deleted].[NAME] <> [inserted].[NAME]
+	UNION ALL
+	SELECT 
+			[inserted].[OMOBJECTSTATUSID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Description',			
+			ISNULL([deleted].[DESCRIPTION],'[none]'),
+			ISNULL([inserted].[DESCRIPTION],'[none]'),
+			'Object Status (' + [inserted].[NAME] + ')',
+			'61FF9B20-4FF5-4995-8C99-97D193B85B40',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[OMOBJECTSTATUSID] = [inserted].[OMOBJECTSTATUSID]	
+	WHERE	ISNULL([deleted].[DESCRIPTION],'') <> ISNULL([inserted].[DESCRIPTION], '')
+	UNION ALL
+	SELECT
+			[inserted].[OMOBJECTSTATUSID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'System Status',			
+			ISNULL([OMOBJECTSTATUSSYSTEM_DELETED].[NAME],'[none]'),
+			ISNULL([OMOBJECTSTATUSSYSTEM_INSERTED].[NAME],'[none]'),
+			'Object Status (' + [inserted].[NAME] + ')',
+			'61FF9B20-4FF5-4995-8C99-97D193B85B40',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[OMOBJECTSTATUSID] = [inserted].[OMOBJECTSTATUSID]
+			JOIN OMOBJECTSTATUSSYSTEM OMOBJECTSTATUSSYSTEM_DELETED WITH (NOLOCK) ON [deleted].[OMOBJECTSTATUSSYSTEMID] = [OMOBJECTSTATUSSYSTEM_DELETED].[OMOBJECTSTATUSSYSTEMID]
+			JOIN OMOBJECTSTATUSSYSTEM OMOBJECTSTATUSSYSTEM_INSERTED WITH (NOLOCK) ON [inserted].[OMOBJECTSTATUSSYSTEMID] = [OMOBJECTSTATUSSYSTEM_INSERTED].[OMOBJECTSTATUSSYSTEMID]	
+	WHERE	ISNULL([deleted].[OMOBJECTSTATUSSYSTEMID],'') <> ISNULL([inserted].[OMOBJECTSTATUSSYSTEMID],'')
+END

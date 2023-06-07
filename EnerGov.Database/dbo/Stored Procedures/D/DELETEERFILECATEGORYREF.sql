@@ -1,0 +1,8 @@
+﻿
+CREATE PROCEDURE [dbo].[DELETEERFILECATEGORYREF]
+-- Add the parameters for the stored procedure here
+@ERProjectFileID char(36)	
+AS
+BEGIN		
+	DELETE FROM ERPROJECTFILECATEGORYXREF WHERE ERPROJECTFILEID = @ERProjectFileID
+END

@@ -1,0 +1,116 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="PDFs\AlcoholLicenseRenewalAdditionalContacts.pdf" />
+    <None Remove="PDFs\AlcoholLicenseRenewalForm.pdf" />
+    <None Remove="PDFs\BeerGardenApplication.pdf" />
+    <None Remove="PDFs\CigaretteLicenseForm.pdf" />
+    <None Remove="PDFs\DanceHallLicenseForm.pdf" />
+    <None Remove="PDFs\IndoorCabaretApplication.pdf" />
+    <None Remove="PDFs\JunkDealerLicenseForm.pdf" />
+    <None Remove="PDFs\MobileHomeParkLicenseForm.pdf" />
+    <None Remove="PDFs\OutdoorCabaretApplication.pdf" />
+    <None Remove="PDFs\PawnbrokerAndSecondhandLicenseForm.pdf" />
+    <None Remove="PDFs\PersonalDataSheet.pdf" />
+    <None Remove="PDFs\RecyclingLicenseForm.pdf" />
+    <None Remove="PDFs\RollerRinkLicenseForm.pdf" />
+    <None Remove="PDFs\TheatreLicenseForm.pdf" />
+    <None Remove="PDFs\WasteHaulerLicenseForm.pdf" />
+    <None Remove="SQL\AlcoholLicenseFeeInformation.sql" />
+    <None Remove="SQL\BeerGardenLicenseFeeInformation.sql" />
+    <None Remove="SQL\CabaretLicenseFeeInformation.sql" />
+    <None Remove="SQL\CigaretteLicenseFeeInformation.sql" />
+    <None Remove="SQL\DanceHallLicenseFeeInformation.sql" />
+    <None Remove="SQL\EnerGovBusinessInformation.sql" />
+    <None Remove="SQL\EnerGovLicenseInformation.sql" />
+    <None Remove="SQL\FetchBusinessEntityInformation.sql" />
+    <None Remove="SQL\JunkDealerLicenseFeeInformation.sql" />
+    <None Remove="SQL\LicensePacketInfo.sql" />
+    <None Remove="SQL\MobileHomeParkLicenseFeeInformation.sql" />
+    <None Remove="SQL\RecyclingFacilityLicenseFeeInformation.sql" />
+    <None Remove="SQL\RollerRinkLicenseFeeInformation.sql" />
+    <None Remove="SQL\SecondhandLicenseFeeInformation.sql" />
+    <None Remove="SQL\TheatreLicenseFeeInformation.sql" />
+    <None Remove="SQL\WasteHaulerLicenseFeeInformation.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="PDFs\AlcoholLicenseRenewalAdditionalContacts.pdf" />
+    <EmbeddedResource Include="PDFs\AlcoholLicenseRenewalForm.pdf" />
+    <EmbeddedResource Include="PDFs\BeerGardenApplication.pdf" />
+    <EmbeddedResource Include="PDFs\CigaretteLicenseForm.pdf" />
+    <EmbeddedResource Include="PDFs\DanceHallLicenseForm.pdf" />
+    <EmbeddedResource Include="PDFs\IndoorCabaretApplication.pdf" />
+    <EmbeddedResource Include="PDFs\JunkDealerLicenseForm.pdf" />
+    <EmbeddedResource Include="PDFs\MobileHomeParkLicenseForm.pdf" />
+    <EmbeddedResource Include="PDFs\OutdoorCabaretApplication.pdf" />
+    <EmbeddedResource Include="PDFs\PawnbrokerAndSecondhandLicenseForm.pdf" />
+    <EmbeddedResource Include="PDFs\PersonalDataSheet.pdf" />
+    <EmbeddedResource Include="PDFs\RecyclingLicenseForm.pdf" />
+    <EmbeddedResource Include="PDFs\RollerRinkLicenseForm.pdf" />
+    <EmbeddedResource Include="PDFs\TheatreLicenseForm.pdf" />
+    <EmbeddedResource Include="PDFs\WasteHaulerLicenseForm.pdf" />
+    <EmbeddedResource Include="SQL\AlcoholLicenseFeeInformation.sql" />
+    <EmbeddedResource Include="SQL\BeerGardenLicenseFeeInformation.sql" />
+    <EmbeddedResource Include="SQL\CabaretLicenseFeeInformation.sql" />
+    <EmbeddedResource Include="SQL\CigaretteLicenseFeeInformation.sql" />
+    <EmbeddedResource Include="SQL\DanceHallLicenseFeeInformation.sql" />
+    <EmbeddedResource Include="SQL\EnerGovBusinessInformation.sql" />
+    <EmbeddedResource Include="SQL\EnerGovLicenseInformation.sql" />
+    <EmbeddedResource Include="SQL\FetchBusinessEntityInformation.sql" />
+    <EmbeddedResource Include="SQL\JunkDealerLicenseFeeInformation.sql" />
+    <EmbeddedResource Include="SQL\LicensePacketInfo.sql" />
+    <EmbeddedResource Include="SQL\MobileHomeParkLicenseFeeInformation.sql" />
+    <EmbeddedResource Include="SQL\RecyclingFacilityLicenseFeeInformation.sql" />
+    <EmbeddedResource Include="SQL\RollerRinkLicenseFeeInformation.sql" />
+    <EmbeddedResource Include="SQL\SecondhandLicenseFeeInformation.sql" />
+    <EmbeddedResource Include="SQL\TheatreLicenseFeeInformation.sql" />
+    <EmbeddedResource Include="SQL\WasteHaulerLicenseFeeInformation.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Autofac" Version="6.3.0" />
+    <PackageReference Include="Dapper" Version="2.0.123" />
+    <PackageReference Include="Lax.Business.Authorization.Abstractions" Version="8.1.0" />
+
+    <PackageReference Include="Lax.Business.Bus.Authorization" Version="8.1.0" />
+    <PackageReference Include="Lax.Business.Bus.Logging" Version="8.1.0" />
+    <PackageReference Include="Lax.Business.Bus.UnitOfWork" Version="8.1.0" />
+    <PackageReference Include="Lax.Business.Bus.Validation" Version="8.1.0" />
+
+    <PackageReference Include="Lax.AutoFac.AutoMapper" Version="8.1.0" />
+    <PackageReference Include="Lax.AutoFac.FluentValidation" Version="8.1.0" />
+    <PackageReference Include="Lax.AutoFac.MediatR" Version="8.1.0" />
+    <PackageReference Include="Lax.AutoFac.NodaTime" Version="8.1.0" />
+    <PackageReference Include="Lax.Helpers.AssemblyResources" Version="8.1.0" />
+    <PackageReference Include="Lax.Helpers.AsyncProgress" Version="8.1.0" />
+    <PackageReference Include="Lax.Helpers.SSRSReports" Version="8.1.0" />
+
+    <PackageReference Include="Lax.Cli.Common" Version="8.1.0" />
+
+    <PackageReference Include="itext7" Version="7.2.1" />
+    
+    <PackageReference Include="Microsoft.DotNet.PlatformAbstractions" Version="3.1.6" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0" />
+
+    <PackageReference Include="Humanizer" Version="2.14.1" />
+
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EnerGov.Business.Abstractions\EnerGov.Business.Abstractions.csproj" />
+    <ProjectReference Include="..\EnerGov.Data.Configuration\EnerGov.Data.Configuration.csproj" />
+    <ProjectReference Include="..\EnerGov.Data.EnerGov\EnerGov.Data.EnerGov.csproj" />
+    <ProjectReference Include="..\EnerGov.Data.LandRecords\EnerGov.Data.LandRecords.csproj" />
+    <ProjectReference Include="..\EnerGov.Security\EnerGov.Security.csproj" />
+  </ItemGroup>
+
+</Project>

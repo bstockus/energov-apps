@@ -1,0 +1,108 @@
+﻿@page
+@using EnerGov.Web.Common.Infrastructure
+@using EnerGov.Web.UtilityExcavation.Constants
+@model InvoiceListModel
+
+@{
+    this.UseLayout(Model.IncludeAllInvoices ? "All Invoices List" : "Open Invoices List");
+}
+
+@section Header {
+    @(Model.IncludeAllInvoices ? "All Invoices List" : "Open Invoices List")
+}
+
+@section Breadcrumbs {
+    <li>Invoices</li>
+    <li>List</li>
+    <li class="active">@(Model.IncludeAllInvoices ? "All" : "Open")</li>
+}
+
+<lte-box>
+    <lte-box-header>
+        <lte-box-title>@(Model.IncludeAllInvoices ? "All Invoices" : "Open Invoices")</lte-box-title>
+        <lte-box-tools>
+            <a asp-page="@PageConstants.InvoiceDetails"
+               asp->
+
+            </a>
+            <datatable-search table-id="invoices"></datatable-search>
+        </lte-box-tools>
+    </lte-box-header>
+
+    <lte-box-body padding="false">
+
+        <datatable table-id="invoices" table-type="Normal">
+
+            <datatable-headers>
+
+                <datatable-header>Invoice Number</datatable-header>
+                <datatable-header>Invoice Date</datatable-header>
+                <datatable-header>Customer Name</datatable-header>
+                <datatable-header>Invoice Total</datatable-header>
+                <datatable-header>Amount Paid</datatable-header>
+                <datatable-header>Amount Due</datatable-header>
+                <datatable-header>Status</datatable-header>
+                <datatable-header>Description</datatable-header>
+
+            </datatable-headers>
+
+            <datatable-body>
+
+                @foreach (var invoice in Model.Invoices) {
+
+                    var customerName = "Error: None Found";
+                    var globalEntityIdGuid = Guid.Parse(invoice.GlobalEntityId);
+                    if (Model.UtilityCustomerInfo.ContainsKey(globalEntityIdGuid)) {
+                        customerName = Model.UtilityCustomerInfo[globalEntityIdGuid].CustomerName;
+                    }
+
+                    <datatable-row>
+
+                        <datatable-cell>
+                            <a asp-page="@PageConstants.InvoiceDetails"
+                               asp-area="@AreaConstants.UtilityExcavation"
+                               asp-route-invoiceId="@invoice.InvoiceId">
+
+                                <strong>@invoice.InvoiceNumber</strong>
+                            </a>
+
+                        </datatable-cell>
+
+                        <datatable-cell>
+                            @invoice.InvoiceDate.ToShortDateString()
+                        </datatable-cell>
+
+                        <datatable-cell>
+                            @customerName
+                        </datatable-cell>
+
+                        <datatable-cell order-value="@(invoice.InvoiceTotal?.ToString("F2") ?? "0.00")">
+                            @(invoice.InvoiceTotal?.ToString("C") ?? "")
+                        </datatable-cell>
+
+                        <datatable-cell order-value="@(invoice.PaidAmount?.ToString("F2") ?? "0.00")">
+                            @(invoice.PaidAmount?.ToString("C") ?? "")
+                        </datatable-cell>
+
+                        <datatable-cell order-value="@(invoice.AmountDue?.ToString("F2") ?? "0.00")">
+                            @(invoice.AmountDue?.ToString("C") ?? "")
+                        </datatable-cell>
+
+                        <datatable-cell>
+                            @invoice.Status
+                        </datatable-cell>
+                        
+                        <datatable-cell>
+                            @invoice.InvoiceDescription
+                        </datatable-cell>
+
+                    </datatable-row>
+
+                }
+
+            </datatable-body>
+
+        </datatable>
+
+    </lte-box-body>
+</lte-box>

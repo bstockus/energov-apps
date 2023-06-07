@@ -1,0 +1,32 @@
+﻿CREATE PROCEDURE [energovnotifications].[USP_TASK_GETBYID]
+(
+	@TASKID CHAR(36)
+)
+AS
+BEGIN
+SET NOCOUNT ON;
+SELECT 
+	[dbo].[TASK].[TASKID],
+	[dbo].[TASK].[SUBJECT],
+	[dbo].[TASK].[TASKTEXT],
+	[dbo].[TASK].[STARTDATE],
+	[dbo].[TASK].[DUEDATE],
+	[dbo].[TASK].[TASKSTATUSID],
+	[dbo].[TASK].[TASKPRIORITYID],
+	[dbo].[TASK].[PERCENTCOMPLETE],
+	[dbo].[TASK].[CREATEDBYID],
+	[dbo].[TASK].[CREATEDON],
+	[dbo].[TASK].[FORMID],
+	[dbo].[TASK].[UNIQUERECORDID],
+	[dbo].[TASK].[SHOWONCALENDAR],
+	[dbo].[TASK].[TASKTYPEID],
+	[dbo].[TASK].[COMPLETEDDATE],
+	[dbo].[TASK].[LASTCHANGEDBY],
+	[dbo].[TASK].[LASTCHANGEDON],
+	[dbo].[TASK].[ROWVERSION]
+FROM [dbo].[TASK]
+WHERE
+	[dbo].[TASK].[TASKID] = @TASKID  
+
+	EXEC [energovnotifications].[USP_TASKUSER_BY_TASKID] @TASKID  
+END

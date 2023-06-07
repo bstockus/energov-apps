@@ -1,0 +1,152 @@
+.table-header-row, .table-footer-row {
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+
+.callout-buttons a.btn {
+    text-decoration: none;
+}
+
+a.special-alert-button {
+    text-decoration: none;
+}
+
+.top-padding .tab-pane {
+    padding-top: 10px;
+}
+
+.dataTables_length {
+    padding-left: 10px;
+}
+
+.dataTables_filter {
+    padding-right: 10px;
+}
+
+.dataTables_info {
+    padding-left: 10px;
+}
+
+.dataTables_paginate {
+    padding-right: 10px;
+}
+
+@media screen and (max-width: 767px) {
+    td {
+        text-align: left !important;
+    }
+}
+
+@media (max-width: 991px) {
+    /*.navbar-collapse.pull-left + .navbar-custom-menu {
+        right: 0;
+    }*/
+}
+
+.img-xs {
+    width: 20px !important;
+    height: 20px !important;
+}
+
+.label-pill {
+    padding: 0 !important;
+}
+
+.label-pill-title {
+    padding: .2em .6em .3em !important;
+    display: inline !important;
+    background-color: #000 !important;
+    color: #FFF !important;
+    font-weight: bolder !important;
+    border-bottom-left-radius: 2.625px !important;
+    border-top-left-radius: 2.625px !important;
+}
+
+.label-pill-value {
+    padding: .2em .6em .3em .4em !important;
+    display: inline !important;
+    background-color: #d2d6de !important;
+    color: #000 !important;
+    border-bottom-right-radius: 2.625px !important;
+    border-top-right-radius: 2.625px !important;
+}
+
+.dl-horizontal-wide dt {
+    width: 350px;
+}
+
+.dl-horizontal-wide dd {
+    margin-left: 370px;
+}
+
+/*dd i.fa {
+    visibility: hidden;
+}
+
+dd:hover i.fa {
+    visibility: visible;
+}*/
+
+.select2-remote {
+    width: 100%;
+}
+
+.edit-area i.fa-edit {
+    visibility: hidden;
+}
+
+.edit-area:hover i.fa-edit {
+    visibility: visible;
+}
+
+.edit-area i.fa-trash {
+    visibility: hidden;
+}
+
+.edit-area:hover i.fa-trash {
+    visibility: visible;
+}
+
+.skin-blue .sidebar-menu > li:hover > a,
+.skin-blue .sidebar-menu > li.active > a {
+    background-color: #fff;
+    color: #1e282c;
+}
+
+/*
+    Comma Seperated Lists with CSS
+    Source: http://markheath.net/post/css-comma-separated-list?utm_source=feedburner&utm_medium=feed&utm_campaign=Feed%3A+soundcode+%28SoundCode%29
+*/
+
+.comma-list {
+    display: inline;
+    list-style: none;
+    padding: 0px;
+}
+
+    .comma-list li {
+        display: inline;
+    }
+
+        .comma-list li::after {
+            content: ", ";
+        }
+
+        .comma-list li:last-child::after {
+            content: "";
+        }
+
+select.form-control {
+    width: 100% !important;
+}
+
+.scrolling-console {
+    font-size: 11pt;
+    font-family: Inconsolata, monospace;
+    color: white;
+    background-color: black;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    margin-bottom: 20px;
+}

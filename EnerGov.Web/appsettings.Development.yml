@@ -1,0 +1,92 @@
+﻿Logging:
+  LogLevel:
+    Default: Debug
+    System: Debug
+    Microsoft: Debug
+Serilog:
+  MinimumLevel: Debug
+  Enrich:
+  - FromLogContext
+  - WithMachineName
+  - WithThreadId
+  - WithProcessId
+  WriteTo:
+  - Name: Console
+  - Name: Debug
+
+Email:
+  InternalSender:
+    OverideEmailAddress: stockusb@cityoflacrosse.org
+    SmtpHostName: mail2
+    SendEmails: true
+  ExternalSender:
+    OverideEmailAddress: stockusb@cityoflacrosse.org
+    MailGunApiKey: ##MailGunApiKey##
+    MailGunApiUrl: https://api.mailgun.net/v3
+    MailGunDomain: mg.cityoflacrosse.org
+    SendEmails: false
+
+FireOccupancy:
+  Scanning:
+    InspectionTypeIds:
+    - d1d23f7c-c535-48d5-a935-33b14081fdea
+    - 8c95785d-0e26-4d40-b2a6-33da0bdf6a56
+    - a58cc229-3b42-4a1b-9b68-f26f7f1f6d2e
+  Notification:
+    ChangeInOccupancyEmail:
+      Recipients:
+      - sodenk@cityoflacrosse.org
+      - cashs@cityoflacrosse.org
+      FromAddress: energov@cityoflacrosse.org
+    ReferredToFirePreventionEmail:
+      Recipients:
+      - sodenk@cityoflacrosse.org
+      - cashs@cityoflacrosse.org
+      - snyderc@cityoflacrosse.org
+      FromAddress: energov@cityoflacrosse.org
+    ReferredToBuildingSafetyEmail:
+      Recipients:
+      - reinhartd@cityoflacrosse.org
+      - sodenk@cityoflacrosse.org
+      - cashs@cityoflacrosse.org
+      - snyderc@cityoflacrosse.org
+      FromAddress: energov@cityoflacrosse.org
+    InternalReportEmail:
+      Recipients:
+      - bartlea@cityoflacrosse.org
+      FromAddress: energov@cityoflacrosse.org
+    ExternalReportEmail:
+      Recipients: []
+      FromAddress: noreply@mg.cityoflacrosse.org
+  Reporting:
+    FireInspectionLetterReportUrl: "/EnerGov/Production/Prod/FireInspectionLetter"
+    FireInspectionLetterWithAddressReportUrl: "/EnerGov/Production/Prod/FireInspectionLetterWithAddress"
+
+Alerting:
+  NewCssPermitAlert:
+    TaskCronExpression: 15 * * * *
+    EnableTask: true
+    SendEmails: true
+    OverrideEmailAddress: ''
+    FromAddress: energov@cityoflacrosse.org
+
+Reporting:
+  ReportServerUrl: https://lax-sql1.cityoflacrosse.org/ReportServer?
+  ReportUserName: SSRSAutomation
+  ReportDomain: CITY_DOMAIN
+  ReportPassword: EIRrKakhh3fghOcudwuH
+
+ConnectionStrings:
+  EnerGovConfiguration: Server=.;Database=EnerGovConfiguration;Trusted_Connection=True;MultipleActiveResultSets=True;
+
+AzureAd:
+  Instance: https://login.microsoftonline.com/
+  TenantId: ##M365TenantId##
+  ClientId: ##M365ClientId##
+  CallbackPath: /signin-oidc
+  SignedOutCallbackPath: /signout-oidc
+  ClientSecret: ##M365ClientSecret##
+
+GraphBeta:
+  BaseUrl: https://graph.microsoft.com/beta
+  Scopes: User.Read

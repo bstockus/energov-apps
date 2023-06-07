@@ -1,0 +1,171 @@
+﻿CREATE TABLE [dbo].[IMINSPECTIONCATEGORY] (
+    [IMINSPECTIONCATEGORYID] CHAR (36)      NOT NULL,
+    [NAME]                   NVARCHAR (100) NOT NULL,
+    [CATEGORYLIMIT]          INT            DEFAULT ((0)) NOT NULL,
+    [LASTCHANGEDBY]          CHAR (36)      NULL,
+    [LASTCHANGEDON]          DATETIME       CONSTRAINT [DF_IMINSPECTIONCATEGORY_LastChangedOn] DEFAULT (getutcdate()) NOT NULL,
+    [ROWVERSION]             INT            CONSTRAINT [DF_IMINSPECTIONCATEGORY_RowVersion] DEFAULT ((1)) NOT NULL,
+    CONSTRAINT [PK_IMINSPECTIONCATEGORY] PRIMARY KEY CLUSTERED ([IMINSPECTIONCATEGORYID] ASC) WITH (FILLFACTOR = 90)
+);
+
+
+GO
+CREATE NONCLUSTERED INDEX [IMINSPECTIONCATEGORY_IX_QUERY]
+    ON [dbo].[IMINSPECTIONCATEGORY]([IMINSPECTIONCATEGORYID] ASC, [NAME] ASC);
+
+
+GO
+CREATE NONCLUSTERED INDEX [IMINSPECTIONCATEGORYXREF_IX_IMINSPECTIONCATEGORYID]
+    ON [dbo].[IMINSPECTIONCATEGORY]([IMINSPECTIONCATEGORYID] ASC);
+
+
+GO
+
+CREATE TRIGGER [dbo].[TG_IMINSPECTIONCATEGORY_DELETE] ON  [dbo].[IMINSPECTIONCATEGORY]
+   AFTER DELETE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+	INSERT INTO [HISTORYSYSTEMSETUP]
+	(	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT
+			[deleted].[IMINSPECTIONCATEGORYID],
+			[deleted].[ROWVERSION],
+			GETUTCDATE(),
+			(SELECT dbo.UFN_GET_USERID_FROM_CONTEXT_INFO()),
+			'Inspection Category Deleted',
+			'',
+			'',
+			'Inspection Category (' + [deleted].[NAME] + ')',
+			'F699FF97-BDF1-414D-B30D-0BB2E72EED75',
+			3,
+			1,
+			[deleted].[NAME]
+	FROM	[deleted]
+END
+GO
+
+CREATE TRIGGER [dbo].[TG_IMINSPECTIONCATEGORY_UPDATE] ON  [dbo].[IMINSPECTIONCATEGORY]
+   AFTER UPDATE
+AS 
+BEGIN	
+	SET NOCOUNT ON;
+
+	-- Check if LASTCHANGEDBY contains VALID User Id and it Exists in USERS table, this is in replacement to foreign key reference of IMINSPECTIONCATEGORY table with USERS table.
+	IF EXISTS (SELECT * FROM inserted 
+		LEFT OUTER JOIN USERS WITH (NOLOCK) ON USERS.SUSERGUID = inserted.LASTCHANGEDBY
+		WHERE inserted.LASTCHANGEDBY IS NOT NULL AND USERS.SUSERGUID IS NULL)
+	BEGIN		
+		RAISERROR ('The INSERT or UPDATE statement conflicted with the FOREIGN KEY to table USERS', 16, 0);
+		ROLLBACK;
+		RETURN;
+	END
+
+	INSERT INTO [HISTORYSYSTEMSETUP]
+    (	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT 
+			[inserted].[IMINSPECTIONCATEGORYID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Name',
+			[deleted].[NAME],
+			[inserted].[NAME],
+			'Inspection Category (' + [inserted].[NAME] + ')',
+			'F699FF97-BDF1-414D-B30D-0BB2E72EED75',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[IMINSPECTIONCATEGORYID] = [inserted].[IMINSPECTIONCATEGORYID]
+	WHERE	[deleted].[NAME] <> [inserted].[NAME]
+	UNION ALL
+	SELECT
+			[inserted].[IMINSPECTIONCATEGORYID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Limit',
+			CONVERT(NVARCHAR(MAX),[deleted].[CATEGORYLIMIT]),
+			CONVERT(NVARCHAR(MAX),[inserted].[CATEGORYLIMIT]),
+			'Inspection Category (' + [inserted].[NAME] + ')',
+			'F699FF97-BDF1-414D-B30D-0BB2E72EED75',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[IMINSPECTIONCATEGORYID] = [inserted].[IMINSPECTIONCATEGORYID]
+	WHERE	[deleted].[CATEGORYLIMIT] <> [inserted].[CATEGORYLIMIT]
+END
+GO
+
+CREATE TRIGGER [dbo].[TG_IMINSPECTIONCATEGORY_INSERT] ON [dbo].[IMINSPECTIONCATEGORY]
+   AFTER INSERT
+AS 
+BEGIN
+	SET NOCOUNT ON;
+		
+	-- Check if LASTCHANGEDBY contains VALID User Id and it Exists in USERS table, this is in replacement to foreign key reference of IMINSPECTIONCATEGORY table with USERS table.
+	IF EXISTS (SELECT * FROM inserted 
+		LEFT OUTER JOIN USERS WITH (NOLOCK) ON USERS.SUSERGUID = inserted.LASTCHANGEDBY
+		WHERE inserted.LASTCHANGEDBY IS NOT NULL AND USERS.SUSERGUID IS NULL)
+	BEGIN		
+		RAISERROR ('The INSERT or UPDATE statement conflicted with the FOREIGN KEY to table USERS', 16, 0);
+		ROLLBACK;
+		RETURN;
+	END
+
+	INSERT INTO [HISTORYSYSTEMSETUP]
+    (
+        [ID],
+        [ROWVERSION],
+        [CHANGEDON],
+        [CHANGEDBY],
+        [FIELDNAME],
+        [OLDVALUE],
+        [NEWVALUE],
+        [ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT 
+        [inserted].[IMINSPECTIONCATEGORYID], 
+        [inserted].[ROWVERSION],
+        GETUTCDATE(),
+        [inserted].[LASTCHANGEDBY],
+        'Inspection Category Added',
+        '',
+        '',
+        'Inspection Category (' + [inserted].[NAME] + ')',
+		'F699FF97-BDF1-414D-B30D-0BB2E72EED75',
+		1,
+		1,
+		[inserted].[NAME]
+    FROM [inserted] 
+END

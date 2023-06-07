@@ -1,0 +1,12 @@
+﻿CREATE TABLE [dbo].[APPROVALHIERARCHY] (
+    [APPROVALHIERARCHYID] CHAR (36)       NOT NULL,
+    [OBJECT]              VARCHAR (100)   NOT NULL,
+    [ROLE]                CHAR (36)       NOT NULL,
+    [LIMIT]               DECIMAL (38, 5) NOT NULL,
+    [UNLIMITED]           BIT             NOT NULL,
+    [NEXTROLE]            CHAR (36)       NULL,
+    CONSTRAINT [PK_ApprovalHierarchy] PRIMARY KEY CLUSTERED ([APPROVALHIERARCHYID] ASC) WITH (FILLFACTOR = 90),
+    CONSTRAINT [FK_AppHrrchyRole_Roles] FOREIGN KEY ([ROLE]) REFERENCES [dbo].[ROLES] ([SROLEGUID]),
+    CONSTRAINT [FK_ApprHrrchyNextRole_Roles] FOREIGN KEY ([NEXTROLE]) REFERENCES [dbo].[ROLES] ([SROLEGUID])
+);
+

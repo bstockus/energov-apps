@@ -1,0 +1,731 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report MustUnderstand="df" xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner" xmlns:df="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition/defaultfontfamily">
+  <df:DefaultFontFamily>Segoe UI</df:DefaultFontFamily>
+  <AutoRefresh>0</AutoRefresh>
+  <DataSources>
+    <DataSource Name="EnerGov">
+      <ConnectionProperties>
+        <DataProvider>SQL</DataProvider>
+        <ConnectString>Data Source=lax-sql1;Initial Catalog=energovprod</ConnectString>
+        <IntegratedSecurity>true</IntegratedSecurity>
+      </ConnectionProperties>
+      <rd:SecurityType>Integrated</rd:SecurityType>
+      <rd:DataSourceID>db11bb88-344c-4726-bb11-3ae3fffed184</rd:DataSourceID>
+    </DataSource>
+  </DataSources>
+  <DataSets>
+    <DataSet Name="ActivitiesDataSet">
+      <Query>
+        <DataSourceName>EnerGov</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@StartDate">
+            <Value>=Parameters!StartDate.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@EndDate">
+            <Value>=Parameters!EndDate.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@DepartmentId">
+            <Value>=Parameters!DepartmentId.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>WITH AllActivities AS (
+    SELECT
+        'Permit' AS Module,
+        'Activity' AS ActivityClass,
+        pmpat.NAME AS ActivityType,
+        '' AS ActivitySubType,
+        pmpa.PERMITACTIVITYNUMBER AS ActivityNumber,
+        pmpa.SUSERGUID AS UserId,
+        pmp.PERMITNUMBER AS CaseNumber,
+        pmpa.CREATEDON AS ActivityDate
+    FROM PMPERMITACTIVITY pmpa
+    INNER JOIN PMPERMITACTIVITYTYPE pmpat ON pmpa.PMPERMITACTIVITYTYPEID = pmpat.PMPERMITACTIVITYTYPEID
+    INNER JOIN PMPERMIT pmp ON pmpa.PMPERMITID = pmp.PMPERMITID
+
+    UNION ALL
+
+    SELECT
+        'Plan' AS Module,
+        'Activity' AS ActivityClass,
+        plpat.NAME AS ActivityType,
+        '' AS ActivitySubType,
+        plpa.PLANACTIVITYNUMBER AS ActivityNumber,
+        plpa.SUSERGUID AS UserId,
+        plp.PLANNUMBER AS CaseNumber,
+        plpa.CREATEDON AS ActivityDate
+    FROM PLPLANACTIVITY plpa
+    INNER JOIN PLPLANACTIVITYTYPE plpat ON plpa.PLPLANACTIVITYTYPEID = plpat.PLPLANACTIVITYTYPEID
+    INNER JOIN PLPLAN plp ON plpa.PLPLANID = plp.PLPLANID
+
+    UNION ALL
+
+    SELECT
+        'Code Case' AS Module,
+        'Activity' AS ActivityClass,
+        cmcat.NAME AS ActivityType,
+        '' AS ActivitySubType,
+        cmca.CODEACTIVITYNUMBER AS ActivityNumber,
+        cmca.SUSERGUID AS UserId,
+        cmcc.CASENUMBER AS CaseNumber,
+        cmca.CREATEDON AS ActivityDate
+    FROM CMCODEACTIVITY cmca
+    INNER JOIN CMCODEACTIVITYTYPE cmcat ON cmca.CMCODEACTIVITYTYPEID = cmcat.CMCODEACTIVITYTYPEID
+    INNER JOIN CMCODECASE cmcc ON cmcc.CMCODECASEID = cmca.CMCODECASEID
+
+    UNION ALL
+
+    SELECT
+        'Request' AS Module,
+        'Activity' AS ActivityClass,
+        crat.NAME AS ActivityType,
+        '' AS ActivitySubType,
+        cra.CITIZENREQUESTACTIVITYNUMBER AS ActivityNumber,
+        cra.SUSERGUID AS UserId,
+        cr.REQUESTNUMBER AS CaseNumber,
+        cra.CREATEDON AS ActivityDate
+    FROM CITIZENREQUESTACTIVITY cra
+    INNER JOIN CITIZENREQUESTACTIVITYTYPE crat ON cra.CITIZENREQUESTACTIVITYTYPEID = crat.CITIZENREQUESTACTIVITYTYPEID
+    INNER JOIN CITIZENREQUEST cr ON cra.CITIZENREQUESTID = cr.CITIZENREQUESTID
+
+    UNION ALL
+
+    SELECT
+        'Business License' AS Module,
+        'Activity' AS ActivityClass,
+        bllat.NAME AS ActivityType,
+        '' AS ActivitySubType,
+        blla.LICENSEACTIVITYNUMBER AS ActivityNumber,
+        blla.SUSERGUID AS UserId,
+        bll.LICENSENUMBER AS CaseNumber,
+        blla.CREATEDON AS ActivityDate
+    FROM BLLICENSEACTIVITY blla
+    INNER JOIN BLLICENSEACTIVITYTYPE bllat ON blla.BLLICENSEACTIVITYTYPEID = bllat.BLLICENSEACTIVITYTYPEID
+    INNER JOIN BLLICENSE bll ON blla.BLLICENSEID = bll.BLLICENSEID
+
+    UNION ALL
+
+    SELECT
+        imil.NAME AS Module,
+        'Inspection' AS ActivityClass,
+        imit.NAME AS ActivityType,
+        '' AS ActivitySubType,
+        imi.INSPECTIONNUMBER AS ActivityNumber,
+        imir.USERID AS UserId,
+        imi.LINKNUMBER AS CaseNumber,
+        imi.CREATEDATE AS ActivityDate
+    FROM IMINSPECTION imi
+    INNER JOIN IMINSPECTIONTYPE imit ON imi.IMINSPECTIONTYPEID = imit.IMINSPECTIONTYPEID
+    INNER JOIN IMINSPECTIONLINK imil ON imi.IMINSPECTIONLINKID = imil.IMINSPECTIONLINKID
+    LEFT OUTER JOIN IMINSPECTORREF imir ON imi.IMINSPECTIONID = imir.INSPECTIONID AND imir.BPRIMARY = 1
+
+    UNION ALL
+
+    SELECT
+        'Code Case' AS Module,
+        'Violation' AS ActivityClass,
+        cmc.DESCRIPTION AS ActivityType,
+        '' AS ActivitySubType,
+        '' AS ActivityNumber,
+        ISNULL(cmcc.ASSIGNEDTO, cmcc.CREATEDBY) AS UserId,
+        cmcc.CASENUMBER AS CaseNumber,
+        cmcc.OPENEDDATE AS ActivityDate
+    FROM CMVIOLATION cmv
+    INNER JOIN CMCODE cmc ON cmv.CMCODEID = cmc.CMCODEID
+    INNER JOIN CMCODEWFSTEP cmcwfs ON cmv.CMCODEWFSTEPID = cmcwfs.CMCODEWFSTEPID
+    INNER JOIN CMCODECASE cmcc ON cmcwfs.CMCODECASEID = cmcc.CMCODECASEID
+
+) SELECT
+    aa.Module,
+    aa.ActivityClass,
+    u.FNAME AS UserFirstName,
+    u.LNAME AS UserLastName,
+    aa.ActivityType,
+    aa.ActivitySubType,
+    COUNT(*) AS ActivityCount
+FROM AllActivities aa
+INNER JOIN USERS u ON aa.UserId = u.SUSERGUID
+INNER JOIN USERDEPARTMENT udepts ON u.SUSERGUID = udepts.SUSERGUID
+--WHERE aa.ActivityDate BETWEEN '1/1/2020' AND '12/31/2020'
+WHERE aa.ActivityDate BETWEEN @StartDate AND @EndDate AND udepts.DEPARTMENTID = @DepartmentId
+GROUP BY aa.Module, aa.ActivityClass, u.FNAME, u.LNAME, aa.ActivityType, aa.ActivitySubType;</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="Module">
+          <DataField>Module</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="ActivityClass">
+          <DataField>ActivityClass</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="UserFirstName">
+          <DataField>UserFirstName</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="UserLastName">
+          <DataField>UserLastName</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="ActivityType">
+          <DataField>ActivityType</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="ActivitySubType">
+          <DataField>ActivitySubType</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="ActivityCount">
+          <DataField>ActivityCount</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="DepartmentsDataSet">
+      <Query>
+        <DataSourceName>EnerGov</DataSourceName>
+        <CommandText>SELECT
+    dept.DEPARTMENTID, 
+    dept.NAME
+FROM DEPARTMENT dept
+ORDER BY dept.NAME</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="DEPARTMENTID">
+          <DataField>DEPARTMENTID</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="NAME">
+          <DataField>NAME</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+  </DataSets>
+  <ReportSections>
+    <ReportSection>
+      <Body>
+        <ReportItems>
+          <Tablix Name="Tablix1">
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn>
+                  <Width>6.5in</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>1in</Width>
+                </TablixColumn>
+              </TablixColumns>
+              <TablixRows>
+                <TablixRow>
+                  <Height>0.25in</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox9">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!ActivityClass.Value</Value>
+                                  <Style>
+                                    <FontFamily>Arial</FontFamily>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                                <TextRun>
+                                  <Value>:</Value>
+                                  <Style>
+                                    <FontFamily>Arial</FontFamily>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox9</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>None</Style>
+                            </Border>
+                            <BackgroundColor>Black</BackgroundColor>
+                            <VerticalAlign>Bottom</VerticalAlign>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="ActivityCount2">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Sum(Fields!ActivityCount.Value)</Value>
+                                  <Style>
+                                    <FontFamily>Arial</FontFamily>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>White</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>ActivityCount2</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>None</Style>
+                            </Border>
+                            <BackgroundColor>Black</BackgroundColor>
+                            <VerticalAlign>Bottom</VerticalAlign>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.22241in</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Module">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!Module.Value</Value>
+                                  <Style>
+                                    <FontFamily>Arial</FontFamily>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Module</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>None</Style>
+                            </Border>
+                            <BottomBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>0.75pt</Width>
+                            </BottomBorder>
+                            <VerticalAlign>Bottom</VerticalAlign>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="ActivityCount">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Sum(Fields!ActivityCount.Value)</Value>
+                                  <Style>
+                                    <FontFamily>Arial</FontFamily>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>ActivityCount</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>None</Style>
+                            </Border>
+                            <BottomBorder>
+                              <Color>Black</Color>
+                              <Style>Solid</Style>
+                              <Width>0.75pt</Width>
+                            </BottomBorder>
+                            <VerticalAlign>Bottom</VerticalAlign>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.13426in</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="ActivityType">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!ActivityType.Value</Value>
+                                  <Style>
+                                    <FontFamily>Arial</FontFamily>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <LeftIndent>16pt</LeftIndent>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>ActivityType</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>None</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="ActivityCount1">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Sum(Fields!ActivityCount.Value)</Value>
+                                  <Style>
+                                    <FontFamily>Arial</FontFamily>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>ActivityCount1</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>None</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.13043in</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox5">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!ActivitySubType.Value</Value>
+                                  <Style>
+                                    <FontFamily>Arial</FontFamily>
+                                    <FontSize>8pt</FontSize>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <LeftIndent>32pt</LeftIndent>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox5</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>None</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="ActivityCount3">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Sum(Fields!ActivityCount.Value)</Value>
+                                  <Style>
+                                    <FontFamily>Arial</FontFamily>
+                                    <FontSize>8pt</FontSize>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>ActivityCount3</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>None</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.16262in</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox1">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value />
+                                  <Style>
+                                    <FontFamily>Arial</FontFamily>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox1</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>None</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox2">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value />
+                                  <Style>
+                                    <FontFamily>Arial</FontFamily>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox2</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Style>None</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+              </TablixRows>
+            </TablixBody>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember />
+                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <Group Name="ActivityClass">
+                    <GroupExpressions>
+                      <GroupExpression>=Fields!ActivityClass.Value</GroupExpression>
+                    </GroupExpressions>
+                  </Group>
+                  <SortExpressions>
+                    <SortExpression>
+                      <Value>=Fields!ActivityClass.Value</Value>
+                    </SortExpression>
+                  </SortExpressions>
+                  <TablixMembers>
+                    <TablixMember />
+                    <TablixMember>
+                      <Group Name="Details">
+                        <GroupExpressions>
+                          <GroupExpression>=Fields!Module.Value</GroupExpression>
+                        </GroupExpressions>
+                      </Group>
+                      <TablixMembers>
+                        <TablixMember />
+                        <TablixMember>
+                          <TablixMembers>
+                            <TablixMember>
+                              <Group Name="ActivityType">
+                                <GroupExpressions>
+                                  <GroupExpression>=Fields!ActivityType.Value</GroupExpression>
+                                </GroupExpressions>
+                              </Group>
+                              <SortExpressions>
+                                <SortExpression>
+                                  <Value>=Fields!ActivityType.Value</Value>
+                                </SortExpression>
+                              </SortExpressions>
+                              <TablixMembers>
+                                <TablixMember />
+                                <TablixMember>
+                                  <TablixMembers>
+                                    <TablixMember>
+                                      <Group Name="ActivitySubType">
+                                        <GroupExpressions>
+                                          <GroupExpression>=Fields!ActivitySubType.Value</GroupExpression>
+                                        </GroupExpressions>
+                                      </Group>
+                                      <SortExpressions>
+                                        <SortExpression>
+                                          <Value>=Fields!ActivitySubType.Value</Value>
+                                        </SortExpression>
+                                      </SortExpressions>
+                                    </TablixMember>
+                                  </TablixMembers>
+                                  <Visibility>
+                                    <Hidden>=Len(Fields!ActivitySubType.Value) = 0 Or Fields!ActivityType.Value = Fields!ActivitySubType.Value</Hidden>
+                                  </Visibility>
+                                </TablixMember>
+                              </TablixMembers>
+                            </TablixMember>
+                          </TablixMembers>
+                        </TablixMember>
+                        <TablixMember />
+                      </TablixMembers>
+                    </TablixMember>
+                  </TablixMembers>
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            <DataSetName>ActivitiesDataSet</DataSetName>
+            <Height>0.89972in</Height>
+            <Width>7.5in</Width>
+            <Style>
+              <Border>
+                <Style>None</Style>
+              </Border>
+            </Style>
+          </Tablix>
+        </ReportItems>
+        <Height>0.89972in</Height>
+        <Style />
+      </Body>
+      <Width>7.5in</Width>
+      <Page>
+        <InteractiveHeight>11in</InteractiveHeight>
+        <InteractiveWidth>8.5in</InteractiveWidth>
+        <LeftMargin>0.5in</LeftMargin>
+        <RightMargin>0.5in</RightMargin>
+        <TopMargin>0.5in</TopMargin>
+        <BottomMargin>0.5in</BottomMargin>
+        <Style />
+      </Page>
+    </ReportSection>
+  </ReportSections>
+  <ReportParameters>
+    <ReportParameter Name="StartDate">
+      <DataType>String</DataType>
+      <Prompt>Start Date</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="EndDate">
+      <DataType>String</DataType>
+      <Prompt>End Date</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="DepartmentId">
+      <DataType>String</DataType>
+      <Prompt>Department</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>DepartmentsDataSet</DataSetName>
+          <ValueField>DEPARTMENTID</ValueField>
+          <LabelField>NAME</LabelField>
+        </DataSetReference>
+      </ValidValues>
+    </ReportParameter>
+  </ReportParameters>
+  <ReportParametersLayout>
+    <GridLayoutDefinition>
+      <NumberOfColumns>3</NumberOfColumns>
+      <NumberOfRows>2</NumberOfRows>
+      <CellDefinitions>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>StartDate</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>EndDate</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>2</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>DepartmentId</ParameterName>
+        </CellDefinition>
+      </CellDefinitions>
+    </GridLayoutDefinition>
+  </ReportParametersLayout>
+  <rd:ReportUnitType>Inch</rd:ReportUnitType>
+  <rd:ReportID>2b374d87-da7f-4637-b075-4d243735a53d</rd:ReportID>
+</Report>

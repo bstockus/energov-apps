@@ -1,0 +1,136 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Operations Version="1.0" xmlns="http://schemas.microsoft.com/sqlserver/dac/Serialization/2012/02">
+  <Operation Name="Rename Refactor" Key="57c5b5b0-5497-404c-86f3-31ba362c6d4e" ChangeDateTime="09/20/2016 19:42:15">
+    <Property Name="ElementName" Value="[laxreports].[PermitTypeAndClassCustomFieldSections].[Id]" />
+    <Property Name="ElementType" Value="SqlSimpleColumn" />
+    <Property Name="ParentElementName" Value="[laxreports].[PermitTypeAndClassCustomFieldSections]" />
+    <Property Name="ParentElementType" Value="SqlTable" />
+    <Property Name="NewName" Value="PermitTypeId" />
+  </Operation>
+  <Operation Name="Rename Refactor" Key="d116360b-b050-4d4f-b011-4aa6b3497b08" ChangeDateTime="09/20/2016 19:57:46">
+    <Property Name="ElementName" Value="[laxreports].[PermitPlanReviewComments].[Id]" />
+    <Property Name="ElementType" Value="SqlSimpleColumn" />
+    <Property Name="ParentElementName" Value="[laxreports].[PermitPlanReviewComments]" />
+    <Property Name="ParentElementType" Value="SqlTable" />
+    <Property Name="NewName" Value="CustomFieldId" />
+  </Operation>
+  <Operation Name="Rename Refactor" Key="f4a76cb6-d87e-4bea-b774-f4fd19613c29" ChangeDateTime="09/20/2016 20:46:31">
+    <Property Name="ElementName" Value="[laxreports].[PermitTypeAndClassDepartmentHeader].[Id]" />
+    <Property Name="ElementType" Value="SqlSimpleColumn" />
+    <Property Name="ParentElementName" Value="[laxreports].[PermitTypeAndClassDepartmentHeader]" />
+    <Property Name="ParentElementType" Value="SqlTable" />
+    <Property Name="NewName" Value="PermitTypeId" />
+  </Operation>
+  <Operation Name="Rename Refactor" Key="8c0b2a86-06d7-4c6c-86a8-17fd6b9712a3" ChangeDateTime="09/21/2016 17:46:28">
+    <Property Name="ElementName" Value="[laxreports].[DepartmentHeaders].[RightText]" />
+    <Property Name="ElementType" Value="SqlSimpleColumn" />
+    <Property Name="ParentElementName" Value="[laxreports].[DepartmentHeaders]" />
+    <Property Name="ParentElementType" Value="SqlTable" />
+    <Property Name="NewName" Value="RightTextLine1" />
+  </Operation>
+  <Operation Name="Rename Refactor" Key="46c9e3a3-0fbb-4791-aa67-c2a5083cb813" ChangeDateTime="09/21/2016 17:46:34">
+    <Property Name="ElementName" Value="[laxreports].[DepartmentHeaders].[LeftText]" />
+    <Property Name="ElementType" Value="SqlSimpleColumn" />
+    <Property Name="ParentElementName" Value="[laxreports].[DepartmentHeaders]" />
+    <Property Name="ParentElementType" Value="SqlTable" />
+    <Property Name="NewName" Value="LeftTextLine1" />
+  </Operation>
+  <Operation Name="Rename Refactor" Key="e6f18f18-67f2-48ab-a11c-92902916be1e" ChangeDateTime="09/22/2016 15:52:08">
+    <Property Name="ElementName" Value="[laxreports].[PermitTypeAndClassReleventContactClassification].[Id]" />
+    <Property Name="ElementType" Value="SqlSimpleColumn" />
+    <Property Name="ParentElementName" Value="[laxreports].[PermitTypeAndClassReleventContactClassification]" />
+    <Property Name="ParentElementType" Value="SqlTable" />
+    <Property Name="NewName" Value="PermitTypeId" />
+  </Operation>
+  <Operation Name="Rename Refactor" Key="70761a42-c616-4303-ad93-76c9bbe12e6a" ChangeDateTime="09/22/2016 16:17:13">
+    <Property Name="ElementName" Value="[dbo].[InspectorSignatures].[Id]" />
+    <Property Name="ElementType" Value="SqlSimpleColumn" />
+    <Property Name="ParentElementName" Value="[dbo].[InspectorSignatures]" />
+    <Property Name="ParentElementType" Value="SqlTable" />
+    <Property Name="NewName" Value="InspectorUserId" />
+  </Operation>
+  <Operation Name="Rename Refactor" Key="3b0a4f8a-83ef-43e6-a569-ba27c23867c1" ChangeDateTime="09/22/2016 16:19:07">
+    <Property Name="ElementName" Value="[laxreports].[SignatureSections].[Id]" />
+    <Property Name="ElementType" Value="SqlSimpleColumn" />
+    <Property Name="ParentElementName" Value="[laxreports].[SignatureSections]" />
+    <Property Name="ParentElementType" Value="SqlTable" />
+    <Property Name="NewName" Value="SignatureSectionType" />
+  </Operation>
+  <Operation Name="Rename Refactor" Key="ba957e14-1760-4320-896d-228b35d6df48" ChangeDateTime="02/20/2017 15:36:39">
+    <Property Name="ElementName" Value="[dbo].[PermitRequiredInspectionTypes].[Id]" />
+    <Property Name="ElementType" Value="SqlSimpleColumn" />
+    <Property Name="ParentElementName" Value="[dbo].[PermitRequiredInspectionTypes]" />
+    <Property Name="ParentElementType" Value="SqlTable" />
+    <Property Name="NewName" Value="PermitTypeId" />
+  </Operation>
+  <Operation Name="Rename Refactor" Key="fc2d4c0c-d777-48e9-bebb-ec910089eb4a" ChangeDateTime="02/20/2017 15:41:09">
+    <Property Name="ElementName" Value="[dbo].[PermitTypeAndClassSignOffs].[InspectionTypeId]" />
+    <Property Name="ElementType" Value="SqlSimpleColumn" />
+    <Property Name="ParentElementName" Value="[dbo].[PermitTypeAndClassSignOffs]" />
+    <Property Name="ParentElementType" Value="SqlTable" />
+    <Property Name="NewName" Value="WorkflowActionId" />
+  </Operation>
+  <Operation Name="Rename Refactor" Key="879963a4-26a0-4a20-8e50-9823ad91746a" ChangeDateTime="02/20/2017 15:41:31">
+    <Property Name="ElementName" Value="[dbo].[PermitTypeAndClassSignOffs].[DescriptionText]" />
+    <Property Name="ElementType" Value="SqlSimpleColumn" />
+    <Property Name="ParentElementName" Value="[dbo].[PermitTypeAndClassSignOffs]" />
+    <Property Name="ParentElementType" Value="SqlTable" />
+    <Property Name="NewName" Value="Title" />
+  </Operation>
+  <Operation Name="Rename Refactor" Key="d2bf7b9b-4b42-48b5-83d3-0dc5e118df41" ChangeDateTime="06/05/2017 21:26:17">
+    <Property Name="ElementName" Value="[dbo].[ViolationLetterContents].[Id]" />
+    <Property Name="ElementType" Value="SqlSimpleColumn" />
+    <Property Name="ParentElementName" Value="[dbo].[ViolationLetterContents]" />
+    <Property Name="ParentElementType" Value="SqlTable" />
+    <Property Name="NewName" Value="ViolationId" />
+  </Operation>
+  <Operation Name="Rename Refactor" Key="f743731b-e7d6-45e2-ba37-ec71c58293d9" ChangeDateTime="01/31/2018 16:58:37">
+    <Property Name="ElementName" Value="[dbo].[PermitTypeMasterData].[Id]" />
+    <Property Name="ElementType" Value="SqlSimpleColumn" />
+    <Property Name="ParentElementName" Value="[dbo].[PermitTypeMasterData]" />
+    <Property Name="ParentElementType" Value="SqlTable" />
+    <Property Name="NewName" Value="PermitTypeId" />
+  </Operation>
+  <Operation Name="Rename Refactor" Key="04f4d9f9-299e-4c71-b51a-6830e109b97f" ChangeDateTime="02/01/2018 19:39:33">
+    <Property Name="ElementName" Value="[laxmasterdata].[PermitTypeMasterData].[MechanicalIsNew]" />
+    <Property Name="ElementType" Value="SqlSimpleColumn" />
+    <Property Name="ParentElementName" Value="[laxmasterdata].[PermitTypeMasterData]" />
+    <Property Name="ParentElementType" Value="SqlTable" />
+    <Property Name="NewName" Value="MechanicalIsNewHandling" />
+  </Operation>
+  <Operation Name="Rename Refactor" Key="e1678906-093a-400c-a3ff-a714227b185d" ChangeDateTime="02/19/2018 13:34:15">
+    <Property Name="ElementName" Value="[laxreports].[PermitTypeWorkClassAdditionalInformation].[ReviewItemTitle]" />
+    <Property Name="ElementType" Value="SqlSimpleColumn" />
+    <Property Name="ParentElementName" Value="[laxreports].[PermitTypeWorkClassAdditionalInformation]" />
+    <Property Name="ParentElementType" Value="SqlTable" />
+    <Property Name="NewName" Value="Title" />
+  </Operation>
+  <Operation Name="Rename Refactor" Key="7dfdb7f2-38d1-4fca-bf1f-7502cec4459c" ChangeDateTime="02/19/2018 13:34:17">
+    <Property Name="ElementName" Value="[laxreports].[PermitTypeWorkClassAdditionalInformation].[ReviewItemContents]" />
+    <Property Name="ElementType" Value="SqlSimpleColumn" />
+    <Property Name="ParentElementName" Value="[laxreports].[PermitTypeWorkClassAdditionalInformation]" />
+    <Property Name="ParentElementType" Value="SqlTable" />
+    <Property Name="NewName" Value="Contents" />
+  </Operation>
+  <Operation Name="Rename Refactor" Key="03909f05-ba59-4f1a-9480-d93089a26ffd" ChangeDateTime="02/19/2018 14:21:54">
+    <Property Name="ElementName" Value="[laxreports].[PermitTypeWorkClassInspectionInformation].[AdditionalInformation]" />
+    <Property Name="ElementType" Value="SqlSimpleColumn" />
+    <Property Name="ParentElementName" Value="[laxreports].[PermitTypeWorkClassInspectionInformation]" />
+    <Property Name="ParentElementType" Value="SqlTable" />
+    <Property Name="NewName" Value="InspectionInformation" />
+  </Operation>
+  <Operation Name="Rename Refactor" Key="fdda1e1b-9a4b-4a55-96e8-31f133335bd8" ChangeDateTime="02/22/2018 21:05:40">
+    <Property Name="ElementName" Value="[dbo].[PermitTypeInformationSelectors].[Id]" />
+    <Property Name="ElementType" Value="SqlSimpleColumn" />
+    <Property Name="ParentElementName" Value="[dbo].[PermitTypeInformationSelectors]" />
+    <Property Name="ParentElementType" Value="SqlTable" />
+    <Property Name="NewName" Value="PermitTypeId" />
+  </Operation>
+  <Operation Name="Rename Refactor" Key="c035408d-f557-4027-b741-7654129cdece" ChangeDateTime="07/05/2019 15:28:33">
+    <Property Name="ElementName" Value="[laxmasterdata].[FireOccupancyUserDistricts].[Id]" />
+    <Property Name="ElementType" Value="SqlSimpleColumn" />
+    <Property Name="ParentElementName" Value="[laxmasterdata].[FireOccupancyUserDistricts]" />
+    <Property Name="ParentElementType" Value="SqlTable" />
+    <Property Name="NewName" Value="ZoneId" />
+  </Operation>
+</Operations>

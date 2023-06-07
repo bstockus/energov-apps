@@ -1,0 +1,12 @@
+﻿CREATE PROCEDURE [security].[USP_ROLES_GETALL]
+AS
+BEGIN
+SET NOCOUNT ON;
+SELECT 
+	[dbo].[ROLES].[SROLEGUID],
+	[dbo].[ROLES].[ID]
+FROM 
+	[dbo].[ROLES]
+ORDER BY 
+	[dbo].[ROLES].[ID]
+END

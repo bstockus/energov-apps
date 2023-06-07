@@ -1,0 +1,91 @@
+﻿CREATE TABLE [dbo].[WORKFLOWCONDITIONGROUP] (
+    [WORKFLOWCONDITIONGROUPID] CHAR (36) NOT NULL,
+    [WORKFLOWID]               CHAR (36) NOT NULL,
+    [ISORBASED]                BIT       NOT NULL,
+    [GROUPNUMBER]              INT       NOT NULL,
+    [WORKFLOWACTIONID]         CHAR (36) NULL,
+    CONSTRAINT [PK_WorkflowConditionGroup] PRIMARY KEY CLUSTERED ([WORKFLOWCONDITIONGROUPID] ASC) WITH (FILLFACTOR = 90),
+    CONSTRAINT [FK_WFConditionGroup_WF] FOREIGN KEY ([WORKFLOWID]) REFERENCES [dbo].[WORKFLOW] ([WORKFLOWID])
+);
+
+
+GO
+CREATE NONCLUSTERED INDEX [WorkflowConditionGroup_Workflo]
+    ON [dbo].[WORKFLOWCONDITIONGROUP]([WORKFLOWID] ASC) WITH (FILLFACTOR = 90);
+
+
+GO
+
+CREATE TRIGGER [dbo].[TG_WORKFLOWCONDITIONGROUP_DELETE] ON [dbo].[WORKFLOWCONDITIONGROUP]
+	AFTER DELETE
+AS
+BEGIN
+	SET NOCOUNT ON;
+	INSERT INTO [HISTORYSYSTEMSETUP]
+	(
+        [ID],
+        [ROWVERSION],
+        [CHANGEDON],
+        [CHANGEDBY],
+        [FIELDNAME],
+        [OLDVALUE],
+        [NEWVALUE],
+        [ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT 
+		[WORKFLOW].[WORKFLOWID],
+		[WORKFLOW].[ROWVERSION],
+		GETUTCDATE(),
+		(SELECT dbo.UFN_GET_USERID_FROM_CONTEXT_INFO()),
+		'Workflow Condition Group Deleted',
+		'',
+		'',
+		'Intelligent Object (' + [WORKFLOW].[WORKFLOWNAME] + '), Workflow Condition Group Number (' + CAST([deleted].[GROUPNUMBER] AS varchar(10)) + ')',
+		'F053A756-19BE-4A42-A70D-185D5B01C31A',
+		3,
+		0,
+		'Workflow Condition Group Number (' + CAST([deleted].[GROUPNUMBER] AS varchar(10)) + ')'
+	FROM [deleted]
+	INNER JOIN [WORKFLOW] ON [deleted].[WORKFLOWID] = [WORKFLOW].[WORKFLOWID]
+END
+GO
+CREATE TRIGGER [dbo].[TG_WORKFLOWCONDITIONGROUP_INSERT] ON [dbo].[WORKFLOWCONDITIONGROUP]
+	AFTER INSERT
+AS
+BEGIN
+	SET NOCOUNT ON;
+	INSERT INTO [HISTORYSYSTEMSETUP]
+	(
+        [ID],
+        [ROWVERSION],
+        [CHANGEDON],
+        [CHANGEDBY],
+        [FIELDNAME],
+        [OLDVALUE],
+        [NEWVALUE],
+        [ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT 
+		[WORKFLOW].[WORKFLOWID],
+		[WORKFLOW].[ROWVERSION],
+		GETUTCDATE(),
+		[WORKFLOW].[LASTCHANGEDBY],
+		'Workflow Condition Group Added',
+		'',
+		'',
+		'Intelligent Object (' + [WORKFLOW].[WORKFLOWNAME] + '), Workflow Condition Group Number (' + CAST([inserted].[GROUPNUMBER] AS varchar(10)) + ')',
+		'F053A756-19BE-4A42-A70D-185D5B01C31A',
+		1,
+		0,
+		'Workflow Condition Group Number (' + CAST([inserted].[GROUPNUMBER] AS varchar(10)) + ')'
+	FROM [inserted]
+	INNER JOIN [WORKFLOW] ON [inserted].[WORKFLOWID] = [WORKFLOW].[WORKFLOWID]
+END

@@ -1,0 +1,257 @@
+﻿CREATE TABLE [dbo].[RPPROPERTYTYPE] (
+    [RPPROPERTYTYPEID]    CHAR (36)      NOT NULL,
+    [NAME]                NVARCHAR (50)  NOT NULL,
+    [DESCRIPTION]         NVARCHAR (MAX) NULL,
+    [DEFAULTSTATUSID]     CHAR (36)      NULL,
+    [CUSTOMFIELDLAYOUTID] CHAR (36)      NULL,
+    [ACTIVE]              BIT            NOT NULL,
+    [CAFEETEMPLATEID]     CHAR (36)      NULL,
+    [LICENSECYCLEID]      CHAR (36)      NULL,
+    [FRIENDLYNAME]        NVARCHAR (100) NOT NULL,
+    [PREFIX]              NVARCHAR (10)  NULL,
+    [LASTCHANGEDBY]       CHAR (36)      NULL,
+    [LASTCHANGEDON]       DATETIME       CONSTRAINT [DF_RPPROPERTYTYPE_LastChangedOn] DEFAULT (getutcdate()) NOT NULL,
+    [ROWVERSION]          INT            CONSTRAINT [DF_RPPROPERTYTYPE_RowVersion] DEFAULT ((1)) NOT NULL,
+    CONSTRAINT [PK_RPPROPERTYTYPE] PRIMARY KEY NONCLUSTERED ([RPPROPERTYTYPEID] ASC) WITH (FILLFACTOR = 90),
+    CONSTRAINT [FK_RPPROPERTYTYPE_CUSTOM] FOREIGN KEY ([CUSTOMFIELDLAYOUTID]) REFERENCES [dbo].[CUSTOMFIELDLAYOUT] ([GCUSTOMFIELDLAYOUTS]),
+    CONSTRAINT [FK_RPPROPERTYTYPE_LICENSECYCLE] FOREIGN KEY ([LICENSECYCLEID]) REFERENCES [dbo].[LICENSECYCLE] ([LICENSECYCLEID]),
+    CONSTRAINT [FK_RPPROPERTYTYPE_STATUS] FOREIGN KEY ([DEFAULTSTATUSID]) REFERENCES [dbo].[RPPROPERTYSTATUS] ([RPPROPERTYSTATUSID]),
+    CONSTRAINT [FK_RPPROPTYPE_FEETEMPLATE] FOREIGN KEY ([CAFEETEMPLATEID]) REFERENCES [dbo].[CAFEETEMPLATE] ([CAFEETEMPLATEID])
+);
+
+
+GO
+CREATE NONCLUSTERED INDEX [RPPROPERTYTYPE_IX_QUERY]
+    ON [dbo].[RPPROPERTYTYPE]([RPPROPERTYTYPEID] ASC, [NAME] ASC);
+
+
+GO
+
+CREATE TRIGGER [dbo].[TG_RPPROPERTYTYPE_DELETE] ON  [dbo].[RPPROPERTYTYPE]
+   AFTER DELETE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+	INSERT INTO [HISTORYSYSTEMSETUP]
+	(	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO]
+    )
+	SELECT
+			[deleted].[RPPROPERTYTYPEID],
+			[deleted].[ROWVERSION],
+			GETUTCDATE(),
+			(SELECT dbo.UFN_GET_USERID_FROM_CONTEXT_INFO()),
+			'Property Type Deleted',
+			'',
+			'',
+			'Property Type (' + [deleted].[NAME] + ')'
+	FROM	[deleted]
+END
+GO
+
+CREATE TRIGGER [dbo].[TG_RPPROPERTYTYPE_INSERT] ON [dbo].[RPPROPERTYTYPE]
+   AFTER INSERT
+AS 
+BEGIN
+	SET NOCOUNT ON;
+
+	-- Check if LASTCHANGEDBY contains VALID User Id and it Exists in USERS table, this is in replacement to foreign key reference of RPPROPERTYTYPE table with USERS table.
+	IF EXISTS (SELECT * FROM inserted 
+		LEFT OUTER JOIN USERS WITH (NOLOCK) ON USERS.SUSERGUID = inserted.LASTCHANGEDBY
+		WHERE inserted.LASTCHANGEDBY IS NOT NULL AND USERS.SUSERGUID IS NULL)
+	BEGIN		
+		RAISERROR ('The INSERT or UPDATE statement conflicted with the FOREIGN KEY to table USERS', 16, 0);
+		ROLLBACK;
+		RETURN;
+	END
+
+	INSERT INTO [HISTORYSYSTEMSETUP]
+    (
+        [ID],
+        [ROWVERSION],
+        [CHANGEDON],
+        [CHANGEDBY],
+        [FIELDNAME],
+        [OLDVALUE],
+        [NEWVALUE],
+        [ADDITIONALINFO]
+    )
+	SELECT 
+        [inserted].[RPPROPERTYTYPEID], 
+        [inserted].[ROWVERSION],
+        GETUTCDATE(),
+        [inserted].[LASTCHANGEDBY],
+        'Property Type Added',
+        '',
+        '',
+        'Property Type (' + [inserted].[NAME] + ')'
+    FROM [inserted] 
+END
+GO
+
+CREATE TRIGGER [dbo].[TG_RPPROPERTYTYPE_UPDATE] ON  [dbo].[RPPROPERTYTYPE]
+   AFTER UPDATE
+AS 
+BEGIN	
+	SET NOCOUNT ON;
+
+	-- Check if LASTCHANGEDBY contains VALID User Id and it Exists in USERS table, this is in replacement to foreign key reference of RPPROPERTYTYPE table with USERS table.
+	IF EXISTS (SELECT * FROM inserted 
+		LEFT OUTER JOIN USERS WITH (NOLOCK) ON USERS.SUSERGUID = inserted.LASTCHANGEDBY
+		WHERE inserted.LASTCHANGEDBY IS NOT NULL AND USERS.SUSERGUID IS NULL)
+	BEGIN		
+		RAISERROR ('The INSERT or UPDATE statement conflicted with the FOREIGN KEY to table USERS', 16, 0);
+		ROLLBACK;
+		RETURN;
+	END
+
+
+	INSERT INTO [HISTORYSYSTEMSETUP]
+    (	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO]
+    )
+	SELECT 
+			[inserted].[RPPROPERTYTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Property Type Name',
+			[deleted].[NAME],
+			[inserted].[NAME],
+			'Property Type (' + [inserted].[NAME] + ')'
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[RPPROPERTYTYPEID] = [inserted].[RPPROPERTYTYPEID]
+	WHERE	[deleted].[NAME] <> [inserted].[NAME]
+	UNION ALL
+
+	SELECT
+			[inserted].[RPPROPERTYTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Property Type Description',
+			ISNULL([deleted].[DESCRIPTION],'[none]'),
+			ISNULL([inserted].[DESCRIPTION],'[none]'),
+			'Property Type (' + [inserted].[NAME] + ')'
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[RPPROPERTYTYPEID] = [inserted].[RPPROPERTYTYPEID]
+	WHERE	ISNULL([deleted].[DESCRIPTION],'') <> ISNULL([inserted].[DESCRIPTION],'')
+	UNION ALL
+
+	SELECT
+			[inserted].[RPPROPERTYTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Property Type Default Status',
+			ISNULL([RPPROPERTYSTATUS_DELETED].[NAME],'[none]'),
+			ISNULL([RPPROPERTYSTATUS_INSERTED].[NAME],'[none]'),
+			'Property Type (' + [inserted].[NAME] + ')'
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[RPPROPERTYTYPEID] = [inserted].[RPPROPERTYTYPEID]
+			LEFT JOIN [RPPROPERTYSTATUS] RPPROPERTYSTATUS_INSERTED WITH (NOLOCK) ON [RPPROPERTYSTATUS_INSERTED].[RPPROPERTYSTATUSID] = [inserted].[DEFAULTSTATUSID]
+			LEFT JOIN [RPPROPERTYSTATUS] RPPROPERTYSTATUS_DELETED WITH (NOLOCK) ON [RPPROPERTYSTATUS_DELETED].[RPPROPERTYSTATUSID] = [deleted].[DEFAULTSTATUSID]
+	WHERE	ISNULL([deleted].[DEFAULTSTATUSID], '') <> ISNULL([inserted].[DEFAULTSTATUSID], '')
+	UNION ALL
+
+	SELECT
+			[inserted].[RPPROPERTYTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Property Type Custom Field Layout',
+			ISNULL([CUSTOMFIELDLAYOUT_DELETED].[SNAME],'[none]'),
+			ISNULL([CUSTOMFIELDLAYOUT_INSERTED].[SNAME],'[none]'),
+			'Property Type (' + [inserted].[NAME] + ')'
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[RPPROPERTYTYPEID] = [inserted].[RPPROPERTYTYPEID]
+			LEFT JOIN [CUSTOMFIELDLAYOUT] CUSTOMFIELDLAYOUT_INSERTED WITH (NOLOCK) ON [CUSTOMFIELDLAYOUT_INSERTED].[GCUSTOMFIELDLAYOUTS] = [inserted].[CUSTOMFIELDLAYOUTID]
+			LEFT JOIN [CUSTOMFIELDLAYOUT] CUSTOMFIELDLAYOUT_DELETED WITH (NOLOCK) ON [CUSTOMFIELDLAYOUT_DELETED].[GCUSTOMFIELDLAYOUTS] = [deleted].[CUSTOMFIELDLAYOUTID]
+	WHERE	ISNULL([deleted].[CUSTOMFIELDLAYOUTID], '') <> ISNULL([inserted].[CUSTOMFIELDLAYOUTID], '')
+	UNION ALL
+
+	SELECT
+			[inserted].[RPPROPERTYTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Property Type Active Flag',
+			CASE [deleted].[ACTIVE] WHEN 1 THEN 'Yes' ELSE 'No' END,
+			CASE [inserted].[ACTIVE] WHEN 1 THEN 'Yes' ELSE 'No' END,
+			'Property Type (' + [inserted].[NAME] + ')'
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[RPPROPERTYTYPEID] = [inserted].[RPPROPERTYTYPEID]
+	WHERE	[deleted].[ACTIVE] <> [inserted].[ACTIVE]
+	UNION ALL
+
+	SELECT
+			[inserted].[RPPROPERTYTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Property Type Fee Template',
+			ISNULL([CAFEETEMPLATE_DELETED].[CAFEETEMPLATENAME],'[none]'),
+			ISNULL([CAFEETEMPLATE_INSERTED].[CAFEETEMPLATENAME],'[none]'),
+			'Property Type (' + [inserted].[NAME] + ')'
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[RPPROPERTYTYPEID] = [inserted].[RPPROPERTYTYPEID]
+			LEFT JOIN [CAFEETEMPLATE] CAFEETEMPLATE_INSERTED WITH (NOLOCK) ON [CAFEETEMPLATE_INSERTED].[CAFEETEMPLATEID] = [inserted].[CAFEETEMPLATEID]
+			LEFT JOIN [CAFEETEMPLATE] CAFEETEMPLATE_DELETED WITH (NOLOCK) ON [CAFEETEMPLATE_DELETED].[CAFEETEMPLATEID] = [deleted].[CAFEETEMPLATEID]
+	WHERE	ISNULL([deleted].[CAFEETEMPLATEID], '') <> ISNULL([inserted].[CAFEETEMPLATEID], '')
+	UNION ALL
+
+	SELECT
+			[inserted].[RPPROPERTYTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Property Type Cycle Name',
+			ISNULL([LICENSECYCLE_DELETED].[NAME],'[none]'),
+			ISNULL([LICENSECYCLE_INSERTED].[NAME],'[none]'),
+			'Property Type (' + [inserted].[NAME] + ')'
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[RPPROPERTYTYPEID] = [inserted].[RPPROPERTYTYPEID]
+			LEFT JOIN [LICENSECYCLE] LICENSECYCLE_INSERTED WITH (NOLOCK) ON [LICENSECYCLE_INSERTED].[LICENSECYCLEID] = [inserted].[LICENSECYCLEID]
+			LEFT JOIN [LICENSECYCLE] LICENSECYCLE_DELETED WITH (NOLOCK) ON [LICENSECYCLE_DELETED].[LICENSECYCLEID] = [deleted].[LICENSECYCLEID]
+	WHERE	ISNULL([deleted].[LICENSECYCLEID], '') <> ISNULL([inserted].[LICENSECYCLEID], '')
+	UNION ALL
+
+	SELECT
+			[inserted].[RPPROPERTYTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Property Type Prefix',
+			ISNULL([deleted].[PREFIX],'[none]'),
+			ISNULL([inserted].[PREFIX],'[none]'),
+			'Property Type (' + [inserted].[NAME] + ')'
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[RPPROPERTYTYPEID] = [inserted].[RPPROPERTYTYPEID]
+	WHERE	ISNULL([deleted].[PREFIX],'') <> ISNULL([inserted].[PREFIX],'')
+	UNION ALL
+
+	SELECT 
+			[inserted].[RPPROPERTYTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Property Type Friendly Name',
+			[deleted].[FRIENDLYNAME],
+			[inserted].[FRIENDLYNAME],
+			'Property Type (' + [inserted].[NAME] + ')'
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[RPPROPERTYTYPEID] = [inserted].[RPPROPERTYTYPEID]
+	WHERE	[deleted].[FRIENDLYNAME] <> [inserted].[FRIENDLYNAME]
+END

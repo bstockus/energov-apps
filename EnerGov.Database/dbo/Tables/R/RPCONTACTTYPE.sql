@@ -1,0 +1,209 @@
+﻿CREATE TABLE [dbo].[RPCONTACTTYPE] (
+    [RPCONTACTTYPEID]       CHAR (36)      NOT NULL,
+    [NAME]                  NVARCHAR (50)  NOT NULL,
+    [DESCRIPTION]           NVARCHAR (MAX) NULL,
+    [RPCONTACTTYPESYSTEMID] INT            NOT NULL,
+    [REQUIREDVALIDLIC]      BIT            NOT NULL,
+    [LASTCHANGEDBY]         CHAR (36)      NULL,
+    [LASTCHANGEDON]         DATETIME       CONSTRAINT [DF_RPCONTACTTYPE_LastChangedOn] DEFAULT (getutcdate()) NOT NULL,
+    [ROWVERSION]            INT            CONSTRAINT [DF_RPCONTACTTYPE_RowVersion] DEFAULT ((1)) NOT NULL,
+    CONSTRAINT [PK_RPCONTACTTYPE] PRIMARY KEY NONCLUSTERED ([RPCONTACTTYPEID] ASC) WITH (FILLFACTOR = 90),
+    CONSTRAINT [FK_RPCONTACTTYPE_SYSTEM] FOREIGN KEY ([RPCONTACTTYPESYSTEMID]) REFERENCES [dbo].[RPCONTACTTYPESYSTEM] ([RPCONTACTTYPESYSTEMID])
+);
+
+
+GO
+CREATE NONCLUSTERED INDEX [RPCONTACTTYPE_IX_QUERY]
+    ON [dbo].[RPCONTACTTYPE]([RPCONTACTTYPEID] ASC, [NAME] ASC);
+
+
+GO
+
+CREATE TRIGGER [TG_RPCONTACTTYPE_DELETE] ON RPCONTACTTYPE
+   AFTER DELETE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+
+    INSERT INTO [HISTORYSYSTEMSETUP]
+		(	[ID],
+			[ROWVERSION],
+			[CHANGEDON],
+			[CHANGEDBY],
+			[FIELDNAME],
+			[OLDVALUE],
+			[NEWVALUE],
+			[ADDITIONALINFO],
+			[FORMID],
+			[ACTION],
+			[ISROOT],
+			[RECORDNAME]
+		)
+	SELECT
+			[deleted].[RPCONTACTTYPEID],
+			[deleted].[ROWVERSION],
+			GETUTCDATE(),
+			(SELECT dbo.UFN_GET_USERID_FROM_CONTEXT_INFO()),
+			'Rental Property Contact Type Deleted',
+			'',
+			'',
+			'Rental Property Contact Type (' + [deleted].[NAME] + ')',
+			'C002D968-8765-4D89-86F4-8642B046110B',
+			3,
+			1,
+			[deleted].[NAME]
+	FROM	[deleted]
+END
+GO
+
+
+CREATE TRIGGER [TG_RPCONTACTTYPE_UPDATE] ON RPCONTACTTYPE
+   AFTER UPDATE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+		
+	-- Check if LASTCHANGEDBY contains VALID User Id and it Exists in USERS table, this is in replacement to foreign key reference of RPCONTACTTYPE table with USERS table.
+	IF EXISTS (SELECT * FROM inserted 
+		LEFT OUTER JOIN USERS WITH (NOLOCK) ON USERS.SUSERGUID = inserted.LASTCHANGEDBY
+		WHERE inserted.LASTCHANGEDBY IS NOT NULL AND USERS.SUSERGUID IS NULL)
+	BEGIN		
+		RAISERROR ('The INSERT or UPDATE statement conflicted with the FOREIGN KEY to table USERS', 16, 0);
+		ROLLBACK;
+		RETURN;
+	END	
+
+    INSERT INTO [HISTORYSYSTEMSETUP]
+		(	[ID],
+			[ROWVERSION],
+			[CHANGEDON],
+			[CHANGEDBY],
+			[FIELDNAME],
+			[OLDVALUE],
+			[NEWVALUE],
+			[ADDITIONALINFO],
+			[FORMID],
+			[ACTION],
+			[ISROOT],
+			[RECORDNAME]
+		)	
+	SELECT
+			[inserted].[RPCONTACTTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Name',
+			[deleted].[NAME],
+			[inserted].[NAME],
+			'Rental Property Contact Type (' + [inserted].[NAME] + ')',
+			'C002D968-8765-4D89-86F4-8642B046110B',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[RPCONTACTTYPEID] = [inserted].[RPCONTACTTYPEID]
+	WHERE	[deleted].[NAME] <> [inserted].[NAME]
+	
+	UNION ALL
+	SELECT
+			[inserted].[RPCONTACTTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Description',
+			ISNULL([deleted].[DESCRIPTION], '[none]'),
+			ISNULL([inserted].[DESCRIPTION], '[none]'),
+			'Rental Property Contact Type (' + [inserted].[NAME] + ')',
+			'C002D968-8765-4D89-86F4-8642B046110B',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[RPCONTACTTYPEID] = [inserted].[RPCONTACTTYPEID]
+	WHERE	ISNULL([deleted].[DESCRIPTION], '') <> ISNULL([inserted].[DESCRIPTION], '')
+
+	UNION ALL
+	SELECT
+			[inserted].[RPCONTACTTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'System Type',
+			[RPCONTACTTYPESYSTEM_DELETED].[NAME],
+			[RPCONTACTTYPESYSTEM_INSERTED].[NAME],
+			'Rental Property Contact Type (' + [inserted].[NAME] + ')',
+			'C002D968-8765-4D89-86F4-8642B046110B',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[RPCONTACTTYPEID] = [inserted].[RPCONTACTTYPEID]
+			INNER JOIN RPCONTACTTYPESYSTEM RPCONTACTTYPESYSTEM_DELETED WITH (NOLOCK) ON [deleted].[RPCONTACTTYPESYSTEMID] = RPCONTACTTYPESYSTEM_DELETED.[RPCONTACTTYPESYSTEMID]
+			INNER JOIN RPCONTACTTYPESYSTEM RPCONTACTTYPESYSTEM_INSERTED WITH (NOLOCK) ON [inserted].[RPCONTACTTYPESYSTEMID] = RPCONTACTTYPESYSTEM_INSERTED.[RPCONTACTTYPESYSTEMID]
+	WHERE	[deleted].[RPCONTACTTYPESYSTEMID] <> [inserted].[RPCONTACTTYPESYSTEMID]
+	
+	UNION ALL
+	SELECT
+			[inserted].[RPCONTACTTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Valid License Flag',
+			CASE [deleted].[REQUIREDVALIDLIC] WHEN 1 THEN 'Yes' ELSE  'No' END,
+			CASE [inserted].[REQUIREDVALIDLIC] WHEN 1 THEN 'Yes' ELSE 'No' END,
+			'Rental Property Contact Type (' + [inserted].[NAME] + ')',
+			'C002D968-8765-4D89-86F4-8642B046110B',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[RPCONTACTTYPEID] = [inserted].[RPCONTACTTYPEID]
+	WHERE	([deleted].[REQUIREDVALIDLIC] <> [inserted].[REQUIREDVALIDLIC])
+END
+GO
+
+CREATE TRIGGER [TG_RPCONTACTTYPE_INSERT] ON RPCONTACTTYPE
+   FOR INSERT
+AS 
+BEGIN
+	SET NOCOUNT ON;
+
+	-- Check if LASTCHANGEDBY contains VALID User Id and it Exists in USERS table, this is in replacement to foreign key reference of RPCONTACTTYPE table with USERS table.
+	IF EXISTS (SELECT * FROM inserted 
+		LEFT OUTER JOIN USERS WITH (NOLOCK) ON USERS.SUSERGUID = inserted.LASTCHANGEDBY
+		WHERE inserted.LASTCHANGEDBY IS NOT NULL AND USERS.SUSERGUID IS NULL)
+	BEGIN		
+		RAISERROR ('The INSERT or UPDATE statement conflicted with the FOREIGN KEY to table USERS', 16, 0);
+		ROLLBACK;
+		RETURN;
+	END
+
+    INSERT INTO [HISTORYSYSTEMSETUP]
+		(	[ID],
+			[ROWVERSION],
+			[CHANGEDON],
+			[CHANGEDBY],
+			[FIELDNAME],
+			[OLDVALUE],
+			[NEWVALUE],
+			[ADDITIONALINFO],
+			[FORMID],
+			[ACTION],
+			[ISROOT],
+			[RECORDNAME]
+		)
+	SELECT
+			[inserted].[RPCONTACTTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Rental Property Contact Type Added',
+			'',
+			'',
+			'Rental Property Contact Type (' + [inserted].[NAME] + ')',
+			'C002D968-8765-4D89-86F4-8642B046110B',
+			1,
+			1,
+			[inserted].[NAME]
+	FROM	[inserted]	
+END

@@ -1,0 +1,636 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report MustUnderstand="df" xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner" xmlns:df="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition/defaultfontfamily">
+  <df:DefaultFontFamily>Segoe UI</df:DefaultFontFamily>
+  <AutoRefresh>0</AutoRefresh>
+  <DataSources>
+    <DataSource Name="EnerGov">
+      <ConnectionProperties>
+        <DataProvider>SQL</DataProvider>
+        <ConnectString>Data Source=lax-sql1\ENERGOV;Initial Catalog=energov_prod</ConnectString>
+        <IntegratedSecurity>true</IntegratedSecurity>
+      </ConnectionProperties>
+      <rd:SecurityType>Integrated</rd:SecurityType>
+      <rd:DataSourceID>2dd8af78-eefe-484a-b057-c859cda9d071</rd:DataSourceID>
+    </DataSource>
+  </DataSources>
+  <DataSets>
+    <DataSet Name="FeesDataSet">
+      <Query>
+        <DataSourceName>EnerGov</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@StartDate">
+            <Value>=Parameters!StartDate.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@EndDate">
+            <Value>=Parameters!EndDate.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>SET @STARTDATE = DATEADD(DAY, DATEDIFF(DAY, 0, @StartDate), 0)
+SET @ENDDATE = DATEADD(DAY, DATEDIFF(DAY, 0, @EndDate), 1)
+
+DECLARE @TCINTEGRATION AS BIT = (SELECT CAST(COALESCE(S.BITVALUE, 0) AS BIT)
+                                 FROM SETTINGS S
+                                 WHERE S.NAME = 'EnableTCIntegration');
+
+
+WITH Transactions AS (SELECT CAFEE.ARFEECODE                 AS GLACCOUNT
+                           , CACOMPUTEDFEE.FEENAME
+                           , CACOMPUTEDFEE.CACOMPUTEDFEEID
+                           , CATRANSACTIONPAYMENT.PAYMENTDATE
+                           --, (CATRANSACTIONFEE.PAIDAMOUNT - 2*CATRANSACTIONFEE.REFUNDAMOUNT) AS TRANSACTIONAMOUNT
+                           , CASE
+                                 WHEN @TCINTEGRATION = 0
+                                     THEN (CATRANSACTIONGLPOSTING.POSTINGAMOUNT *
+                                           CASE WHEN CATRANSACTIONFEE.REFUNDAMOUNT &gt; 0 THEN -1 ELSE 1 END)
+                                 ELSE (CATRANSACTIONFEE.PAIDAMOUNT - 2 * CATRANSACTIONFEE.REFUNDAMOUNT)
+        END                                                                                                        AS TRANSACTIONAMOUNT
+                           , CATRANSACTIONFEE.CATRANSACTIONFEEID
+                           , CAPAYMENTMETHOD.NAME                                                                  AS PAYMENTMETHOD
+                           , COALESCE(BLLICENSE.LICENSENUMBER, CMCODECASE.CASENUMBER, CODEVIO.CASENUMBER,
+                                      ILLICENSE.LICENSENUMBER, PLAPPLICATION.APPNUMBER
+        , PLPLAN.PLANNUMBER, PMPERMIT.PERMITNUMBER, PRPROJECT.PROJECTNUMBER, RPLANDLORDLICENSE.LANDLORDNUMBER
+        , RPPROPERTY.PROPERTYNUMBER, TXREMITTANCEACCOUNT.REMITTANCEACCOUNTNUMBER, IPCASE.CASENUMBER,
+                                      IMINSPECTION.INSPECTIONNUMBER)                                               AS CaseNumber
+                           , CAENTITY.NAME                                                                         AS Module
+                           , CACOMPUTEDFEE.COMPUTEDAMOUNT                                                          AS FEEAMOUNT
+                           , CATRANSACTION.RECEIPTNUMBER
+                           , CATRANSACTIONPAYMENT.CATRANSACTIONPAYMENTID
+                           --,(SELECT R.[IMAGE] FROM RPTIMAGELIB R WHERE R.IMAGENAME = 'Municipality_Logo') LOGO
+                           , (SELECT COALESCE(S.BITVALUE, 0)
+                              FROM SETTINGS S
+                              WHERE S.NAME = 'EnableTCIntegration')                                                AS TCIntegration
+                           , (SELECT CASE WHEN R.[IMAGE] IS NULL THEN 'N' ELSE 'Y' END
+                              FROM RPTIMAGELIB R
+                              WHERE R.IMAGENAME = 'Municipality_Logo')                                                SHOWLOGO
+                           , (SELECT R.REPORTTEXT
+                              FROM RPTTEXTLIB R
+                              WHERE R.TEXTNAME = 'Municipality_Name')                                                 Municipality_Name
+                           , (SELECT R.REPORTTEXT
+                              FROM RPTTEXTLIB R
+                              WHERE R.TEXTNAME = 'Municipality_Page_Footer')                                          Municipality_Page_Footer
+                      FROM CACOMPUTEDFEE
+                               INNER JOIN CATRANSACTIONFEE
+                                          ON CACOMPUTEDFEE.CACOMPUTEDFEEID = CATRANSACTIONFEE.CACOMPUTEDFEEID
+                               INNER JOIN CATRANSACTION
+                                          ON CATRANSACTIONFEE.CATRANSACTIONID = CATRANSACTION.CATRANSACTIONID
+                               INNER JOIN GLOBALENTITY GE ON CATRANSACTION.GLOBALENTITYID = GE.GLOBALENTITYID
+                               INNER JOIN CATRANSACTIONTYPE
+                                          ON CATRANSACTION.CATRANSACTIONTYPEID = CATRANSACTIONTYPE.CATRANSACTIONTYPEID
+                               INNER JOIN CATRANSACTIONSTATUS ON CATRANSACTION.CATRANSACTIONSTATUSID =
+                                                                 CATRANSACTIONSTATUS.CATRANSACTIONSTATUSID
+                               INNER JOIN CATRANSACTIONPAYMENT
+                                          ON CATRANSACTION.CATRANSACTIONID = CATRANSACTIONPAYMENT.CATRANSACTIONID
+                               INNER JOIN CAPaymentMethod
+                                          ON CATransactionPayment.CAPaymentMethodID = CAPaymentMethod.CAPaymentMethodID
+                               INNER JOIN CAFEETEMPLATEFEE
+                                          ON CACOMPUTEDFEE.CAFEETEMPLATEFEEID = CAFEETEMPLATEFEE.CAFEETEMPLATEFEEID
+                               INNER JOIN CAFEE ON CAFEETEMPLATEFEE.CAFEEID = CAFEE.CAFEEID
+                               INNER JOIN CAFEETEMPLATE
+                                          ON CAFEETEMPLATEFEE.CAFEETEMPLATEID = CAFEETEMPLATE.CAFEETEMPLATEID
+                               LEFT OUTER JOIN CATRANSACTIONFEEPOSTING ON CATRANSACTIONFEE.CATRANSACTIONFEEID =
+                                                                          CATRANSACTIONFEEPOSTING.CATRANSACTIONFEEID
+                               LEFT OUTER JOIN CATRANSACTIONGLPOSTING
+                                               ON CATRANSACTIONFEEPOSTING.CATRANSACTIONGLPOSTINGID =
+                                                  CATRANSACTIONGLPOSTING.CATRANSACTIONGLPOSTINGID
+
+                               LEFT OUTER JOIN CAENTITY ON CAENTITY.CAENTITYID = CAFEETEMPLATE.CAENTITYID
+
+                               LEFT OUTER JOIN PLAPPLICATIONFEE
+                                               ON CACOMPUTEDFEE.CACOMPUTEDFEEID = PLAPPLICATIONFEE.CACOMPUTEDFEEID
+                               LEFT OUTER JOIN PLAPPLICATION
+                                               ON PLAPPLICATIONFEE.PLAPPLICATIONID = PLAPPLICATION.PLAPPLICATIONID
+
+                               LEFT OUTER JOIN PLPLANFEE ON PLPLANFEE.CACOMPUTEDFEEID = CACOMPUTEDFEE.CACOMPUTEDFEEID
+                               LEFT OUTER JOIN PLPLAN ON PLPLAN.PLPLANID = PLPLANFEE.PLPLANID
+
+                               LEFT OUTER JOIN PRPROJECTFEE
+                                               ON CACOMPUTEDFEE.CACOMPUTEDFEEID = PRPROJECTFEE.CACOMPUTEDFEEID
+                               LEFT OUTER JOIN PRPROJECT ON PRPROJECTFEE.PRPROJECTID = PRPROJECT.PRPROJECTID
+
+                               LEFT OUTER JOIN BLLICENSEFEE
+                                               ON CACOMPUTEDFEE.CACOMPUTEDFEEID = BLLICENSEFEE.CACOMPUTEDFEEID
+                               LEFT OUTER JOIN BLLICENSE ON BLLICENSEFEE.BLLICENSEID = BLLICENSE.BLLICENSEID
+
+                               LEFT OUTER JOIN ILLICENSEFEE
+                                               ON CACOMPUTEDFEE.CACOMPUTEDFEEID = ILLICENSEFEE.CACOMPUTEDFEEID
+                               LEFT OUTER JOIN ILLICENSE ON ILLICENSEFEE.ILLICENSEID = ILLICENSE.ILLICENSEID
+
+                               LEFT OUTER JOIN CMCODECASEFEE
+                                               ON CACOMPUTEDFEE.CACOMPUTEDFEEID = CMCODECASEFEE.CACOMPUTEDFEEID
+                               LEFT OUTER JOIN CMCODECASE ON CMCODECASEFEE.CMCODECASEID = CMCODECASE.CMCODECASEID
+
+                               LEFT OUTER JOIN CMVIOLATIONFEE
+                                               ON CACOMPUTEDFEE.CACOMPUTEDFEEID = CMVIOLATIONFEE.CACOMPUTEDFEEID
+                               LEFT OUTER JOIN CMVIOLATION ON CMVIOLATIONFEE.CMVIOLATIONID = CMVIOLATION.CMVIOLATIONID
+                               LEFT OUTER JOIN CMCODEWFSTEP ON CMVIOLATION.CMCODEWFSTEPID = CMCODEWFSTEP.CMCODEWFSTEPID
+                               LEFT OUTER JOIN CMCODECASE CODEVIO ON CMCODEWFSTEP.CMCODECASEID = CODEVIO.CMCODECASEID
+
+                               LEFT OUTER JOIN PMPERMITFEE
+                                               ON CACOMPUTEDFEE.CACOMPUTEDFEEID = PMPERMITFEE.CACOMPUTEDFEEID
+                               LEFT OUTER JOIN PMPERMIT ON PMPERMIT.PMPERMITID = PMPERMITFEE.PMPERMITID
+
+                               LEFT OUTER JOIN RPLANDLORDLICENSEFEE
+                                               ON CACOMPUTEDFEE.CACOMPUTEDFEEID = RPLANDLORDLICENSEFEE.CACOMPUTEDFEEID
+                               LEFT OUTER JOIN RPLANDLORDLICENSE ON RPLANDLORDLICENSEFEE.RPLANDLORDLICENSEID =
+                                                                    RPLANDLORDLICENSE.RPLANDLORDLICENSEID
+
+                               LEFT OUTER JOIN RPPROPERTYFEE
+                                               ON CACOMPUTEDFEE.CACOMPUTEDFEEID = RPPROPERTYFEE.CACOMPUTEDFEEID
+                               LEFT OUTER JOIN RPPROPERTY ON RPPROPERTYFEE.RPPROPERTYID = RPPROPERTY.RPPROPERTYID
+
+                               LEFT OUTER JOIN TXREMITTANCEFEE
+                                               ON CACOMPUTEDFEE.CACOMPUTEDFEEID = TXREMITTANCEFEE.CACOMPUTEDFEEID
+                               LEFT OUTER JOIN TXREMITTANCE
+                                               ON TXREMITTANCEFEE.TXREMITTANCEID = TXREMITTANCE.TXREMITTANCEID
+                               LEFT OUTER JOIN TXREMITTANCEACCOUNT ON TXREMITTANCE.TXREMITTANCEACCOUNTID =
+                                                                      TXREMITTANCEACCOUNT.TXREMITTANCEACCOUNTID
+
+                               LEFT OUTER JOIN IPCONDITIONFEE
+                                               ON CACOMPUTEDFEE.CACOMPUTEDFEEID = IPCONDITIONFEE.CACOMPUTEDFEEID
+                               LEFT OUTER JOIN IPCONDITION ON IPCONDITIONFEE.IPCONDITIONID = IPCONDITION.IPCONDITIONID
+                               LEFT OUTER JOIN IPCASE ON IPCONDITION.IPCASEID = IPCASE.IPCASEID
+
+                               LEFT OUTER JOIN IMINSPECTIONFEE
+                                               ON CACOMPUTEDFEE.CACOMPUTEDFEEID = IMINSPECTIONFEE.CACOMPUTEDFEEID
+                               LEFT OUTER JOIN IMINSPECTION
+                                               ON IMINSPECTIONFEE.IMINSPECTIONID = IMINSPECTION.IMINSPECTIONID
+
+                      WHERE CATransactionPayment.PaymentDate &gt;= @STARTDATE
+                        AND CATransactionPayment.PaymentDate &lt; @ENDDATE
+                        AND (CATransactionType.CATransactionTypeID NOT IN (6))     --void reversal
+                        AND (CATransactionStatus.CATransactionStatusID NOT IN (2)) --void
+                        AND (CATransactionFee.CAStatusID NOT IN (5, 10))           --void, deleted
+
+                      UNION ALL
+                      SELECT CAFEE.ARFEECODE                 AS GLACCOUNT
+                           , CAMISCFEE.FEENAME
+                           , CAMISCFEE.CAMISCFEEID
+                           , CATRANSACTIONPAYMENT.PAYMENTDATE
+                           --, (CATRANSACTIONMISCFEE.PAIDAMOUNT - 2*CATRANSACTIONMISCFEE.REFUNDAMOUNT) AS TRANSACTIONAMOUNT
+                           , CASE
+                                 WHEN @TCINTEGRATION = 0
+                                     THEN (CATRANSACTIONGLPOSTING.POSTINGAMOUNT *
+                                           CASE WHEN CATRANSACTIONMISCFEE.REFUNDAMOUNT &gt; 0 THEN -1 ELSE 1 END)
+                                 ELSE (CATRANSACTIONMISCFEE.PAIDAMOUNT - 2 * CATRANSACTIONMISCFEE.REFUNDAMOUNT)
+                          END                                                                                      AS TRANSACTIONAMOUNT
+                           , CATRANSACTIONMISCFEE.CATRANSACTIONMISCFEEID
+                           , CAPAYMENTMETHOD.NAME                                                                  AS PAYMENTMETHOD
+                           , 'Misc. Fee'                                                                           AS CaseNumber
+                           , 'Cashier'                                                                             AS Module
+                           , CAMISCFEE.AMOUNT                                                                      AS FEEAMOUNT
+                           , CATRANSACTION.RECEIPTNUMBER
+                           , CATRANSACTIONPAYMENT.CATRANSACTIONPAYMENTID
+                           --,(SELECT R.[IMAGE] FROM RPTIMAGELIB R WHERE R.IMAGENAME = 'Municipality_Logo') LOGO
+                           , (SELECT COALESCE(S.BITVALUE, 0)
+                              FROM SETTINGS S
+                              WHERE S.NAME = 'EnableTCIntegration')                                                AS TCIntegration
+                           , (SELECT CASE WHEN R.[IMAGE] IS NULL THEN 'N' ELSE 'Y' END
+                              FROM RPTIMAGELIB R
+                              WHERE R.IMAGENAME = 'Municipality_Logo')                                                SHOWLOGO
+                           , (SELECT R.REPORTTEXT
+                              FROM RPTTEXTLIB R
+                              WHERE R.TEXTNAME = 'Municipality_Name')                                                 Municipality_Name
+                           , (SELECT R.REPORTTEXT
+                              FROM RPTTEXTLIB R
+                              WHERE R.TEXTNAME = 'Municipality_Page_Footer')                                          Municipality_Page_Footer
+                      FROM CAMISCFEE
+                               INNER JOIN CAFEE ON CAMISCFEE.CAFEEID = CAFEE.CAFEEID
+                               INNER JOIN CATRANSACTIONMISCFEE
+                                          ON CAMISCFEE.CAMISCFEEID = CATRANSACTIONMISCFEE.CAMISCFEEID
+                               INNER JOIN CATRANSACTION
+                                          ON CATRANSACTIONMISCFEE.CATRANSACTIONID = CATRANSACTION.CATRANSACTIONID
+                               INNER JOIN GLOBALENTITY GE ON CATRANSACTION.GLOBALENTITYID = GE.GLOBALENTITYID
+                               INNER JOIN CATRANSACTIONTYPE
+                                          ON CATRANSACTION.CATRANSACTIONTYPEID = CATRANSACTIONTYPE.CATRANSACTIONTYPEID
+                               INNER JOIN CATRANSACTIONSTATUS ON CATRANSACTION.CATRANSACTIONSTATUSID =
+                                                                 CATRANSACTIONSTATUS.CATRANSACTIONSTATUSID
+                               INNER JOIN CATRANSACTIONPAYMENT
+                                          ON CATRANSACTION.CATRANSACTIONID = CATRANSACTIONPAYMENT.CATRANSACTIONID
+                               INNER JOIN CAPaymentMethod
+                                          ON CATransactionPayment.CAPaymentMethodID = CAPaymentMethod.CAPaymentMethodID
+                               LEFT OUTER JOIN CATRANSACTIONMISCFEEPOSTING
+                                               ON CATRANSACTIONMISCFEE.CATRANSACTIONMISCFEEID =
+                                                  CATRANSACTIONMISCFEEPOSTING.CATRANSACTIONMISCFEEID
+                               LEFT OUTER JOIN CATRANSACTIONGLPOSTING
+                                               ON CATRANSACTIONMISCFEEPOSTING.CATRANSACTIONGLPOSTINGID =
+                                                  CATRANSACTIONGLPOSTING.CATRANSACTIONGLPOSTINGID
+                      WHERE CATransactionPayment.PaymentDate &gt;= @STARTDATE
+                        AND CATransactionPayment.PaymentDate &lt; @ENDDATE
+                        AND (CATransactionType.CATransactionTypeID NOT IN (6))     --void reversal
+                        AND (CATransactionStatus.CATransactionStatusID NOT IN (2)) --void
+                        AND (CATRANSACTIONMISCFEE.CAStatusID NOT IN (5, 10))) --void, deleted
+SELECT x.FEENAME AS FeeName,
+       x.GLACCOUNT AS ChargeCode,
+       COUNT(*) AS FeeCount,
+       SUM(x.TRANSACTIONAMOUNT) AS TotalAmount
+FROM Transactions x
+GROUP BY x.FEENAME, x.GLACCOUNT</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="FeeName">
+          <DataField>FeeName</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="ChargeCode">
+          <DataField>ChargeCode</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="FeeCount">
+          <DataField>FeeCount</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="TotalAmount">
+          <DataField>TotalAmount</DataField>
+          <rd:TypeName>System.Decimal</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+  </DataSets>
+  <ReportSections>
+    <ReportSection>
+      <Body>
+        <ReportItems>
+          <Tablix Name="Tablix1">
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn>
+                  <Width>4in</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>1in</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>1in</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>1in</Width>
+                </TablixColumn>
+              </TablixColumns>
+              <TablixRows>
+                <TablixRow>
+                  <Height>0.25in</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox1">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Fee Name</Value>
+                                  <Style>
+                                    <FontFamily>Arial</FontFamily>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox1</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox3">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Charge Code</Value>
+                                  <Style>
+                                    <FontFamily>Arial</FontFamily>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox3</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox5">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Fee Count</Value>
+                                  <Style>
+                                    <FontFamily>Arial</FontFamily>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox5</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="Textbox7">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>Total Amount</Value>
+                                  <Style>
+                                    <FontFamily>Arial</FontFamily>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>Textbox7</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.25in</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="FeeName">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!FeeName.Value</Value>
+                                  <Style>
+                                    <FontFamily>Arial</FontFamily>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>FeeName</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="ChargeCode">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!ChargeCode.Value</Value>
+                                  <Style>
+                                    <FontFamily>Arial</FontFamily>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style />
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>ChargeCode</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="FeeCount">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!FeeCount.Value</Value>
+                                  <Style>
+                                    <FontFamily>Arial</FontFamily>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>FeeCount</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="TotalAmount">
+                          <CanGrow>true</CanGrow>
+                          <KeepTogether>true</KeepTogether>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!TotalAmount.Value</Value>
+                                  <Style>
+                                    <FontFamily>Arial</FontFamily>
+                                    <Format>'$'#,0.00;('$'#,0.00);'-'</Format>
+                                    <rd:FormatSymbolCulture>en-US</rd:FormatSymbolCulture>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <rd:DefaultName>TotalAmount</rd:DefaultName>
+                          <Style>
+                            <Border>
+                              <Color>LightGrey</Color>
+                              <Style>Solid</Style>
+                            </Border>
+                            <PaddingLeft>2pt</PaddingLeft>
+                            <PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop>
+                            <PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+              </TablixRows>
+            </TablixBody>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <KeepWithGroup>After</KeepWithGroup>
+                </TablixMember>
+                <TablixMember>
+                  <Group Name="Details" />
+                  <SortExpressions>
+                    <SortExpression>
+                      <Value>=Fields!FeeName.Value</Value>
+                    </SortExpression>
+                  </SortExpressions>
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            <DataSetName>FeesDataSet</DataSetName>
+            <Height>0.5in</Height>
+            <Width>7in</Width>
+            <Style>
+              <Border>
+                <Style>None</Style>
+              </Border>
+            </Style>
+          </Tablix>
+        </ReportItems>
+        <Height>0.5in</Height>
+        <Style>
+          <Border>
+            <Style>None</Style>
+          </Border>
+        </Style>
+      </Body>
+      <Width>7in</Width>
+      <Page>
+        <PageHeight>8.5in</PageHeight>
+        <PageWidth>11in</PageWidth>
+        <InteractiveHeight>7.5in</InteractiveHeight>
+        <InteractiveWidth>10in</InteractiveWidth>
+        <LeftMargin>0.5in</LeftMargin>
+        <RightMargin>0.5in</RightMargin>
+        <TopMargin>0.5in</TopMargin>
+        <BottomMargin>0.5in</BottomMargin>
+        <Style />
+      </Page>
+    </ReportSection>
+  </ReportSections>
+  <ReportParameters>
+    <ReportParameter Name="StartDate">
+      <DataType>DateTime</DataType>
+      <Prompt>Start Date</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="EndDate">
+      <DataType>DateTime</DataType>
+      <Prompt>End Date</Prompt>
+    </ReportParameter>
+  </ReportParameters>
+  <ReportParametersLayout>
+    <GridLayoutDefinition>
+      <NumberOfColumns>3</NumberOfColumns>
+      <NumberOfRows>2</NumberOfRows>
+      <CellDefinitions>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>StartDate</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>EndDate</ParameterName>
+        </CellDefinition>
+      </CellDefinitions>
+    </GridLayoutDefinition>
+  </ReportParametersLayout>
+  <rd:ReportUnitType>Inch</rd:ReportUnitType>
+  <rd:ReportID>580753c1-14ac-4779-a46b-e5c794c7dfd0</rd:ReportID>
+</Report>

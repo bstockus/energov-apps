@@ -1,0 +1,23 @@
+﻿CREATE TABLE [dbo].[IVINSPECTIONSTAGING] (
+    [IVINSPECTIONSTAGINGID]        CHAR (36)      NOT NULL,
+    [ENERGOVMODULE]                INT            NOT NULL,
+    [MODULECASEID]                 CHAR (36)      NOT NULL,
+    [WFSTEPACTIONID]               CHAR (36)      NOT NULL,
+    [IMINSPECTIONTYPEID]           CHAR (36)      NOT NULL,
+    [ENTEREDON]                    DATETIME       NOT NULL,
+    [IVRACTIONCODE]                INT            NOT NULL,
+    [PROCESSED]                    BIT            CONSTRAINT [DF_Table_1_IsProcessed] DEFAULT ((0)) NOT NULL,
+    [REQUESTDATE]                  DATETIME       NULL,
+    [REQUESTAMORPM]                INT            NULL,
+    [IMINSPECTIONID]               CHAR (36)      NULL,
+    [RESULT]                       NVARCHAR (MAX) NULL,
+    [PROCESSED_ON]                 DATETIME       NULL,
+    [IMINSPECTIONNUM]              NVARCHAR (50)  NULL,
+    [CONTACTPHONENUMBER]           NVARCHAR (15)  NULL,
+    [VOICEMAILRECORDINGINPROGRESS] BIT            NULL,
+    CONSTRAINT [PK_IVInspectionStaging] PRIMARY KEY CLUSTERED ([IVINSPECTIONSTAGINGID] ASC) WITH (FILLFACTOR = 90),
+    CONSTRAINT [FK_IVInspectionStaging_IMInspection] FOREIGN KEY ([IMINSPECTIONID]) REFERENCES [dbo].[IMINSPECTION] ([IMINSPECTIONID]),
+    CONSTRAINT [FK_IVInspectionStaging_IMInspectionType] FOREIGN KEY ([IMINSPECTIONTYPEID]) REFERENCES [dbo].[IMINSPECTIONTYPE] ([IMINSPECTIONTYPEID]),
+    CONSTRAINT [FK_IVInspectionStaging_IVRActionCode] FOREIGN KEY ([IVRACTIONCODE]) REFERENCES [dbo].[IVRACTIONCODE] ([IVRACTIONCODE])
+);
+

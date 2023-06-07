@@ -1,0 +1,293 @@
+﻿@page
+@using EnerGov.Web.Common.Infrastructure
+@using EnerGov.Business.ClerksLicensing.RenewalPackets.Generators
+@model LicenseRenewalPacketModel
+
+@{
+    this.UseLayout("License Renewal Packet Generator");
+}
+
+@section Header {
+    License Renewal Packet Generator
+}
+
+@section Breadcrumbs {
+    <li>
+        <i class="fa fa-home"></i>
+    </li>
+    <li>
+        Clerks Licenseing
+    </li>
+    <li class="active">
+        Renewal Packet Generator
+    </li>
+}
+
+@section Scripts {
+    <script src="~/js/signalr.min.js"></script>
+    <script>
+
+        function handleCheckboxToggle(element) {
+            if (element.is(":checked")) {
+                console.log("#" + element.data("body-toggle") + " checked!");
+                $("#" + element.data("body-toggle")).removeClass("hidden");
+            } else {
+                console.log("#" + element.data("body-toggle") + " unchecked!");
+                $("#" + element.data("body-toggle")).addClass("hidden");
+            }
+        }
+
+        $(function() {
+            $("[data-body-toggle]").on('change',
+                function (event) {
+                    var element = $(this);
+                    handleCheckboxToggle(element);
+
+                });
+
+            $("#select-all-btn").on('click',
+                function () {
+                    $(".license-type-cbo").prop("checked", true);
+                    $(".license-type-cbo").each(function(index, element) {
+                        handleCheckboxToggle($(element));
+                    })
+                    console.log("Clicked!!!");
+                });
+
+            $("#unselect-all-btn").on('click',
+                function () {
+                    $(".license-type-cbo").prop("checked", false);
+                    $(".license-type-cbo").each(function (index, element) {
+                        handleCheckboxToggle($(element));
+                    })
+                    console.log("Clicked!!!");
+                });
+        });
+
+        function tailScroll() {
+            var height = $("#tail").get(0).scrollHeight;
+            $("#tail").animate({
+                scrollTop: height
+            }, 500);
+        }
+
+        const jobId = @Html.Raw(Model.JobId == null ? "null" : $"'{Model.JobId}'");
+
+        if (jobId !== null) {
+
+            Object.defineProperty(WebSocket, 'OPEN', { value: 1, });
+
+            var connection = new signalR.HubConnectionBuilder()
+                .withUrl("/jobprogress")
+                .configureLogging(signalR.LogLevel.Information)
+                .build();
+
+            connection.on("progress",
+                (percent, message) => {
+                    $('#job-status').text(`${percent}%: ${message}`);
+                    $("<div />").text(message).appendTo('#tail');
+                    tailScroll();
+                    $('#job-progress').css('width', `${percent}%`);
+                });
+
+            connection.on("show-download",
+                () => {
+                    $('.download-buttons').removeClass("hidden");
+                    $('#job-progress').removeClass("progress-bar-warning").addClass("progress-bar-success");
+                    $('#job-progress-container').removeClass("active");
+                });
+
+            connection.start()
+                .then(_ => connection.invoke("AssociateJob", jobId))
+                .catch(err => console.error(err.toString()));
+
+        }
+
+
+    </script>
+}
+
+<form method="post">
+
+    @if (Model.JobId == null) {
+
+
+
+
+        <div class="row">
+
+            <div class="form-group col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                <label>Prior License Year</label>
+                <input type="number"
+                       class="form-control"
+                       required
+                       asp-for="PriorLicenseYear" />
+                <help-block></help-block>
+            </div>
+
+            <div class="form-group col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                <label>Run Type</label>
+                <select asp-for="RunType">
+                    <option value="@RenewalRequest.RenewalPacketRunType">@RenewalRequest.RenewalPacketRunType</option>
+                    <option value="@RenewalRequest.CoverLetterOnlyRunType">@RenewalRequest.CoverLetterOnlyRunType</option>
+                    <option value="@RenewalRequest.PersonalDataSheetWithDateOfBirthsRunType">@RenewalRequest.PersonalDataSheetWithDateOfBirthsRunType</option>
+                    <option value="@RenewalRequest.PersonalDataSheetWithOutDateOfBirthsRunType">@RenewalRequest.PersonalDataSheetWithOutDateOfBirthsRunType</option>
+                    <option value="@RenewalRequest.FinalNoticeRunType">@RenewalRequest.FinalNoticeRunType</option>
+                </select>
+                <help-block></help-block>
+            </div>
+
+            <div class="form-group col-md-4 col-lg-4 col-sm-6 col-xs-12">
+                <label>Letter Date</label>
+                <input type="text"
+                       class="form-control date-control"
+                       asp-for="LetterDate"
+                       required
+                       value="@Model.LetterDate.ToShortDateString()" />
+                <help-block></help-block>
+            </div>
+
+            <div class="form-group col-md-4 col-lg-4 col-sm-6 col-xs-12">
+                <label>Alcohol License Due Date</label>
+                <input type="text"
+                       class="form-control date-control"
+                       asp-for="ApplicationDueDate"
+                       required
+                       value="@(Model.ApplicationDueDate?.ToShortDateString() ?? "")" />
+                <help-block></help-block>
+            </div>
+
+            <div class="form-group col-md-4 col-lg-4 col-sm-6 col-xs-12">
+                <label>Non-Alcohol License &amp; Payment Due Date</label>
+                <input type="text"
+                       class="form-control date-control"
+                       asp-for="MiscellaneousDueDate"
+                       required
+                       value="@(Model.MiscellaneousDueDate?.ToShortDateString() ?? "")" />
+                <help-block></help-block>
+            </div>
+
+            <div class="form-group col-md-4 col-lg-4 col-sm-6 col-xs-12">
+                <label>Alcohol Payment Due Date</label>
+                <input type="text"
+                       class="form-control date-control"
+                       asp-for="PaymentDueDate"
+                       required
+                       value="@(Model.PaymentDueDate?.ToShortDateString() ?? "")" />
+                <help-block></help-block>
+            </div>
+
+            <div class="form-group col-md-4 col-lg-4 col-sm-6 col-xs-12">
+                <label>J&A Date</label>
+                <input type="text"
+                       class="form-control date-control"
+                       asp-for="JADate"
+                       required
+                       value="@(Model.JADate?.ToShortDateString() ?? "")" />
+                <help-block></help-block>
+            </div>
+
+            <div class="form-group col-md-4 col-lg-4 col-sm-6 col-xs-12">
+                <label>Council Date</label>
+                <input type="text"
+                       class="form-control date-control"
+                       asp-for="CouncilDate"
+                       required
+                       value="@(Model.CouncilDate?.ToShortDateString() ?? "")" />
+                <help-block></help-block>
+            </div>
+
+            <div class="form-group col-xs-12">
+                <label>
+                    <input type="checkbox"
+                           asp-for="AddBlankPagesForDoubleSidedPrinting" />
+                    Add Blank Pages for Double Side Printing?
+                </label>
+            </div>
+
+        </div>
+
+        @foreach (var licenseType in Model.LicenseFeeInformations.OrderBy(_ => _.LicenseName)) {
+
+            <div class="box box-default box-solid">
+
+                <div class="box-header with-border">
+
+                    <h3 class="box-title">
+                        <label>
+                            <input type="checkbox"
+                                   id="@licenseType.TypeName"
+                                   name="@licenseType.TypeName"
+                                   data-body-toggle="@licenseType.TypeName-body"
+                                   class="license-type-cbo" />
+                            @licenseType.LicenseName
+                        </label>
+
+                    </h3>
+
+                    <div class="box-tools pull-right">
+
+                    </div>
+
+                </div>
+
+                <div class="box-body hidden" id="@licenseType.TypeName-body">
+
+                    @foreach (var fee in licenseType.FeeInformations) {
+
+                        <div class="form-group col-md-4 col-lg-4 col-sm-6 col-xs-12">
+                            <label>@fee.DisplayName</label>
+                            <div class="input-group">
+                                <span class="input-group-addon"><i class="fa fa-dollar"></i></span>
+                                <input type="number"
+                                       class="form-control"
+                                       id="@(licenseType.TypeName + "." + fee.FieldName)"
+                                       name="@(licenseType.TypeName + "." + fee.FieldName)"
+                                       value="@fee.DefaultValue.ToString("F2")" />
+                            </div>
+
+                            <help-block></help-block>
+                        </div>
+
+                    }
+
+
+
+
+
+                </div>
+
+            </div>
+
+        }
+
+
+
+        <div>
+            <button type="submit" bs-context="@ButtonContext.Success" class="pull-right" asp-page-handler="Generate" style="margin-bottom: 20px;">Generate</button>
+            <a role="button" class="btn btn-info" style="margin-bottom: 20px;" id="select-all-btn">Select All</a>
+            <a role="button" class="btn btn-info" style="margin-bottom: 20px;" id="unselect-all-btn">Unselect All</a>
+        </div>
+
+
+
+    } else {
+
+        <div class="progress active" style="margin-bottom: 0;" id="job-progress-container">
+            <div class="progress-bar progress-bar-warning progress-bar-striped" role="progressbar" style="width: 0%" id="job-progress"></div>
+        </div>
+
+        <p>Generator Status: <strong><span id="job-status">Waiting to start...</span></strong></p>
+
+
+
+        <div id="tail" class="scrolling-console col-sm-12" style="height: 400px;">
+
+        </div>
+
+        <a asp-controller="CachedDownloadsResult" asp-action="Fetch" asp-route-fileId="@Model.JobId" asp-route-fileName="@Model.FileName" class="btn btn-block btn-success hidden download-buttons col-sm-12"><i class="fa fa-download"></i> Download File</a>
+
+    }
+
+</form>
+

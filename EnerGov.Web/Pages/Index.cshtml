@@ -1,0 +1,17 @@
+﻿@page
+@using EnerGov.Web.Common.Infrastructure
+@{
+    this.UseLayout("Home");
+}
+
+@section Header {
+    EnerGov
+}
+
+@section Breadcrumbs {
+    <li class="active">
+        <i class="fa fa-home"></i>
+    </li>
+}
+
+<vc:navigation for-home-page="true"></vc:navigation>

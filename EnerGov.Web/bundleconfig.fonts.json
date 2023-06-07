@@ -1,0 +1,5 @@
+[
+  "./node_modules/admin-lte/bower_components/bootstrap/dist/fonts/**/*",
+  "./node_modules/admin-lte/bower_components/font-awesome/fonts/**/*",
+  "./node_modules/admin-lte/bower_components/ionicons/fonts/**/*"
+]

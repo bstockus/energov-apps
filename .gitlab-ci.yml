@@ -1,0 +1,25 @@
+stages:
+  - build
+  - deploy
+
+build:
+  stage: build
+  script: ./Build.ps1
+  artifacts:
+    paths:
+      - out/
+  tags:
+    - build-windows
+  only:
+    - master
+
+deploy:
+  stage: deploy
+  script: ./Deploy.ps1
+  needs:
+    - job: build
+      artifacts: true
+  tags:
+    - deploy-lax-appsint1
+  only:
+    - master

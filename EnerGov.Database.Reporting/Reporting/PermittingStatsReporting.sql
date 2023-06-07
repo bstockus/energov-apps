@@ -1,0 +1,158 @@
+﻿--CREATE PROCEDURE [laxmasterdata].[PermittingStatsReporting]
+--	@StartDate datetime,
+--	@EndDate datetime
+--AS
+--	SELECT
+--  p.PERMITNUMBER AS "PermitNumber",
+--  p.APPLYDATE AS "ApplyDate",
+--  p.ISSUEDATE AS "IssueDate",
+--  p.FINALIZEDATE AS "FinalizeDate",
+--  ps.NAME AS "Status",
+--  ptmd.Department AS "Department",
+--  ptmd.PermitCategory AS "Category",
+--  ptmd.PermitType AS "Type",
+--  ptmd.PermitClass AS "Class",
+--  ptmd.IsNewConstruction AS "IsNewConstruction",
+--  ISNULL(cspm.NumberOfDwellingUnits, ptmd.FixedNumberOfDwellingUnits) AS "NumberOfDwellingUnits",
+--  p.VALUE AS "ProjectValue",
+--  ISNULL((SELECT SUM(cfee.AMOUNTPAIDTODATE)
+--    FROM dbo.PMPERMITFEE pfee
+--    INNER JOIN dbo.CACOMPUTEDFEE cfee ON pfee.CACOMPUTEDFEEID = cfee.CACOMPUTEDFEEID
+--    INNER JOIN dbo.CAFEETEMPLATEFEE cfeetemp ON cfee.CAFEETEMPLATEFEEID = cfeetemp.CAFEETEMPLATEFEEID
+--    WHERE pfee.PMPERMITID = p.PMPERMITID AND cfeetemp.CAFEEID NOT IN ('7631b142-9472-41dc-8dbf-cc5f9395c677', 'f4b26983-01c4-4fea-9662-f2fa0d82dfb8', 'e4fc4ffd-a912-46e0-b7b1-ff51fc941dfb')), 0) AS "PermitFees",
+--  CASE
+--    WHEN ISNULL(ptmd.SquareFootageType, 'N') = 'R' THEN ISNULL(cspm.TotalSquareFootage, 0)
+--    WHEN ISNULL(ptmd.SquareFootageType, 'N') = 'M' THEN ISNULL(cspm.ResidentialSquareFootage, 0)
+--    ELSE 0 END AS "ResidentialSquareFootage",
+--  CASE
+--    WHEN ISNULL(ptmd.SquareFootageType, 'N') = 'C' THEN ISNULL(cspm.TotalSquareFootage, 0)
+--    WHEN ISNULL(ptmd.SquareFootageType, 'N') = 'M' THEN ISNULL(cspm.CommercialSquareFootage, 0)
+--    ELSE 0 END AS "CommercialSquareFootage"
+--FROM dbo.PMPERMIT p
+--INNER JOIN laxmasterdata.PermitTypeMasterData ptmd ON p.PMPERMITTYPEID = ptmd.PermitTypeId AND p.PMPERMITWORKCLASSID = ptmd.PermitWorkClassId AND ptmd.SpecialHandlingCode = ''
+--INNER JOIN dbo.PMPERMITSTATUS ps ON p.PMPERMITSTATUSID = ps.PMPERMITSTATUSID
+--LEFT OUTER JOIN dbo.CUSTOMSAVERPERMITMANAGEMENT cspm ON p.PMPERMITID = cspm.ID
+--WHERE p.ISSUEDATE >= @StartDate AND
+--      p.ISSUEDATE <= @EndDate AND
+--      p.PMPERMITSTATUSID IN (
+--        '04f087ab-1fc8-474d-b8b4-bc16bea18bcf',
+--        '34fbca57-2bb5-41cf-a191-186870af69bb',
+--        '49a216ba-f358-400b-aa3f-179f1689dc08',
+--        'e14408cd-4249-4fda-9503-f14557b4d641')
+
+--UNION ALL
+
+--SELECT
+--  p.PERMITNUMBER AS "PermitNumber",
+--  p.APPLYDATE AS "ApplyDate",
+--  p.ISSUEDATE AS "IssueDate",
+--  p.FINALIZEDATE AS "FinalizeDate",
+--  ps.NAME AS "Status",
+--  ptmd.Department AS "Department",
+--  ptmd.PermitCategory AS "Category",
+--  ptmd.PermitType AS "Type",
+--  ptmd.PermitClass AS "Class",
+--  ptmd.IsNewConstruction AS "IsNewConstruction",
+--  ISNULL(cspm.NumberOfDwellingUnits, ptmd.FixedNumberOfDwellingUnits) AS "NumberOfDwellingUnits",
+--  p.VALUE AS "ProjectValue",
+--  ISNULL((SELECT SUM(cfee.AMOUNTPAIDTODATE)
+--    FROM dbo.PMPERMITFEE pfee
+--    INNER JOIN dbo.CACOMPUTEDFEE cfee ON pfee.CACOMPUTEDFEEID = cfee.CACOMPUTEDFEEID
+--    INNER JOIN dbo.CAFEETEMPLATEFEE cfeetemp ON cfee.CAFEETEMPLATEFEEID = cfeetemp.CAFEETEMPLATEFEEID
+--    WHERE pfee.PMPERMITID = p.PMPERMITID AND cfeetemp.CAFEEID NOT IN ('7631b142-9472-41dc-8dbf-cc5f9395c677', 'f4b26983-01c4-4fea-9662-f2fa0d82dfb8', 'e4fc4ffd-a912-46e0-b7b1-ff51fc941dfb')), 0) AS "PermitFees",
+--  CASE
+--    WHEN ISNULL(ptmd.SquareFootageType, 'N') = 'R' THEN ISNULL(cspm.TotalSquareFootage, 0)
+--    WHEN ISNULL(ptmd.SquareFootageType, 'N') = 'M' THEN ISNULL(cspm.ResidentialSquareFootage, 0)
+--    ELSE 0 END AS "ResidentialSquareFootage",
+--  CASE
+--    WHEN ISNULL(ptmd.SquareFootageType, 'N') = 'C' THEN ISNULL(cspm.TotalSquareFootage, 0)
+--    WHEN ISNULL(ptmd.SquareFootageType, 'N') = 'M' THEN ISNULL(cspm.CommercialSquareFootage, 0)
+--    ELSE 0 END AS "CommercialSquareFootage"
+--FROM dbo.PMPERMIT p
+--INNER JOIN laxmasterdata.PermitTypeMasterData ptmd ON p.PMPERMITTYPEID = ptmd.PermitTypeId AND p.PMPERMITWORKCLASSID = ptmd.PermitWorkClassId
+--INNER JOIN dbo.PMPERMITSTATUS ps ON p.PMPERMITSTATUSID = ps.PMPERMITSTATUSID
+--LEFT OUTER JOIN dbo.CUSTOMSAVERPERMITMANAGEMENT cspm ON p.PMPERMITID = cspm.ID
+--WHERE p.ISSUEDATE >= @StartDate AND
+--      p.ISSUEDATE <= @EndDate AND
+--      p.PMPERMITSTATUSID IN (
+--        '04f087ab-1fc8-474d-b8b4-bc16bea18bcf',
+--        '34fbca57-2bb5-41cf-a191-186870af69bb',
+--        '49a216ba-f358-400b-aa3f-179f1689dc08',
+--        'e14408cd-4249-4fda-9503-f14557b4d641') AND
+--      (cspm.DemolitionType = ptmd.SpecialHandlingCode OR
+--       cspm.AntennaType = ptmd.SpecialHandlingCode OR
+--       cspm.SignLocation = ptmd.SpecialHandlingCode)
+
+--UNION ALL
+
+--SELECT
+--  p.PERMITNUMBER AS "PermitNumber",
+--  p.APPLYDATE AS "ApplyDate",
+--  p.ISSUEDATE AS "IssueDate",
+--  p.FINALIZEDATE AS "FinalizeDate",
+--  ps.NAME AS "Status",
+--  'FP&BS' AS "Department",
+--  'Zoning' AS "Category",
+--  'Land Disturbance' AS "Type",
+--  '' AS "Class",
+--  0 AS "IsNewConstruction",
+--  0 AS "NumberOfDwellingUnits",
+--  p.VALUE AS "ProjectValue",
+--  ISNULL((SELECT SUM(cfee.AMOUNTPAIDTODATE)
+--    FROM dbo.PMPERMITFEE pfee
+--    INNER JOIN dbo.CACOMPUTEDFEE cfee ON pfee.CACOMPUTEDFEEID = cfee.CACOMPUTEDFEEID
+--    INNER JOIN dbo.CAFEETEMPLATEFEE cfeetemp ON cfee.CAFEETEMPLATEFEEID = cfeetemp.CAFEETEMPLATEFEEID
+--    WHERE pfee.PMPERMITID = p.PMPERMITID AND cfeetemp.CAFEEID IN ('7631b142-9472-41dc-8dbf-cc5f9395c677', 'f4b26983-01c4-4fea-9662-f2fa0d82dfb8')), 0) AS "PermitFees",
+--  0 AS "ResidentialSquareFootage",
+--  0 AS "CommercialSquareFootage"
+--FROM dbo.PMPERMIT p
+--INNER JOIN dbo.PMPERMITSTATUS ps ON p.PMPERMITSTATUSID = ps.PMPERMITSTATUSID
+--WHERE p.ISSUEDATE >= @StartDate AND
+--      p.ISSUEDATE <= @EndDate AND
+--      p.PMPERMITSTATUSID IN (
+--        '04f087ab-1fc8-474d-b8b4-bc16bea18bcf',
+--        '34fbca57-2bb5-41cf-a191-186870af69bb',
+--        '49a216ba-f358-400b-aa3f-179f1689dc08',
+--        'e14408cd-4249-4fda-9503-f14557b4d641') AND
+--      (SELECT SUM(cfee.AMOUNTPAIDTODATE)
+--        FROM dbo.PMPERMITFEE pfee
+--        INNER JOIN dbo.CACOMPUTEDFEE cfee ON pfee.CACOMPUTEDFEEID = cfee.CACOMPUTEDFEEID
+--        INNER JOIN dbo.CAFEETEMPLATEFEE cfeetemp ON cfee.CAFEETEMPLATEFEEID = cfeetemp.CAFEETEMPLATEFEEID
+--        WHERE pfee.PMPERMITID = p.PMPERMITID AND cfeetemp.CAFEEID IN ('e4fc4ffd-a912-46e0-b7b1-ff51fc941dfb', 'f4b26983-01c4-4fea-9662-f2fa0d82dfb8')) > 0
+
+--UNION ALL
+
+--SELECT
+--  p.PERMITNUMBER AS "PermitNumber",
+--  p.APPLYDATE AS "ApplyDate",
+--  p.ISSUEDATE AS "IssueDate",
+--  p.FINALIZEDATE AS "FinalizeDate",
+--  ps.NAME AS "Status",
+--  'FP&BS' AS "Department",
+--  'Zoning' AS "Category",
+--  'Airport Height' AS "Type",
+--  '' AS "Class",
+--  0 AS "IsNewConstruction",
+--  0 AS "NumberOfDwellingUnits",
+--  p.VALUE AS "ProjectValue",
+--  ISNULL((SELECT SUM(cfee.AMOUNTPAIDTODATE)
+--    FROM dbo.PMPERMITFEE pfee
+--    INNER JOIN dbo.CACOMPUTEDFEE cfee ON pfee.CACOMPUTEDFEEID = cfee.CACOMPUTEDFEEID
+--    INNER JOIN dbo.CAFEETEMPLATEFEE cfeetemp ON cfee.CAFEETEMPLATEFEEID = cfeetemp.CAFEETEMPLATEFEEID
+--    WHERE pfee.PMPERMITID = p.PMPERMITID AND cfeetemp.CAFEEID IN ('e4fc4ffd-a912-46e0-b7b1-ff51fc941dfb')), 0) AS "PermitFees",
+--  0 AS "ResidentialSquareFootage",
+--  0 AS "CommercialSquareFootage"
+--FROM dbo.PMPERMIT p
+--INNER JOIN dbo.PMPERMITSTATUS ps ON p.PMPERMITSTATUSID = ps.PMPERMITSTATUSID
+--WHERE p.ISSUEDATE >= @StartDate AND
+--      p.ISSUEDATE <= @EndDate AND
+--      p.PMPERMITSTATUSID IN (
+--        '04f087ab-1fc8-474d-b8b4-bc16bea18bcf',
+--        '34fbca57-2bb5-41cf-a191-186870af69bb',
+--        '49a216ba-f358-400b-aa3f-179f1689dc08',
+--        'e14408cd-4249-4fda-9503-f14557b4d641') AND
+--      (SELECT SUM(cfee.AMOUNTPAIDTODATE)
+--        FROM dbo.PMPERMITFEE pfee
+--        INNER JOIN dbo.CACOMPUTEDFEE cfee ON pfee.CACOMPUTEDFEEID = cfee.CACOMPUTEDFEEID
+--        INNER JOIN dbo.CAFEETEMPLATEFEE cfeetemp ON cfee.CAFEETEMPLATEFEEID = cfeetemp.CAFEETEMPLATEFEEID
+--        WHERE pfee.PMPERMITID = p.PMPERMITID AND cfeetemp.CAFEEID IN ('e4fc4ffd-a912-46e0-b7b1-ff51fc941dfb')) > 0

@@ -1,0 +1,27 @@
+﻿<form method="post" asp-page="@(ViewContext.RouteData.Values["Page"])" autocomplete="off">
+
+    <input type="hidden" name="ReferrerUrl" id="ReferrerUrl" value="@ViewData["ReferrerUrl"]" />
+
+    <div id="modal" class="modal fade" role="dialog" tabindex="-1">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                @ViewData["Title"]
+            </div>
+
+            <div class="modal-body">
+
+                @RenderBody()
+
+            </div>
+
+            <div class="modal-footer">
+                <a role="button" class="btn btn-md btn-default" data-dismiss="modal">Cancel</a>
+                @RenderSection("button", required: true)
+            </div>
+
+        </div>
+    </div>
+
+
+</form>

@@ -1,0 +1,157 @@
+﻿Logging:
+  LogLevel:
+    Default: Warning
+Serilog:
+  MinimumLevel: Warning
+  Enrich:
+  - FromLogContext
+  - WithMachineName
+  - WithEnvironmentUserName
+  - WithThreadId
+  - WithProcessId
+  - WithProcessName
+  WriteTo:
+  - Name: MSSqlServer
+    Args:
+      connectionString: ##EnerGovAppsConnectionString##
+      tableName: Log
+      schemaName: Logs
+
+AllowedHosts: "*"
+
+ConnectionStrings:
+  EnerGovConfiguration: ##EnerGovAppsConnectionString##
+  EnerGov: ##EnerGovConnectionString##
+  Munis: ##MunisConnectionString##
+  GIS: ##GISConnectionString##
+  LandRecords: ##LandRecordsConnectionString##
+  CountyTax: ##CountyTaxConnectionString#
+  ZollRms: ##ZollRMSConnectionString##
+  Tcm: ##TcmConnectionString##
+
+Email:
+  InternalSender:
+    SmtpHostName: mail2.cityoflacrosse.org
+    SendEmails: true
+  ExternalSender:
+    MailGunApiKey: ##MailGunApiKey##
+    MailGunApiUrl: https://api.mailgun.net/v3
+    MailGunDomain: mg.cityoflacrosse.org
+    SendEmails: true
+
+FireOccupancy:
+  Scanning:
+    InspectionTypeIds:
+    - d1d23f7c-c535-48d5-a935-33b14081fdea
+    - 8c95785d-0e26-4d40-b2a6-33da0bdf6a56
+    - a58cc229-3b42-4a1b-9b68-f26f7f1f6d2e
+    - 229412e1-de26-4bd5-9061-051bfd728d2f
+    ReInspectionNotificationStatusIds:
+    - 9daf0666-1420-4a9c-af19-8b9ebce45769
+  Notification:
+    ErrorNotifications:
+    - sodenk@cityoflacrosse.org
+    - knudsent@cityoflacrosse.org
+    - hoerrest@cityoflacrosse.org
+    - dumezk@cityoflacrosse.org
+    - scheelr@cityoflacrosse.org
+    ChangeInOccupancyEmail:
+      Recipients:
+      - sodenk@cityoflacrosse.org
+      - knudsent@cityoflacrosse.org
+      - hoerrest@cityoflacrosse.org
+      - dumezk@cityoflacrosse.org
+      - scheelr@cityoflacrosse.org
+      FromAddress: energov@cityoflacrosse.org
+    ReferredToFirePreventionEmail:
+      Recipients:
+      - sodenk@cityoflacrosse.org
+      - knudsent@cityoflacrosse.org
+      FromAddress: energov@cityoflacrosse.org
+    ReferredToBuildingSafetyEmail:
+      Recipients:
+      - reinhartd@cityoflacrosse.org
+      - sodenk@cityoflacrosse.org
+      - knudsent@cityoflacrosse.org
+      FromAddress: energov@cityoflacrosse.org
+    InternalReportEmail:
+      Recipients:
+      - bartlea@cityoflacrosse.org
+      FromAddress: energov@cityoflacrosse.org
+    ExternalReportEmail:
+      Recipients: []
+      FromAddress: noreply@mg.cityoflacrosse.org
+    ReInspectionNotificationEmail:
+      Recipients: []
+      FromAddress: energov@cityoflacrosse.org
+  Reporting:
+    FireInspectionLetterReportUrl: "/EnerGov/Production/Prod/_InAppReports/FireInspectionLetter"
+    FireInspectionLetterWithAddressReportUrl: "/EnerGov/Production/Prod/_InAppReports/FireInspectionLetterWithAddress"
+
+Reporting:
+  ReportServerUrl: https://lax-sql1.cityoflacrosse.org/ReportServer?
+  ReportUserName: SSRSAutomation
+  ReportDomain: CITY_DOMAIN
+  ReportPassword: ##SSRSAutomationUserPassword##
+
+Export:
+  MarketDrive:
+    IncludePermitTypes:
+    - 49dbc3c0-eb0b-427f-b05e-edabfa4a3c8c
+    - f8e2e5f8-3e4e-4578-9862-8835a2b1d59a
+    - 73ee5e61-1743-485c-91c6-f317b27751bd
+    - af1acea6-eb57-484b-856c-2bb9b99668ad
+    - 6e9a74ef-c984-44c1-82a5-6ebb21f5faa5
+    - 3f8c444c-5e53-4dec-ae67-66ae79355876
+    - ef171716-60e0-48c1-bd65-9a8ae0f30171
+    - be20d44c-7667-43db-9348-d0c9e46f35b8
+    - 9040613f-5ac1-4819-91cd-6b02158a73ab
+    - 8811c583-9d77-455c-9cfd-ab10d86fc2bd
+    - 7ca58aba-3a5b-4809-9cdb-3d83f78d480e
+    - 4790cba0-30b0-4a03-8716-a06b3c2c5247
+    ExcludePermitWorkClasses:
+    - d4763573-5b70-4153-8612-f1312d752bcc
+    StatusMap:
+    - Name: Issued
+      EnerGovIds:
+      - e14408cd-4249-4fda-9503-f14557b4d641
+      - 04f087ab-1fc8-474d-b8b4-bc16bea18bcf
+    - Name: Completed
+      EnerGovIds:
+      - 49a216ba-f358-400b-aa3f-179f1689dc08
+    - Name: Expired
+      EnerGovIds:
+      - 34fbca57-2bb5-41cf-a191-186870af69bb
+    - Name: Abandoned
+      EnerGovIds:
+      - bbe4f6d0-c085-437a-9ebf-52f2625fcee2
+    ExcludePermitsWithNumberPrefix: CONV-
+    IncludePermitsWithParcelNumberPrefix: 17-
+    NumberOfDaysToPullClosedPermits: 90
+
+Alerting:
+  NewCssPermitAlert:
+    TaskCronExpression: 15 * * * *
+    EnableTask: true
+    SendEmails: true
+    OverrideEmailAddress: ''
+    FromAddress: energov@cityoflacrosse.org
+
+ElasticApm:
+  SecretToken:
+  ServerUrls:
+  - "http://localhost:8200"
+  ServiceName: DRILLBIT_EnerGovApps
+  Environment: production
+
+AzureAd:
+  Instance: https://login.microsoftonline.com/
+  TenantId: ##M365TenantId##
+  ClientId: ##M365ClientId##
+  CallbackPath: /signin-oidc
+  SignedOutCallbackPath: /signout-oidc
+  ClientSecret: ##M365ClientSecret##
+
+GraphBeta:
+  BaseUrl: https://graph.microsoft.com/beta
+  Scopes: User.Read

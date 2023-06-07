@@ -1,0 +1,3 @@
+﻿CREATE SCHEMA [osdba]
+    AUTHORIZATION [dbo];
+

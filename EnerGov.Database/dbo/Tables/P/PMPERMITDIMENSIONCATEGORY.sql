@@ -1,0 +1,123 @@
+﻿CREATE TABLE [dbo].[PMPERMITDIMENSIONCATEGORY] (
+    [PMPERMITDIMENSIONCATEGORYID] CHAR (36)     NOT NULL,
+    [CATEGORY]                    NVARCHAR (50) NOT NULL,
+    [LASTCHANGEDBY]               CHAR (36)     NULL,
+    [LASTCHANGEDON]               DATETIME      CONSTRAINT [DF_PMPermitDimensionCategory_LastChangedOn] DEFAULT (getutcdate()) NOT NULL,
+    [ROWVERSION]                  INT           CONSTRAINT [DF_PMPermitDimensionCategory_RowVersion] DEFAULT ((1)) NOT NULL,
+    CONSTRAINT [PK_PMPermitDimensionCategory] PRIMARY KEY CLUSTERED ([PMPERMITDIMENSIONCATEGORYID] ASC) WITH (FILLFACTOR = 90),
+    CONSTRAINT [FK_PMPERMITDIMENSIONCATEGORY_USERS] FOREIGN KEY ([LASTCHANGEDBY]) REFERENCES [dbo].[USERS] ([SUSERGUID])
+);
+
+
+GO
+
+CREATE TRIGGER [dbo].[TG_PMPERMITDIMENSIONCATEGORY_DELETE]  ON  [dbo].[PMPERMITDIMENSIONCATEGORY]
+  AFTER DELETE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+	INSERT INTO [HISTORYSYSTEMSETUP]
+	(	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT
+			[deleted].[PMPERMITDIMENSIONCATEGORYID],
+			[deleted].[ROWVERSION],
+			GETUTCDATE(),
+			(SELECT dbo.UFN_GET_USERID_FROM_CONTEXT_INFO()),
+			 'Permit Dimension Category Deleted',
+			'',
+			'',
+			'Permit Dimension Category (' + [deleted].[CATEGORY] + ')',
+			'580BCB7D-22C3-424E-B729-8C9E537E0E31',
+			3,
+			1,
+			[deleted].[CATEGORY]
+	FROM	[deleted]
+END
+GO
+
+CREATE TRIGGER [dbo].[TG_PMPERMITDIMENSIONCATEGORY_UPDATE] 
+   ON  [dbo].[PMPERMITDIMENSIONCATEGORY]
+   AFTER UPDATE
+AS 
+BEGIN	
+	SET NOCOUNT ON;
+	INSERT INTO [HISTORYSYSTEMSETUP]
+    (	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT 
+			[inserted].[PMPERMITDIMENSIONCATEGORYID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Dimension Category',
+			[deleted].[CATEGORY],
+			[inserted].[CATEGORY],
+			'Permit Dimension Category (' + [inserted].[CATEGORY] + ')',
+			'580BCB7D-22C3-424E-B729-8C9E537E0E31',
+			2,
+			1,
+			[inserted].[CATEGORY]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].PMPERMITDIMENSIONCATEGORYID = [inserted].PMPERMITDIMENSIONCATEGORYID
+	WHERE	[deleted].[CATEGORY] <> [inserted].[CATEGORY]	
+END
+GO
+
+CREATE TRIGGER [dbo].[TG_PMPERMITDIMENSIONCATEGORY_INSERT] ON [dbo].[PMPERMITDIMENSIONCATEGORY]
+   AFTER INSERT
+AS 
+BEGIN
+	SET NOCOUNT ON;
+	INSERT INTO [HISTORYSYSTEMSETUP]
+    (
+        [ID],
+        [ROWVERSION],
+        [CHANGEDON],
+        [CHANGEDBY],
+        [FIELDNAME],
+        [OLDVALUE],
+        [NEWVALUE],
+        [ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT 
+        [inserted].[PMPERMITDIMENSIONCATEGORYID], 
+        [inserted].[ROWVERSION],
+        GETUTCDATE(),
+        [inserted].[LASTCHANGEDBY],
+        'Permit Dimension Category Added',
+        '',
+        '',
+        'Permit Dimension Category (' + [inserted].[CATEGORY] + ')',
+		'580BCB7D-22C3-424E-B729-8C9E537E0E31',
+		1,
+		1,
+		[inserted].[CATEGORY]
+    FROM [inserted] 
+END

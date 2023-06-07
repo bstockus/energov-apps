@@ -1,0 +1,189 @@
+﻿CREATE TABLE [dbo].[CAFEETEMPLATE] (
+    [CAFEETEMPLATEID]          CHAR (36)      NOT NULL,
+    [CAENTITYID]               INT            NOT NULL,
+    [CAFEETEMPLATENAME]        NVARCHAR (30)  NOT NULL,
+    [CAFEETEMPLATEDESCRIPTION] NVARCHAR (MAX) NULL,
+    [ROWVERSION]               INT            NOT NULL,
+    [LASTCHANGEDON]            DATETIME       NOT NULL,
+    [LASTCHANGEDBY]            CHAR (36)      NOT NULL,
+    CONSTRAINT [PK_CAFeeTemplate] PRIMARY KEY CLUSTERED ([CAFEETEMPLATEID] ASC) WITH (FILLFACTOR = 80),
+    CONSTRAINT [FK_CAFeeTemplate_Entity] FOREIGN KEY ([CAENTITYID]) REFERENCES [dbo].[CAENTITY] ([CAENTITYID]),
+    CONSTRAINT [FK_FeeTemplate_Users] FOREIGN KEY ([LASTCHANGEDBY]) REFERENCES [dbo].[USERS] ([SUSERGUID])
+);
+
+
+GO
+CREATE NONCLUSTERED INDEX [IX_CAFEETEMPLATE_CAFEETEMPLATEID_NAME]
+    ON [dbo].[CAFEETEMPLATE]([CAFEETEMPLATEID] ASC, [CAFEETEMPLATENAME] ASC);
+
+
+GO
+
+CREATE TRIGGER [dbo].[TG_CAFEETEMPLATE_UPDATE] ON [dbo].[CAFEETEMPLATE] 
+	AFTER UPDATE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+		
+	-- Check if LASTCHANGEDBY contains VALID User Id and it Exists in USERS table, this is in replacement to foreign key reference of CAFEETEMPLATE table with USERS table.
+	IF EXISTS (SELECT * FROM inserted 
+		LEFT OUTER JOIN USERS WITH (NOLOCK) ON USERS.SUSERGUID = inserted.LASTCHANGEDBY
+		WHERE inserted.LASTCHANGEDBY IS NOT NULL AND USERS.SUSERGUID IS NULL)
+	BEGIN		
+		RAISERROR ('The INSERT or UPDATE statement conflicted with the FOREIGN KEY to table USERS', 16, 0);
+		ROLLBACK;
+		RETURN;
+	END	
+
+    INSERT INTO [HISTORYSYSTEMSETUP]
+    (	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT
+			[inserted].[CAFEETEMPLATEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Template Name',
+			[deleted].[CAFEETEMPLATENAME],
+			[inserted].[CAFEETEMPLATENAME],
+			'Fee Template (' + [inserted].[CAFEETEMPLATENAME] + ')',
+			'CCA2295B-072A-494B-9C11-91424F59BC16',
+			2,
+			1,
+			[inserted].[CAFEETEMPLATENAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[CAFEETEMPLATEID] = [inserted].[CAFEETEMPLATEID]
+	WHERE	[deleted].[CAFEETEMPLATENAME] <> [inserted].[CAFEETEMPLATENAME]
+	
+	UNION ALL
+	SELECT
+			[inserted].[CAFEETEMPLATEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Template Description',
+			ISNULL([deleted].[CAFEETEMPLATEDESCRIPTION],'[none]'),
+			ISNULL([inserted].[CAFEETEMPLATEDESCRIPTION],'[none]'),
+			'Fee Template (' + [inserted].[CAFEETEMPLATENAME] + ')',
+			'CCA2295B-072A-494B-9C11-91424F59BC16',
+			2,
+			1,
+			[inserted].[CAFEETEMPLATENAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[CAFEETEMPLATEID] = [inserted].[CAFEETEMPLATEID]
+	WHERE	ISNULL([deleted].[CAFEETEMPLATEDESCRIPTION], '') <> ISNULL([inserted].[CAFEETEMPLATEDESCRIPTION], '')	
+		
+	UNION ALL
+	SELECT
+			[inserted].[CAFEETEMPLATEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Entity',
+			[CAENTITY_DELETED].[NAME],
+			[CAENTITY_INSERTED].[NAME],
+			'Fee Template (' + [inserted].[CAFEETEMPLATENAME] + ')',
+			'CCA2295B-072A-494B-9C11-91424F59BC16',
+			2,
+			1,
+			[inserted].[CAFEETEMPLATENAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[CAFEETEMPLATEID] = [inserted].[CAFEETEMPLATEID]
+			LEFT JOIN [CAENTITY] [CAENTITY_INSERTED] WITH (NOLOCK) ON [CAENTITY_INSERTED].[CAENTITYID] = [inserted].[CAENTITYID]
+			LEFT JOIN [CAENTITY] [CAENTITY_DELETED] WITH (NOLOCK) ON [CAENTITY_DELETED].[CAENTITYID] = [deleted].[CAENTITYID]
+	WHERE	[deleted].[CAENTITYID] <> [inserted].[CAENTITYID]	
+END
+GO
+
+CREATE TRIGGER [dbo].[TG_CAFEETEMPLATE_INSERT] ON [dbo].[CAFEETEMPLATE]
+   FOR INSERT
+AS 
+BEGIN
+	SET NOCOUNT ON;
+	-- Check if LASTCHANGEDBY contains VALID User Id and it Exists in USERS table, this is in replacement to foreign key reference of CAFEETEMPLATE table with USERS table.
+	IF EXISTS (SELECT * FROM inserted 
+		LEFT OUTER JOIN USERS WITH (NOLOCK) ON USERS.SUSERGUID = inserted.LASTCHANGEDBY
+		WHERE inserted.LASTCHANGEDBY IS NOT NULL AND USERS.SUSERGUID IS NULL)
+	BEGIN		
+		RAISERROR ('The INSERT or UPDATE statement conflicted with the FOREIGN KEY to table USERS', 16, 0);
+		ROLLBACK;
+		RETURN;
+	END
+
+    INSERT INTO [HISTORYSYSTEMSETUP]
+    (	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT
+			[inserted].[CAFEETEMPLATEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Fee Template Added',
+			'',
+			'',
+			'Fee Template (' + [inserted].[CAFEETEMPLATENAME] + ')',
+			'CCA2295B-072A-494B-9C11-91424F59BC16',
+			1,
+			1,
+			[inserted].[CAFEETEMPLATENAME]
+	FROM	[inserted]	
+END
+GO
+
+CREATE TRIGGER [dbo].[TG_CAFEETEMPLATE_DELETE] ON [dbo].[CAFEETEMPLATE]
+   AFTER DELETE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+
+    INSERT INTO [HISTORYSYSTEMSETUP]
+    (	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT
+			[deleted].[CAFEETEMPLATEID],
+			[deleted].[ROWVERSION],
+			GETUTCDATE(),
+			(SELECT dbo.UFN_GET_USERID_FROM_CONTEXT_INFO()),
+			'Fee Template Deleted',
+			'',
+			'',
+			'Fee Template (' + [deleted].[CAFEETEMPLATENAME] + ')',
+			'CCA2295B-072A-494B-9C11-91424F59BC16',
+			3,
+			1,
+			[deleted].[CAFEETEMPLATENAME]
+	FROM	[deleted]
+END

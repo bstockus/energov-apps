@@ -1,0 +1,29 @@
+﻿
+CREATE PROCEDURE [dbo].[GETERPORTALCONFIGURATION]	
+AS
+BEGIN
+	DECLARE @ERFileUploadBufferSize int
+	DECLARE @ERUploadPath nvarchar(500)			
+	DECLARE @ERProjectNumOfDaySearch int
+	DECLARE @ERProjectAutoSearch bit
+	DECLARE @ERApplySubmitForReviewRule bit
+	DECLARE @ERSubmitForReviewConfirmMessage nvarchar(500)
+	DECLARE @ERPortalHelpURL nvarchar(500)
+	DECLARE @EREnablePortalAcknowledge bit
+	SELECT @ERFileUploadBufferSize = INTVALUE FROM SETTINGS WHERE NAME = 'ERFILEUPLOADBUFFERSIZE'
+	SELECT @ERUploadPath = STRINGVALUE FROM SETTINGS WHERE NAME = 'ERUPLOADPATH'		
+	SELECT @ERProjectNumOfDaySearch = INTVALUE FROM SETTINGS WHERE NAME = 'ERProjectNumOfDaySearch'		
+	SELECT @ERProjectAutoSearch = BITVALUE FROM SETTINGS WHERE NAME = 'ERProjectAutoSearch'		
+	SELECT @ERApplySubmitForReviewRule = BITVALUE FROM SETTINGS WHERE NAME = 'ERApplySubmitForReviewRule'		
+	SELECT @ERSubmitForReviewConfirmMessage = STRINGVALUE FROM SETTINGS WHERE NAME = 'ERSubmitForReviewConfirmMessage'		
+	SELECT @ERPortalHelpURL = STRINGVALUE FROM SETTINGS WHERE NAME = 'ERPortalHelpURL'		
+	SELECT @EREnablePortalAcknowledge = BITVALUE FROM SETTINGS WHERE NAME = 'EREnablePortalAcknowledge'		
+	SELECT	@ERFileUploadBufferSize AS ERFILEUPLOADBUFFERSIZE, 
+			@ERUploadPath AS ERUPLOADPATH, 
+			@ERProjectNumOfDaySearch AS ERPROJECTNUMOFDAYSEARCH,
+			@ERProjectAutoSearch AS ERPROJECTAUTOSEARCH,
+			@ERApplySubmitForReviewRule AS ERAPPLYSUBMITFORREVIEWRULE,
+			@ERSubmitForReviewConfirmMessage AS ERSUBMITFORREVIEWCONFIRMMESSAGE,
+			@ERPortalHelpURL AS ERPORTALHELPURL,
+			@EREnablePortalAcknowledge AS ERENABLEPORTALACKNOWLEDGE
+END

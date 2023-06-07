@@ -1,0 +1,72 @@
+﻿@page
+@using EnerGov.Web.Common.Infrastructure
+@model ResetParcelOwnerContactsModel
+
+@{
+    this.UseLayout("Reset Parcel Owner Contacts");
+}
+
+@section Header {
+    Reset Parcel Owner Contacts
+}
+
+@section Breadcrumbs {
+    <li>Utilities</li>
+    <li class="active">Reset Parcel Owner Contacts</li>
+}
+
+@if (!string.IsNullOrWhiteSpace(Model.Message)) {
+    <alert context="Info">@Model.Message</alert>
+}
+
+
+<form method="post">
+
+    <bs-row>
+
+        <bs-col xs="12">
+
+            <lte-box>
+
+                <lte-box-header>
+                    <lte-box-title>Reset Parcel Owner Contacts</lte-box-title>
+                </lte-box-header>
+
+                <lte-box-body>
+
+                    <bs-form-group>
+                        <label>Parcel Number</label>
+                        <input type="text"
+                               required
+                               asp-for="ParcelNumber"
+                               placeholder="Parcel Number" />
+                        <help-block></help-block>
+                    </bs-form-group>
+
+                </lte-box-body>
+
+                <lte-box-footer>
+
+                    <span class="pull-right">
+
+                        <button bs-button
+                                bs-context="@ButtonContext.Danger"
+                                bs-size="@Size.Small"
+                                role="button"
+                                type="submit">
+
+                            Reset
+
+                        </button>
+
+                    </span>
+
+                </lte-box-footer>
+
+            </lte-box>
+
+        </bs-col>
+
+    </bs-row>
+
+</form>

@@ -1,0 +1,223 @@
+﻿CREATE TABLE [dbo].[CUSTOMFIELDTEMPLATE] (
+    [GCUSTOMFIELDTEMPLATE]           CHAR (36)      NOT NULL,
+    [FKCUSTOMFIELDLAYOUTCONTROLTYPE] INT            NOT NULL,
+    [TEMPLATENAME]                   NVARCHAR (50)  NOT NULL,
+    [SDEFAULTVALUE]                  NVARCHAR (50)  NULL,
+    [SFIELDTIP]                      NVARCHAR (MAX) NULL,
+    [ISACTIVE]                       BIT            NULL,
+    [BALLOWMULTIPLESELECTIONS]       BIT            NULL,
+    [LASTCHANGEDBY]                  CHAR (36)      NULL,
+    [LASTCHANGEDON]                  DATETIME       CONSTRAINT [DF_CUSTOMFIELDTEMPLATE_LastChangedOn] DEFAULT (getutcdate()) NOT NULL,
+    [ROWVERSION]                     INT            CONSTRAINT [DF_CUSTOMFIELDTEMPLATE_RowVersion] DEFAULT ((1)) NOT NULL,
+    CONSTRAINT [PK_CUSTOMFIELDTEMPLATE] PRIMARY KEY CLUSTERED ([GCUSTOMFIELDTEMPLATE] ASC) WITH (FILLFACTOR = 80),
+    CONSTRAINT [FK_CUSTOMFIELDTEMPLATE_CFLCT] FOREIGN KEY ([FKCUSTOMFIELDLAYOUTCONTROLTYPE]) REFERENCES [dbo].[CUSTOMFIELDLAYOUTCONTROLTYPE] ([ICUSTOMFIELDLAYOUTCONTROLTYPE])
+);
+
+
+GO
+CREATE NONCLUSTERED INDEX [IX_CUSTOMFIELDTEMPLATE_GCUSTOMFIELDTEMPLATE_TEMPLATENAME]
+    ON [dbo].[CUSTOMFIELDTEMPLATE]([GCUSTOMFIELDTEMPLATE] ASC, [TEMPLATENAME] ASC);
+
+
+GO
+
+CREATE TRIGGER [dbo].[TG_CUSTOMFIELDTEMPLATE_DELETE] ON [dbo].[CUSTOMFIELDTEMPLATE]
+   AFTER DELETE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+
+    INSERT INTO [HISTORYSYSTEMSETUP]
+    (	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+
+	SELECT
+			[deleted].[GCUSTOMFIELDTEMPLATE],
+			[deleted].[ROWVERSION],
+			GETUTCDATE(),
+			(SELECT dbo.UFN_GET_USERID_FROM_CONTEXT_INFO()),
+			'Custom Field Template Deleted',
+			'',
+			'',
+			'Custom Field Template (' + [deleted].[TEMPLATENAME] + ')',
+			'73C11018-1EAF-43EA-8121-8C3DF61B3862',
+			3,
+			1,
+			[deleted].[TEMPLATENAME]
+	FROM	[deleted]
+END
+GO
+
+CREATE TRIGGER [dbo].[TG_CUSTOMFIELDTEMPLATE_INSERT] ON [dbo].[CUSTOMFIELDTEMPLATE]
+   FOR INSERT
+AS 
+BEGIN
+	SET NOCOUNT ON;
+	-- Check if LASTCHANGEDBY contains VALID User Id and it Exists in USERS table, this is in replacement to foreign key reference of CUSTOMFIELDTEMPLATE table with USERS table.
+	IF EXISTS (SELECT * FROM inserted 
+		LEFT OUTER JOIN USERS WITH (NOLOCK) ON USERS.SUSERGUID = inserted.LASTCHANGEDBY
+		WHERE inserted.LASTCHANGEDBY IS NOT NULL AND USERS.SUSERGUID IS NULL)
+	BEGIN		
+		RAISERROR ('The INSERT or UPDATE statement conflicted with the FOREIGN KEY to table USERS', 16, 0);
+		ROLLBACK;
+		RETURN;
+	END
+
+    INSERT INTO [HISTORYSYSTEMSETUP]
+    (	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT
+			[inserted].[GCUSTOMFIELDTEMPLATE],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Custom Field Template Added',
+			'',
+			'',
+			'Custom Field Template (' + [inserted].[TEMPLATENAME] + ')',
+			'73C11018-1EAF-43EA-8121-8C3DF61B3862',
+			1,
+			1,
+			[inserted].[TEMPLATENAME]
+	FROM	[inserted]	
+END
+GO
+
+CREATE TRIGGER [TG_CUSTOMFIELDTEMPLATE_UPDATE] ON CUSTOMFIELDTEMPLATE
+   AFTER UPDATE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+	-- Check if LASTCHANGEDBY contains VALID User Id and it Exists in USERS table, this is in replacement to foreign key reference with USERS table.
+	IF EXISTS (SELECT * FROM inserted 
+		LEFT OUTER JOIN USERS WITH (NOLOCK) ON USERS.SUSERGUID = inserted.LASTCHANGEDBY
+		WHERE inserted.LASTCHANGEDBY IS NOT NULL AND USERS.SUSERGUID IS NULL)
+	BEGIN		
+		RAISERROR ('The INSERT or UPDATE statement conflicted with the FOREIGN KEY to table USERS', 16, 0);
+		ROLLBACK;
+		RETURN;
+	END
+    INSERT INTO [HISTORYSYSTEMSETUP]
+    (	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	
+	SELECT
+			[inserted].[GCUSTOMFIELDTEMPLATE],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Template Name',
+			[deleted].[TEMPLATENAME],
+			[inserted].[TEMPLATENAME],
+			'Custom Field Template (' + [inserted].[TEMPLATENAME] + ')',
+			'73C11018-1EAF-43EA-8121-8C3DF61B3862',
+			2,
+			1,
+			[inserted].[TEMPLATENAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[GCUSTOMFIELDTEMPLATE] = [inserted].[GCUSTOMFIELDTEMPLATE]
+	WHERE	[deleted].[TEMPLATENAME] <> [inserted].[TEMPLATENAME]
+	UNION ALL
+	SELECT
+			[inserted].[GCUSTOMFIELDTEMPLATE],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Default Value',
+			ISNULL([deleted].[SDEFAULTVALUE], '[none]'),
+			ISNULL([inserted].[SDEFAULTVALUE], '[none]'),
+			'Custom Field Template (' + [inserted].[TEMPLATENAME] + ')',
+			'73C11018-1EAF-43EA-8121-8C3DF61B3862',
+			2,
+			1,
+			[inserted].[TEMPLATENAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[GCUSTOMFIELDTEMPLATE] = [inserted].[GCUSTOMFIELDTEMPLATE]
+	WHERE	ISNULL([deleted].[SDEFAULTVALUE],'') <> ISNULL([inserted].[SDEFAULTVALUE],'')
+	UNION ALL
+	SELECT
+			[inserted].[GCUSTOMFIELDTEMPLATE],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Field Tip',
+			ISNULL([deleted].[SFIELDTIP], '[none]'),
+			ISNULL([inserted].[SFIELDTIP], '[none]'),
+			'Custom Field Template (' + ISNULL([inserted].[TEMPLATENAME], '[none]') + ')',
+			'73C11018-1EAF-43EA-8121-8C3DF61B3862',
+			2,
+			1,
+			[inserted].[TEMPLATENAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[GCUSTOMFIELDTEMPLATE] = [inserted].[GCUSTOMFIELDTEMPLATE]
+	WHERE	ISNULL([deleted].[SFIELDTIP],'') <> ISNULL([inserted].[SFIELDTIP],'')
+	UNION ALL
+	SELECT
+			[inserted].[GCUSTOMFIELDTEMPLATE],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Active Flag',
+			CASE [deleted].[ISACTIVE] WHEN 1 THEN 'Yes' WHEN 0 THEN 'No' ELSE '[none]' END,
+			CASE [inserted].[ISACTIVE] WHEN 1 THEN 'Yes' WHEN 0 THEN 'No' ELSE '[none]' END,
+			'Custom Field Template (' + ISNULL([inserted].[TEMPLATENAME], '[none]') + ')',
+			'73C11018-1EAF-43EA-8121-8C3DF61B3862',
+			2,
+			1,
+			[inserted].[TEMPLATENAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[GCUSTOMFIELDTEMPLATE] = [inserted].[GCUSTOMFIELDTEMPLATE]
+	WHERE	([deleted].[ISACTIVE] <> [inserted].[ISACTIVE]) OR ([deleted].[ISACTIVE] IS NULL AND [inserted].[ISACTIVE] IS NOT NULL)
+			OR ([deleted].[ISACTIVE] IS NOT NULL AND [inserted].[ISACTIVE] IS NULL)
+	UNION ALL
+	SELECT
+			[inserted].[GCUSTOMFIELDTEMPLATE],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Allow Multiple Selections Flag',
+			CASE [deleted].[BALLOWMULTIPLESELECTIONS] WHEN 1 THEN 'Yes' WHEN 0 THEN 'No' ELSE '[none]' END,
+			CASE [inserted].[BALLOWMULTIPLESELECTIONS] WHEN 1 THEN 'Yes' WHEN 0 THEN 'No' ELSE '[none]' END,
+			'Custom Field Template (' + ISNULL([inserted].[TEMPLATENAME], '[none]') + ')',
+			'73C11018-1EAF-43EA-8121-8C3DF61B3862',
+			2,
+			1,
+			[inserted].[TEMPLATENAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[GCUSTOMFIELDTEMPLATE] = [inserted].[GCUSTOMFIELDTEMPLATE]
+	WHERE	([deleted].[BALLOWMULTIPLESELECTIONS] <> [inserted].[BALLOWMULTIPLESELECTIONS]) OR ([deleted].[BALLOWMULTIPLESELECTIONS] IS NULL AND [inserted].[BALLOWMULTIPLESELECTIONS] IS NOT NULL)
+			OR ([deleted].[BALLOWMULTIPLESELECTIONS] IS NOT NULL AND [inserted].[BALLOWMULTIPLESELECTIONS] IS NULL)
+END

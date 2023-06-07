@@ -1,0 +1,254 @@
+﻿CREATE TABLE [dbo].[SETTINGS] (
+    [SETTINGID]     CHAR (36)       NOT NULL,
+    [NAME]          NVARCHAR (50)   NOT NULL,
+    [BITVALUE]      BIT             CONSTRAINT [DF_Settings_bBit] DEFAULT ((0)) NULL,
+    [STRINGVALUE]   NVARCHAR (4000) CONSTRAINT [DF_Settings_sNvar] DEFAULT (N'None') NULL,
+    [INTVALUE]      INT             NULL,
+    [IMAGEVALUE]    VARBINARY (MAX) NULL,
+    [LASTCHANGEDBY] CHAR (36)       NULL,
+    [LASTCHANGEDON] DATETIME        CONSTRAINT [DF_SETTINGS_LastChangedOn] DEFAULT (getutcdate()) NOT NULL,
+    [ROWVERSION]    INT             CONSTRAINT [DF_SETTINGS_RowVersion] DEFAULT ((1)) NOT NULL,
+    CONSTRAINT [PK_Setting] PRIMARY KEY CLUSTERED ([SETTINGID] ASC) WITH (FILLFACTOR = 80)
+);
+
+
+GO
+CREATE NONCLUSTERED INDEX [NCIDX_Settings_Name]
+    ON [dbo].[SETTINGS]([NAME] ASC)
+    INCLUDE([STRINGVALUE], [BITVALUE], [INTVALUE]);
+
+
+GO
+
+CREATE TRIGGER [TG_SETTINGS_INSERTUPDATEDELETE_SERVICEBUSTENANT] ON  [SETTINGS]
+   AFTER INSERT, UPDATE, DELETE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+	
+	DECLARE @oldValue NVARCHAR(4000),
+	@newValue NVARCHAR(4000),
+	@enableTriggersFlag BIT = 0;
+	
+	SELECT @oldValue = ISNULL([STRINGVALUE], '') FROM [Deleted] WHERE [NAME] = 'ServiceBusTenant'
+	SELECT @newValue = ISNULL([STRINGVALUE], '') FROM [Inserted] WHERE [NAME] = 'ServiceBusTenant'
+
+	--We only want to enable/disable the Elastic Stage triggers if the bus tenant was changed
+	--If there is a bus tenant value present, enable the triggers.  Otherwise, disable.
+	IF (@oldValue <> @newValue)
+		BEGIN
+			IF (LEN(@newValue) > 0)
+				SET @enableTriggersFlag = 1;
+
+			EXEC [uspEnableElasticSearchTriggers] @enableTriggersFlag
+
+		END
+
+END
+GO
+CREATE TRIGGER [TG_SETTINGS_INSERT] ON [dbo].[SETTINGS]
+   AFTER INSERT
+AS 
+BEGIN
+	SET NOCOUNT ON;	
+	DECLARE @SETTINGSLASTCHANGEDBY CHAR(36) = (CASE WHEN EXISTS(SELECT 1 FROM USERS WHERE SUSERGUID = '2FB39FA9-DF43-41D7-BB8B-C91836D30987')
+																	THEN '2FB39FA9-DF43-41D7-BB8B-C91836D30987'
+																	ELSE 'a24df514-c3c1-49c7-8784-0b2bf58c79fa'
+															END)
+
+    INSERT INTO [HISTORYSYSTEMSETUP]
+    (	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT
+			[inserted].[SETTINGID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			ISNULL([inserted].[LASTCHANGEDBY],@SETTINGSLASTCHANGEDBY),
+			'System Settings Added',
+			'',
+			'',
+			ISNULL([SETTINGSMETADATA].[FRIENDLYNAME],[inserted].[NAME]),
+			'09A43BA0-3A36-4D2B-95AE-A2C13B97185A',
+			1,
+			1,
+			ISNULL([SETTINGSMETADATA].[FRIENDLYNAME],[inserted].[NAME])
+	FROM	[inserted]	
+	LEFT JOIN [SETTINGSMETADATA] ON [SETTINGSMETADATA].[SETTINGNAME] = [inserted].[NAME]
+END
+GO
+CREATE TRIGGER [TG_SETTINGS_UPDATE] ON [dbo].[SETTINGS]
+   AFTER UPDATE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+	DECLARE @SETTINGSLASTCHANGEDBY CHAR(36) = (CASE WHEN EXISTS(SELECT 1 FROM USERS WHERE SUSERGUID = '2FB39FA9-DF43-41D7-BB8B-C91836D30987')
+																	THEN '2FB39FA9-DF43-41D7-BB8B-C91836D30987'
+																	ELSE 'a24df514-c3c1-49c7-8784-0b2bf58c79fa'
+															END)
+
+	DECLARE @SYSTEMSETTINGFORMID CHAR(36) = '09A43BA0-3A36-4D2B-95AE-A2C13B97185A' /*System Settings FormId*/
+
+	DECLARE @CONTEXTINFO VARCHAR(50) = (SELECT dbo.UFN_GET_CASE_FROM_CONTEXT_INFO())
+	DECLARE @FORMID	CHAR(36) = CASE WHEN @CONTEXTINFO = 'GIS Settings' 
+										THEN '48A09E50-2D80-4164-8417-C6C1F5655C23' /*GIS Settings FormId*/
+									WHEN @CONTEXTINFO = 'Windows Service Task' 
+										THEN '0235B443-1680-47B9-B273-484A05D57986' /*Windows Service Task FormId*/
+									WHEN @CONTEXTINFO = 'Integration Settings' 
+										THEN '6115EBA3-71FF-4CEA-AB43-759135A83E0F' /*Integration Settings FormId*/
+									ELSE @SYSTEMSETTINGFORMID
+							   END
+
+    INSERT INTO [HISTORYSYSTEMSETUP]
+    (	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT
+			[inserted].[SETTINGID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			ISNULL([inserted].[LASTCHANGEDBY],@SETTINGSLASTCHANGEDBY),
+			'Bit Value Flag',
+			CASE [deleted].[BITVALUE] WHEN 1 THEN 'Yes' WHEN 0 THEN 'No' ELSE '[none]' END,
+			CASE [inserted].[BITVALUE] WHEN 1 THEN 'Yes' WHEN 0 THEN 'No' ELSE '[none]' END,
+			ISNULL([SETTINGSMETADATA].[FRIENDLYNAME],[inserted].[NAME]),
+
+			/*We have called below function because from EnerGov SilverLight application, the settings are saved from System Settings screen with it's FormId. But now, in HTML5 System setup 
+			application, we have created separate Integration Settings screen with its own FormId. So now, we have to check if the current FormId is of System Setting screen (because of SilverLight
+			screen), we have to specifically check the setting name to set FormId of Integration Settings screen for those settings (which we will get from function).*/
+			CASE WHEN @FORMID = @SYSTEMSETTINGFORMID THEN [dbo].[UFN_SETTINGS_GET_FORMNAME_BASED_ON_SETTING_NAME]([inserted].[NAME], @FORMID) ELSE @FORMID END,
+			2,
+			1,
+			ISNULL([SETTINGSMETADATA].[FRIENDLYNAME],[inserted].[NAME])
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[SETTINGID] = [inserted].[SETTINGID]
+			LEFT JOIN [SETTINGSMETADATA] ON [SETTINGSMETADATA].[SETTINGNAME] = [inserted].[NAME]
+	WHERE	([deleted].[BITVALUE] <> [inserted].[BITVALUE])
+			OR ([deleted].[BITVALUE] IS NULL AND [inserted].[BITVALUE] <> NULL)
+			OR ([deleted].[BITVALUE] <> NULL AND [inserted].[BITVALUE] IS NULL)	
+	UNION ALL
+
+	SELECT
+			[inserted].[SETTINGID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			ISNULL([inserted].[LASTCHANGEDBY],@SETTINGSLASTCHANGEDBY),
+			'String Value',
+			CASE [SETTINGSMETADATA].[ISINTBASED] WHEN 0 THEN (SELECT [dbo].[UFN_GET_SETTING_STRING_LOOKUP_NAME]([deleted].[NAME],[deleted].[STRINGVALUE])) ELSE CASE [SETTINGSMETADATA].[ISPASSWORDBASED]	WHEN 1 THEN '*****'	ELSE ISNULL([deleted].[STRINGVALUE],'[none]') END END,
+			CASE [SETTINGSMETADATA].[ISINTBASED] WHEN 0 THEN (SELECT [dbo].[UFN_GET_SETTING_STRING_LOOKUP_NAME]([inserted].[NAME],[inserted].[STRINGVALUE])) ELSE CASE [SETTINGSMETADATA].[ISPASSWORDBASED]	WHEN 1 THEN '*****'	ELSE ISNULL([inserted].[STRINGVALUE],'[none]') END END,
+			ISNULL([SETTINGSMETADATA].[FRIENDLYNAME],[inserted].[NAME]),
+			CASE WHEN @FORMID = @SYSTEMSETTINGFORMID THEN [dbo].[UFN_SETTINGS_GET_FORMNAME_BASED_ON_SETTING_NAME]([inserted].[NAME], @FORMID) ELSE @FORMID END,
+			2,
+			1,
+			ISNULL([SETTINGSMETADATA].[FRIENDLYNAME],[inserted].[NAME])
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[SETTINGID] = [inserted].[SETTINGID]
+			LEFT JOIN [SETTINGSMETADATA] ON [SETTINGSMETADATA].[SETTINGNAME] = [inserted].[NAME]
+	WHERE	ISNULL([deleted].[STRINGVALUE], '') <> ISNULL([inserted].[STRINGVALUE], '')
+	UNION ALL
+
+	SELECT
+			[inserted].[SETTINGID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			ISNULL([inserted].[LASTCHANGEDBY],@SETTINGSLASTCHANGEDBY),
+			'Integer Value',
+			CASE [SETTINGSMETADATA].[ISINTBASED] WHEN 1 THEN (SELECT [dbo].[UFN_GET_SETTING_INT_LOOKUP_NAME]([deleted].[NAME],[deleted].[INTVALUE])) ELSE ISNULL(CONVERT(NVARCHAR(MAX),[deleted].[INTVALUE]),'[none]') END,
+			CASE [SETTINGSMETADATA].[ISINTBASED] WHEN 1 THEN (SELECT [dbo].[UFN_GET_SETTING_INT_LOOKUP_NAME]([inserted].[NAME],[inserted].[INTVALUE])) ELSE ISNULL(CONVERT(NVARCHAR(MAX),[inserted].[INTVALUE]),'[none]') END,
+			ISNULL([SETTINGSMETADATA].[FRIENDLYNAME],[inserted].[NAME]),
+			CASE WHEN @FORMID = @SYSTEMSETTINGFORMID THEN [dbo].[UFN_SETTINGS_GET_FORMNAME_BASED_ON_SETTING_NAME]([inserted].[NAME], @FORMID) ELSE @FORMID END,
+			2,
+			1,
+			ISNULL([SETTINGSMETADATA].[FRIENDLYNAME],[inserted].[NAME])
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[SETTINGID] = [inserted].[SETTINGID]
+			LEFT JOIN [SETTINGSMETADATA] ON [SETTINGSMETADATA].[SETTINGNAME] = [inserted].[NAME]
+	WHERE	ISNULL([deleted].[INTVALUE], '') <> ISNULL([inserted].[INTVALUE], '')
+	UNION ALL
+
+	SELECT
+			[inserted].[SETTINGID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			ISNULL([inserted].[LASTCHANGEDBY],@SETTINGSLASTCHANGEDBY),
+			'Image Value',
+			CASE WHEN [deleted].[IMAGEVALUE] IS NULL THEN '[none]' ELSE 'Icon' END,
+			CASE WHEN [inserted].[IMAGEVALUE] IS NULL THEN '[none]' ELSE 'Icon' END,
+			ISNULL([SETTINGSMETADATA].[FRIENDLYNAME],[inserted].[NAME]),
+			CASE WHEN @FORMID = @SYSTEMSETTINGFORMID THEN [dbo].[UFN_SETTINGS_GET_FORMNAME_BASED_ON_SETTING_NAME]([inserted].[NAME], @FORMID) ELSE @FORMID END,
+			2,
+			1,
+			ISNULL([SETTINGSMETADATA].[FRIENDLYNAME],[inserted].[NAME])
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[SETTINGID] = [inserted].[SETTINGID]
+			LEFT JOIN [SETTINGSMETADATA] ON [SETTINGSMETADATA].[SETTINGNAME] = [inserted].[NAME]
+	WHERE	[deleted].[IMAGEVALUE] <> [inserted].[IMAGEVALUE] OR 
+			([deleted].[IMAGEVALUE] IS NULL AND [inserted].[IMAGEVALUE] IS NOT NULL) OR
+			([deleted].[IMAGEVALUE] IS NOT NULL AND [inserted].[IMAGEVALUE] IS NULL)
+END
+GO
+CREATE TRIGGER [TG_SETTINGS_DELETE] ON [dbo].[SETTINGS]
+   AFTER DELETE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+	DECLARE @SETTINGSLASTCHANGEDBY CHAR(36) = (CASE WHEN EXISTS(SELECT 1 FROM USERS WHERE SUSERGUID = '2FB39FA9-DF43-41D7-BB8B-C91836D30987')
+																			THEN '2FB39FA9-DF43-41D7-BB8B-C91836D30987'
+																			ELSE 'a24df514-c3c1-49c7-8784-0b2bf58c79fa'
+																	END)
+
+	DECLARE @FORMID	CHAR(36) = CASE WHEN (SELECT dbo.UFN_GET_CASE_FROM_CONTEXT_INFO()) = 'GIS Settings' 
+										THEN '48A09E50-2D80-4164-8417-C6C1F5655C23' /*GIS Settings FormId*/
+									ELSE '09A43BA0-3A36-4D2B-95AE-A2C13B97185A' /*System Settings FormId*/
+							   END
+
+    INSERT INTO [HISTORYSYSTEMSETUP]
+    (	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )	
+	SELECT
+			[deleted].[SETTINGID],
+			[deleted].[ROWVERSION],
+			GETUTCDATE(),
+			ISNULL((SELECT dbo.UFN_GET_USERID_FROM_CONTEXT_INFO()),@SETTINGSLASTCHANGEDBY),
+			'System Settings Deleted',
+			'',
+			'',
+			ISNULL([SETTINGSMETADATA].[FRIENDLYNAME],[deleted].[NAME]),
+			@FORMID,
+			3,
+			1,
+			ISNULL([SETTINGSMETADATA].[FRIENDLYNAME],[deleted].[NAME])
+	FROM	[deleted]
+	LEFT JOIN [SETTINGSMETADATA] ON [SETTINGSMETADATA].[SETTINGNAME] = [deleted].[NAME]
+END

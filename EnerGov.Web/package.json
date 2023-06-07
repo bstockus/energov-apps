@@ -1,0 +1,25 @@
+{
+  "name": "energov-web-app",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@microsoft/signalr": "^3.0.0",
+    "admin-lte": "^2.4.8",
+    "bootstrap-validator": "^0.11.9",
+    "jquery": "^3.2.1",
+    "lodash": "^4.15.0",
+    "vue": "2.5.17"
+  },
+  "devDependencies": {
+    "del": "^4.1.0",
+    "gulp": "^4.0.1",
+    "gulp-concat": "^2.6.1",
+    "gulp-cssmin": "^0.2.0",
+    "gulp-htmlmin": "^5.0.1",
+    "gulp-uglify": "^3.0.2",
+    "merge-stream": "^1.0.1"
+  },
+  "scripts": {
+    "gulp": "gulp"
+  }
+}

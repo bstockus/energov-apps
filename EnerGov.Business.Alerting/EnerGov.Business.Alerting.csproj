@@ -1,0 +1,55 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="NewCssPermitAlerts\Templates\NewCssPermitAlert.html.liquid" />
+    <None Remove="NewCssPermitAlerts\Templates\NewCssPermitAlert.txt.liquid" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="NewCssPermitAlerts\Templates\NewCssPermitAlert.html.liquid" />
+    <EmbeddedResource Include="NewCssPermitAlerts\Templates\NewCssPermitAlert.txt.liquid" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Autofac" Version="6.3.0" />
+    <PackageReference Include="Dapper" Version="2.0.123" />
+    <PackageReference Include="EmailValidation" Version="1.0.6" />
+
+    <PackageReference Include="Lax.Business.Authorization.Abstractions" Version="8.1.0" />
+
+    <PackageReference Include="Lax.Business.Bus.Authorization" Version="8.1.0" />
+    <PackageReference Include="Lax.Business.Bus.Logging" Version="8.1.0" />
+    <PackageReference Include="Lax.Business.Bus.UnitOfWork" Version="8.1.0" />
+    <PackageReference Include="Lax.Business.Bus.Validation" Version="8.1.0" />
+
+    <PackageReference Include="Lax.AutoFac.AutoMapper" Version="8.1.0" />
+    <PackageReference Include="Lax.AutoFac.FluentValidation" Version="8.1.0" />
+    <PackageReference Include="Lax.AutoFac.MediatR" Version="8.1.0" />
+    <PackageReference Include="Lax.AutoFac.NodaTime" Version="8.1.0" />
+    <PackageReference Include="Lax.Cli.Common" Version="8.1.0" />
+
+    <PackageReference Include="MailKit" Version="3.1.1" />
+
+    <PackageReference Include="MimeKit" Version="3.1.1" />
+
+    <PackageReference Include="RestSharp" Version="107.3.0" />
+
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EnerGov.Business.Abstractions\EnerGov.Business.Abstractions.csproj" />
+    <ProjectReference Include="..\EnerGov.Data.Configuration\EnerGov.Data.Configuration.csproj" />
+    <ProjectReference Include="..\EnerGov.Data.EnerGov\EnerGov.Data.EnerGov.csproj" />
+    <ProjectReference Include="..\EnerGov.Data.GIS\EnerGov.Data.GIS.csproj" />
+    <ProjectReference Include="..\EnerGov.Security\EnerGov.Security.csproj" />
+    <ProjectReference Include="..\EnerGov.Services.Email\EnerGov.Services.Email.csproj" />
+    <ProjectReference Include="..\EnerGov.Services.Reporting\EnerGov.Services.Reporting.csproj" />
+    <ProjectReference Include="..\EnerGov.Services.Templating\EnerGov.Services.Templating.csproj" />
+  </ItemGroup>
+
+</Project>

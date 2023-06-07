@@ -1,0 +1,105 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <CopyRefAssembliesToPublishDirectory>false</CopyRefAssembliesToPublishDirectory>
+    <AspNetCoreHostingModel>InProcess</AspNetCoreHostingModel>
+    <TypeScriptCompileBlocked>true</TypeScriptCompileBlocked>
+    <TypeScriptToolsVersion>Latest</TypeScriptToolsVersion>
+    <IsPackable>false</IsPackable>
+    <StartupObject />
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="appsettings.Development.yml" />
+    <None Remove="appsettings.yml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="appsettings.Development.yml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="appsettings.yml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AspNetCore.HealthChecks.Hangfire" Version="6.0.1" />
+    <PackageReference Include="AspNetCore.HealthChecks.SqlServer" Version="6.0.1" />
+    <PackageReference Include="Hangfire" Version="1.7.28" />
+    <PackageReference Include="Jaeger" Version="1.0.3" />
+    <PackageReference Include="Lax.Business.Authorization.HttpContext" Version="8.1.0" />
+    <PackageReference Include="Lax.Business.Authorization.Static" Version="8.1.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="6.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="6.0.2" />
+    <PackageReference Include="MiniProfiler.AspNetCore.Mvc" Version="4.2.22" />
+    <PackageReference Include="MiniProfiler.EntityFrameworkCore" Version="4.2.22" />
+    <PackageReference Include="NetEscapades.Configuration.Yaml" Version="2.1.0" />
+    <PackageReference Include="OpenTracing.Contrib.NetCore" Version="0.8.0" />
+    <PackageReference Include="Serilog.AspNetCore" Version="5.0.0" />
+    <PackageReference Include="Serilog.Enrichers.Environment" Version="2.2.0" />
+    <PackageReference Include="Serilog.Enrichers.Process" Version="2.0.2" />
+    <PackageReference Include="Serilog.Enrichers.Thread" Version="3.1.0" />
+    <PackageReference Include="Serilog.Extensions.Logging" Version="3.1.0" />
+    <PackageReference Include="Serilog.Settings.Configuration" Version="3.3.0" />
+    <PackageReference Include="Serilog.Sinks.Debug" Version="2.0.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="4.0.1" />
+    <PackageReference Include="Serilog.Sinks.MSSqlServer" Version="5.7.0" />
+    <PackageReference Include="AutoFac.Extensions.DependencyInjection" Version="7.2.0" />
+    <PackageReference Include="Lax.Mvc.AdminLte" Version="8.1.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="6.0.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="6.0.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="6.0.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.1.0" />
+    <PackageReference Include="itext7" Version="7.2.1" />
+
+    <PackageReference Include="Elastic.Apm.NetCoreAll" Version="1.14.0" />
+    <PackageReference Include="Elastic.Apm.SerilogEnricher" Version="1.5.3" />
+    <PackageReference Include="Serilog.Sinks.Elasticsearch" Version="8.4.1" />
+    <PackageReference Include="Elastic.CommonSchema.Serilog" Version="1.5.3" />
+    <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
+    <PackageReference Include="Microsoft.Identity.Web" Version="1.25.10" />
+    <PackageReference Include="Microsoft.Identity.Web.UI" Version="1.25.10" />
+    <PackageReference Include="Microsoft.Identity.Web.MicrosoftGraph" Version="1.25.10" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Properties\PublishProfiles\" />
+    <Folder Include="wwwroot\css\" />
+    <Folder Include="wwwroot\imgs" />
+    <Folder Include="wwwroot\js\" />
+    <Folder Include="wwwroot\fonts\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EnerGov.Business.Abstractions\EnerGov.Business.Abstractions.csproj" />
+    <ProjectReference Include="..\EnerGov.Business.FireOccupancy\EnerGov.Business.FireOccupancy.csproj" />
+    <ProjectReference Include="..\EnerGov.Business.TcmIntegration\EnerGov.Business.TcmIntegration.csproj" />
+    <ProjectReference Include="..\EnerGov.Business.UtilityExcavation\EnerGov.Business.UtilityExcavation.csproj" />
+    <ProjectReference Include="..\EnerGov.Business.Identity\EnerGov.Business.Identity.csproj" />
+    <ProjectReference Include="..\EnerGov.Business\EnerGov.Business.csproj" />
+    <ProjectReference Include="..\EnerGov.Data.Configuration\EnerGov.Data.Configuration.csproj" />
+    <ProjectReference Include="..\EnerGov.Cli\EnerGov.Cli.csproj" />
+    <ProjectReference Include="..\EnerGov.Security\EnerGov.Security.csproj" />
+    <ProjectReference Include="..\EnerGov.Services.Email\EnerGov.Services.Email.csproj" />
+    <ProjectReference Include="..\EnerGov.Services.Reporting.SSRS\EnerGov.Services.Reporting.SSRS.csproj" />
+    <ProjectReference Include="..\EnerGov.Services.Templating.Fluid\EnerGov.Services.Templating.Fluid.csproj" />
+    <ProjectReference Include="..\EnerGov.Web.ClerksLicensing\EnerGov.Web.ClerksLicensing.csproj" />
+    <ProjectReference Include="..\EnerGov.Web.Exports\EnerGov.Web.Exports.csproj" />
+    <ProjectReference Include="..\EnerGov.Web.FireOccupancy\EnerGov.Web.FireOccupancy.csproj" />
+    <ProjectReference Include="..\EnerGov.Web.LandRecords\EnerGov.Web.LandRecords.csproj" />
+    <ProjectReference Include="..\EnerGov.Web.Utilities\EnerGov.Web.Utilities.csproj" />
+    <ProjectReference Include="..\EnerGov.Web.UtilityExcavation\EnerGov.Web.UtilityExcavation.csproj" />
+    <ProjectReference Include="..\EnerGov.Web.Common\EnerGov.Web.Common.csproj" />
+  </ItemGroup>
+
+  <Target Name="MyPreCompileTarget" BeforeTargets="Publish">
+    <Exec Command="npm run gulp min" />
+  </Target>
+
+</Project>

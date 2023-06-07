@@ -1,0 +1,190 @@
+﻿CREATE TABLE [dbo].[CONDITIONLIBRARY] (
+    [CONDITIONLIBRARYID]  CHAR (36)      NOT NULL,
+    [CONDITIONCATEGORYID] CHAR (36)      NOT NULL,
+    [NAME]                NVARCHAR (255) NOT NULL,
+    [DESCRIPTION]         NVARCHAR (MAX) NOT NULL,
+    [LASTCHANGEDBY]       CHAR (36)      NULL,
+    [LASTCHANGEDON]       DATETIME       CONSTRAINT [DF_CONDITIONLIBRARY_LastChangedOn] DEFAULT (getutcdate()) NOT NULL,
+    [ROWVERSION]          INT            CONSTRAINT [DF_CONDITIONLIBRARY_RowVersion] DEFAULT ((1)) NOT NULL,
+    CONSTRAINT [PK_conGlobalCondition] PRIMARY KEY CLUSTERED ([CONDITIONLIBRARYID] ASC) WITH (FILLFACTOR = 90),
+    CONSTRAINT [FK_ConditionLibrary_ConditionCategory] FOREIGN KEY ([CONDITIONCATEGORYID]) REFERENCES [dbo].[CONDITIONCATEGORY] ([CONDITIONCATEGORYID])
+);
+
+
+GO
+CREATE NONCLUSTERED INDEX [CONDITIONLIBRARY_IX_QUERY]
+    ON [dbo].[CONDITIONLIBRARY]([CONDITIONLIBRARYID] ASC, [NAME] ASC);
+
+
+GO
+
+CREATE TRIGGER [dbo].[TG_CONDITIONLIBRARY_DELETE]
+   ON  [dbo].[CONDITIONLIBRARY]
+   AFTER DELETE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+	INSERT INTO [HISTORYSYSTEMSETUP]
+	(	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT
+			[deleted].[CONDITIONLIBRARYID],
+			[deleted].[ROWVERSION],
+			GETUTCDATE(),
+			(SELECT dbo.UFN_GET_USERID_FROM_CONTEXT_INFO()),
+			'Condition Library Deleted',
+			'',
+			'',
+			'Condition Library (' + [deleted].[NAME] + ')',
+			'418BF83F-A239-49C9-9362-FD16929CEAC8',
+			3,
+			1,
+			[deleted].[NAME]
+	FROM [deleted]
+END
+GO
+
+CREATE TRIGGER [dbo].[TG_CONDITIONLIBRARY_UPDATE] 
+   ON  [dbo].[CONDITIONLIBRARY]
+   AFTER UPDATE
+AS 
+BEGIN	
+	SET NOCOUNT ON;
+
+	-- Check if LASTCHANGEDBY contains VALID User Id and it Exists in USERS table, this is in replacement to foreign key reference of CONDITIONLIBRARY table with USERS table.
+	IF EXISTS (SELECT * FROM inserted 
+		LEFT OUTER JOIN USERS WITH (NOLOCK) ON USERS.SUSERGUID = inserted.LASTCHANGEDBY
+		WHERE inserted.LASTCHANGEDBY IS NOT NULL AND USERS.SUSERGUID IS NULL)
+	BEGIN		
+		RAISERROR ('The INSERT or UPDATE statement conflicted with the FOREIGN KEY to table USERS', 16, 0);
+		ROLLBACK;
+		RETURN;
+	END
+
+	INSERT INTO [HISTORYSYSTEMSETUP]
+    (	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT 
+			[inserted].[CONDITIONLIBRARYID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Name',
+			[deleted].[NAME],
+			[inserted].[NAME],
+			'Condition Library (' + [inserted].[NAME] + ')',
+			'418BF83F-A239-49C9-9362-FD16929CEAC8',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[CONDITIONLIBRARYID] = [inserted].[CONDITIONLIBRARYID]
+	WHERE	[deleted].[NAME] <> [inserted].[NAME]
+	UNION ALL
+	SELECT
+			[inserted].[CONDITIONLIBRARYID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Description',
+			[deleted].[DESCRIPTION],
+			[inserted].[DESCRIPTION],
+			'Condition Library (' + [inserted].[NAME] + ')',
+			'418BF83F-A239-49C9-9362-FD16929CEAC8',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[CONDITIONLIBRARYID] = [inserted].[CONDITIONLIBRARYID]
+	WHERE	[deleted].[DESCRIPTION]<> [inserted].[DESCRIPTION]
+	UNION ALL
+	SELECT
+			[inserted].[CONDITIONLIBRARYID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Category',
+			CONDITIONCATEGORY_DELETED.[NAME],
+			CONDITIONCATEGORY_INSERTED.[NAME],
+			'Condition Library (' + [inserted].[NAME] + ')',
+			'418BF83F-A239-49C9-9362-FD16929CEAC8',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted] JOIN [inserted] ON [deleted].[CONDITIONLIBRARYID] = [inserted].[CONDITIONLIBRARYID]
+			LEFT JOIN [CONDITIONCATEGORY]  AS CONDITIONCATEGORY_DELETED WITH (NOLOCK)
+				ON [deleted].[CONDITIONCATEGORYID]= CONDITIONCATEGORY_DELETED.[CONDITIONCATEGORYID] 
+			LEFT JOIN [CONDITIONCATEGORY] AS CONDITIONCATEGORY_INSERTED WITH (NOLOCK)
+				ON [inserted].[CONDITIONCATEGORYID] = CONDITIONCATEGORY_INSERTED.[CONDITIONCATEGORYID]
+			WHERE	[deleted].[CONDITIONCATEGORYID]<> [inserted].[CONDITIONCATEGORYID]
+END
+GO
+
+CREATE TRIGGER [dbo].[TG_CONDITIONLIBRARY_INSERT] ON [dbo].[CONDITIONLIBRARY]
+   AFTER INSERT
+AS 
+BEGIN
+	SET NOCOUNT ON;
+
+	-- Check if LASTCHANGEDBY contains VALID User Id and it Exists in USERS table, this is in replacement to foreign key reference of CONDITIONLIBRARY table with USERS table.
+	IF EXISTS (SELECT * FROM inserted 
+		LEFT OUTER JOIN USERS WITH (NOLOCK) ON USERS.SUSERGUID = inserted.LASTCHANGEDBY
+		WHERE inserted.LASTCHANGEDBY IS NOT NULL AND USERS.SUSERGUID IS NULL)
+	BEGIN		
+		RAISERROR ('The INSERT or UPDATE statement conflicted with the FOREIGN KEY to table USERS', 16, 0);
+		ROLLBACK;
+		RETURN;
+	END
+
+	INSERT INTO [HISTORYSYSTEMSETUP]
+    (
+        [ID],
+        [ROWVERSION],
+        [CHANGEDON],
+        [CHANGEDBY],
+        [FIELDNAME],
+        [OLDVALUE],
+        [NEWVALUE],
+        [ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT 
+        [inserted].[CONDITIONLIBRARYID], 
+        [inserted].[ROWVERSION],
+        GETUTCDATE(),
+        [inserted].[LASTCHANGEDBY],
+        'Condition Library Added',
+        '',
+        '',
+		'Condition Library (' + [inserted].[NAME] + ')',
+		'418BF83F-A239-49C9-9362-FD16929CEAC8',
+		1,
+		1,
+		[inserted].[NAME]
+    FROM [inserted] 
+END

@@ -1,0 +1,45 @@
+﻿@page
+@using EnerGov.Web.Common.Infrastructure
+@model MarkInvoicePaidModel
+@{
+    this.UseModalLayout("Mark Invoice Paid");
+}
+
+<input type="hidden" asp-for="InvoiceId" />
+
+<bs-form-group>
+    <label>Journal Year</label>
+    <input type="text"
+           required
+           maxlength="4"
+           asp-for="JournalYear"
+           placeholder="Journal Year" />
+    <help-block></help-block>
+</bs-form-group>
+
+<bs-form-group>
+    <label>Journal Period</label>
+    <input type="text"
+           required
+           maxlength="2"
+           asp-for="JournalPeriod"
+           placeholder="Journal Period" />
+    <help-block></help-block>
+</bs-form-group>
+
+<bs-form-group>
+    <label>Journal Number</label>
+    <input type="text"
+           required
+           maxlength="8"
+           asp-for="JournalNumber"
+           placeholder="Journal Number" />
+    <help-block></help-block>
+</bs-form-group>
+
+@section Button {
+    <button bs-context="@ButtonContext.Warning"
+            type="submit">
+        Mark as Paid
+    </button>
+}

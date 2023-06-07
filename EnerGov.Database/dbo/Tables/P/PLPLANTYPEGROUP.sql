@@ -1,0 +1,140 @@
+﻿CREATE TABLE [dbo].[PLPLANTYPEGROUP] (
+    [PLPLANTYPEGROUPID] CHAR (36)      NOT NULL,
+    [NAME]              NVARCHAR (50)  NOT NULL,
+    [DESCRIPTION]       NVARCHAR (MAX) NULL,
+    [LASTCHANGEDBY]     CHAR (36)      NULL,
+    [LASTCHANGEDON]     DATETIME       CONSTRAINT [DF_PLPLANTYPEGROUP_LastChangedOn] DEFAULT (getutcdate()) NOT NULL,
+    [ROWVERSION]        INT            CONSTRAINT [DF_PLPLANTYPEGROUP_RowVersion] DEFAULT ((1)) NOT NULL,
+    CONSTRAINT [PK_PLPlanTypeGroup] PRIMARY KEY CLUSTERED ([PLPLANTYPEGROUPID] ASC),
+    CONSTRAINT [FK_PLPLANTYPEGROUP_USERS] FOREIGN KEY ([LASTCHANGEDBY]) REFERENCES [dbo].[USERS] ([SUSERGUID])
+);
+
+
+GO
+
+CREATE TRIGGER [dbo].[TG_PLPLANTYPEGROUP_DELETE] ON  [dbo].[PLPLANTYPEGROUP] 
+   AFTER DELETE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+	INSERT INTO [HISTORYSYSTEMSETUP]
+    (	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT 
+			[deleted].[PLPLANTYPEGROUPID],
+			[deleted].[ROWVERSION],
+			GETUTCDATE(),
+			(SELECT dbo.UFN_GET_USERID_FROM_CONTEXT_INFO()),
+			'Plan Type Group Deleted',
+			'',
+			'',
+			'Plan Type Group (' + [deleted].[NAME] + ')',
+			'998F5A41-2BF0-4C12-8535-AF86E5FC7447',
+			3,
+			1,
+			[deleted].[NAME]
+	FROM	[deleted]
+END
+GO
+
+CREATE TRIGGER [dbo].[TG_PLPLANTYPEGROUP_INSERT]   ON  [dbo].[PLPLANTYPEGROUP] 
+   AFTER INSERT
+AS 
+BEGIN	
+	SET NOCOUNT ON;
+	INSERT INTO [HISTORYSYSTEMSETUP]
+    (	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT 
+			[inserted].[PLPLANTYPEGROUPID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Plan Type Group Added',
+			'',
+			'',
+			'Plan Type Group (' + [inserted].[NAME] + ')',
+			'998F5A41-2BF0-4C12-8535-AF86E5FC7447',
+			1,
+			1,
+			[inserted].[NAME]
+	FROM	[inserted]
+END
+GO
+
+CREATE TRIGGER [dbo].[TG_PLPLANTYPEGROUP_UPDATE] ON  [dbo].[PLPLANTYPEGROUP] 
+   AFTER UPDATE
+AS 
+BEGIN	
+	SET NOCOUNT ON;
+	INSERT INTO [HISTORYSYSTEMSETUP]
+    (	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT
+			[inserted].[PLPLANTYPEGROUPID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Name',
+			[deleted].[NAME],
+			[inserted].[NAME],
+			'Plan Type Group (' + [inserted].[NAME] + ')',
+			'998F5A41-2BF0-4C12-8535-AF86E5FC7447',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].PLPLANTYPEGROUPID = [inserted].PLPLANTYPEGROUPID
+	WHERE	[deleted].[NAME] <> [inserted].[NAME]
+	UNION ALL
+
+	SELECT
+			[inserted].[PLPLANTYPEGROUPID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Description',
+			ISNULL([deleted].[DESCRIPTION],'[none]'),
+			ISNULL([inserted].[DESCRIPTION],'[none]'),
+			'Plan Type Group (' + [inserted].[NAME] + ')',
+			'998F5A41-2BF0-4C12-8535-AF86E5FC7447',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[PLPLANTYPEGROUPID] = [inserted].[PLPLANTYPEGROUPID]
+	WHERE	ISNULL([deleted].[DESCRIPTION], '') <> ISNULL([inserted].[DESCRIPTION], '')
+END

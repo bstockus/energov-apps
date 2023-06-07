@@ -1,0 +1,8 @@
+﻿CREATE TYPE [dbo].[CUSTOM_LST_TYPE] AS TABLE (
+    [ID]              CHAR (36) NOT NULL,
+    [PARENT_ID]       CHAR (36) NOT NULL,
+    [MODULEID]        INT       NOT NULL,
+    [CUSTOM_FIELD_ID] CHAR (36) NOT NULL,
+    [PICKLISTVALUE]   CHAR (36) NULL,
+    [ROWNUMBER]       INT       NOT NULL);
+

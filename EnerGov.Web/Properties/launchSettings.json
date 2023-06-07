@@ -1,0 +1,78 @@
+{
+  "iisSettings": {
+    "windowsAuthentication": true,
+    "anonymousAuthentication": true,
+    "iisExpress": {
+      "applicationUrl": "http://localhost:49573/",
+      "sslPort": 0
+    }
+  },
+  "profiles": {
+    "IIS Express": {
+      "commandName": "IISExpress",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Production",
+        "UseHost": "IIS"
+
+      }
+    },
+    "EnerGov.Web - stockusb": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "applicationUrl": "https://localhost:5001;http://localhost:5000",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_ImpersonateUser": "S-1-5-21-1792825746-761096916-1846952604-14167"
+      }
+    },
+    "EnerGov.Web - M365 SSO": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "applicationUrl": "https://localhost:5001;http://localhost:5000",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    "Run Task - renewal-packet-generator-test": {
+      "commandName": "Project",
+      "commandLineArgs": "run RUN :renewal-packet-generator-test",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_ImpersonateUser": "TEST"
+      }
+    },
+    "Run Task - license-packet-generator-test": {
+      "commandName": "Project",
+      "commandLineArgs": "run RUN :license-packet-generator-test",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_ImpersonateUser": "TEST"
+      }
+    },
+    "Run Task - utility-excavation-test": {
+      "commandName": "Project",
+      "commandLineArgs": "run RUN :utility-excavation-test",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_ImpersonateUser": "TEST"
+      }
+    },
+    "Run Task - alerting-test": {
+      "commandName": "Project",
+      "commandLineArgs": "run RUN :alerting-test",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_ImpersonateUser": "TEST"
+      }
+    },
+    "Run Task - reset-parcel-owner-contacts": {
+      "commandName": "Project",
+      "commandLineArgs": "run RUN :reset-parcel-owner-contacts",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_ImpersonateUser": "TEST"
+      }
+    }
+  }
+}

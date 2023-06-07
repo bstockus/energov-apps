@@ -1,0 +1,125 @@
+﻿@using EnerGov.Web.Common.Navigation
+@model NavigationViewComponent.NavBarViewModel
+
+<nav class="navbar navbar-static-top" role="navigation">
+    <div class="container">
+
+        <div class="navbar-header">
+            <a asp-page="/" class="navbar-brand">
+                <strong>EnerGov</strong>
+            </a>
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse">
+                <i class="fa fa-bars"></i>
+            </button>
+        </div>
+        <div class="collapse navbar-collapse pull-left" id="navbar-collapse">
+            <ul class="nav navbar-nav">
+
+                @foreach (var navigationSection in Model.Sections) {
+
+                    <li class="dropdown">
+
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                            @navigationSection.Title <span class="caret"></span>
+                        </a>
+
+                        <ul class="dropdown-menu" role="menu">
+
+                            @if (navigationSection.NavigationItems != null) {
+
+                                @foreach (var navigationItem in navigationSection.NavigationItems) {
+
+                                    <li>
+                                        @if (navigationItem is RoutedNavigationItem routedNavigationItem) {
+
+                                            <a asp-area="@routedNavigationItem.Area"
+                                               asp-page="@routedNavigationItem.Page"
+                                               asp-all-route-data="@routedNavigationItem.RouteValues">
+                                                @routedNavigationItem.ShortTitle
+                                            </a>
+                                        } else if (navigationItem is UrlNavigationItem urlNavigationItem) {
+
+                                            <a href="@urlNavigationItem.Url"
+                                               target="_blank">
+                                                @urlNavigationItem.ShortTitle
+                                            </a>
+
+                                        }
+                                    </li>
+
+
+
+                                }
+
+                            }
+
+                        </ul>
+
+                    </li>
+
+                }
+
+
+
+            </ul>
+
+
+        </div>
+        <environment include="Development">
+            <div class="collapse navbar-collapse pull-right" id="navbar-collapse">
+                <ul class="nav navbar-nav">
+                    <li>
+
+                        <a asp-controller="UserCache" asp-action="FlushUserCache">
+                            <i class="fa fa-recycle"></i> Flush Cache
+                        </a>
+
+                    </li>
+
+                    <li style="background-color: #dd4b39;">
+                        <a href="#">Development Mode</a>
+                    </li>
+
+                </ul>
+
+            </div>
+        </environment>
+
+        @if (Model.User != null) {
+
+            <div class="navbar-custom-menu">
+                <ul class="nav navbar-nav">
+                    <li class="dropdown user user-menu">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                            <span>
+                                <i class="fa fa-user"></i> @Model.User.FirstName @(Model.User.LastName[0] + ".")
+                            </span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li class="user-header">
+                                <i class="fa fa-user fa-5x text-center"></i>
+                                <p>
+                                    @Model.User.FirstName @Model.User.LastName
+                                    <small>@Model.User.EmailAddress</small>
+                                    <strong>@Model.User.UserName</strong>
+                                </p>
+                            </li>
+                            <li class="user-body">
+                                <strong>Roles: </strong>
+                                @foreach (var role in Model.User.EffectiveRoles) {
+                                    <span class="label label-default">@role.RoleName</span>
+                                }
+                            </li>
+                            <li class="user-footer">
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+
+        }
+
+    </div>
+
+
+</nav>

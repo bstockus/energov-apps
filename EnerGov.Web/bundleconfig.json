@@ -1,0 +1,90 @@
+[
+  {
+    "outputFileName": "wwwroot/css/app.min.css",
+    "inputFiles": [
+      "ClientApp/css/site.css"
+    ]
+  },
+  {
+    "outputFileName": "wwwroot/css/vendor.min.css",
+    "inputFiles": [
+      "node_modules/admin-lte/bower_components/bootstrap/dist/css/bootstrap.min.css",
+      "node_modules/admin-lte/bower_components/bootstrap-daterangepicker/daterangepicker.css",
+      "node_modules/admin-lte/bower_components/bootstrap-datepicker/dist/css/bootstrap-datepicker.min.css",
+      "node_modules/admin-lte/bower_components/ionicons/css/ionicons.min.css",
+      "node_modules/admin-lte/bower_components/font-awesome/css/font-awesome.min.css",
+      "node_modules/admin-lte/plugins/iCheck/all.css",
+      "node_modules/admin-lte/plugins/timepicker/bootstrap-timepicker.min.css",
+      "node_modules/admin-lte/bower_components/select2/dist/css/select2.min.css",
+      "node_modules/admin-lte/bower_components/datatables.net-bs/css/dataTables.bootstrap.min.css",
+      "node_modules/admin-lte/plugins/bootstrap-slider/slider.css",
+      "node_modules/admin-lte/dist/css/AdminLTE.min.css",
+      "node_modules/admin-lte/dist/css/skins/_all-skins.min.css",
+      "node_modules/admin-lte/plugins/pace/pace.min.css"
+    ]
+  },
+  {
+    "outputFileName": "wwwroot/js/app.min.js",
+    "inputFiles": [
+      "ClientApp/js/site.js",
+      "ClientApp/js/lax.js"
+    ],
+    "minify": {
+      "enabled": true,
+      "renameLocals": true
+    },
+    "sourceMap": true
+  },
+  {
+    "outputFileName": "wwwroot/js/vendor.min.js",
+    "inputFiles": [
+      "node_modules/jquery/dist/jquery.min.js",
+      "node_modules/bootstrap-validator/dist/validator.min.js",
+      "node_modules/admin-lte/bower_components/bootstrap/dist/js/bootstrap.min.js",
+      "node_modules/admin-lte/bower_components/jquery-slimscroll/jquery.slimscroll.min.js",
+      "node_modules/admin-lte/dist/js/adminlte.min.js",
+      "node_modules/admin-lte/bower_components/select2/dist/js/select2.full.min.js",
+      "node_modules/admin-lte/plugins/input-mask/jquery.inputmask.js",
+      "node_modules/admin-lte/plugins/input-mask/jquery.inputmask.date.extensions.js",
+      "node_modules/admin-lte/plugins/input-mask/jquery.inputmask.extensions.js",
+      "node_modules/admin-lte/bower_components/moment/min/moment.min.js",
+      "node_modules/admin-lte/bower_components/bootstrap-daterangepicker/daterangepicker.js",
+      "node_modules/admin-lte/bower_components/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js",
+      "node_modules/admin-lte/plugins/timepicker/bootstrap-timepicker.min.js",
+      "node_modules/admin-lte/plugins/iCheck/icheck.min.js",
+      "node_modules/admin-lte/bower_components/fastclick/lib/fastclick.js",
+      "node_modules/admin-lte/bower_components/datatables.net/js/jquery.dataTables.min.js",
+      "node_modules/admin-lte/bower_components/datatables.net-bs/js/dataTables.bootstrap.min.js",
+      "node_modules/admin-lte/plugins/bootstrap-slider/bootstrap-slider.js",
+      "node_modules/lodash/lodash.min.js",
+      "node_modules/admin-lte/plugins/pace/pace.min.js"
+    ],
+    "minify": {
+      "enabled": true,
+      "renameLocals": true
+    },
+    "sourceMap": false
+  },
+  {
+    "outputFileName": "wwwroot/js/vue.min.js",
+    "inputFiles": [
+      "node_modules/vue/dist/vue.js"
+    ],
+    "minify": {
+      "enabled": true,
+      "renameLocals": true
+    },
+    "sourceMap": false
+  },
+  {
+    "outputFileName": "wwwroot/js/signalr.min.js",
+    "inputFiles": [
+      "node_modules/@microsoft/signalr/dist/browser/signalr.js"
+    ],
+    "minify": {
+      "enabled": true,
+      "renameLocals": true
+    },
+    "sourceMap": false
+  }
+]

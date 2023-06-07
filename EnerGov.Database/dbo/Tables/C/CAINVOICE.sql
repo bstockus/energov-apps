@@ -1,0 +1,276 @@
+﻿CREATE TABLE [dbo].[CAINVOICE] (
+    [CAINVOICEID]        CHAR (36)      NOT NULL,
+    [CASTATUSID]         INT            CONSTRAINT [DEF_CAInvoice_StatusID] DEFAULT ((1)) NOT NULL,
+    [INVOICENUMBER]      NVARCHAR (500) NOT NULL,
+    [GLOBALENTITYID]     CHAR (36)      NOT NULL,
+    [INVOICETOTAL]       MONEY          NOT NULL,
+    [INVOICEDATE]        DATETIME       NOT NULL,
+    [INVOICEDESCRIPTION] NVARCHAR (MAX) NOT NULL,
+    [ROWVERSION]         INT            CONSTRAINT [DF_CAInvoice_RowVersion] DEFAULT ((1)) NOT NULL,
+    [LASTCHANGEDON]      DATETIME       CONSTRAINT [DF_CAInvoice_LastChangedOn] DEFAULT (getdate()) NOT NULL,
+    [LASTCHANGEDBY]      CHAR (36)      NOT NULL,
+    [INVOICEDUEDATE]     DATETIME       NULL,
+    [ADJUSTEDDATE]       DATETIME       NULL,
+    [CREATEDBY]          CHAR (36)      NULL,
+    CONSTRAINT [PK_CAInvoice] PRIMARY KEY NONCLUSTERED ([CAINVOICEID] ASC) WITH (FILLFACTOR = 80),
+    CONSTRAINT [FK_CAINVOICE_CREATEDBY] FOREIGN KEY ([CREATEDBY]) REFERENCES [dbo].[USERS] ([SUSERGUID]),
+    CONSTRAINT [FK_CAInvoice_Entity] FOREIGN KEY ([GLOBALENTITYID]) REFERENCES [dbo].[GLOBALENTITY] ([GLOBALENTITYID]),
+    CONSTRAINT [FK_CAInvoice_Status] FOREIGN KEY ([CASTATUSID]) REFERENCES [dbo].[CASTATUS] ([CASTATUSID]),
+    CONSTRAINT [FK_CAInvoice_Users] FOREIGN KEY ([LASTCHANGEDBY]) REFERENCES [dbo].[USERS] ([SUSERGUID])
+);
+
+
+GO
+CREATE NONCLUSTERED INDEX [IMPORT1]
+    ON [dbo].[CAINVOICE]([INVOICENUMBER] ASC) WITH (FILLFACTOR = 80);
+
+
+GO
+CREATE NONCLUSTERED INDEX [IMPORT2]
+    ON [dbo].[CAINVOICE]([GLOBALENTITYID] ASC) WITH (FILLFACTOR = 80);
+
+
+GO
+CREATE NONCLUSTERED INDEX [IX_CAINVOICE_LASTCHANGEDON]
+    ON [dbo].[CAINVOICE]([LASTCHANGEDON] ASC)
+    INCLUDE([CAINVOICEID]);
+
+
+GO
+CREATE NONCLUSTERED INDEX [IX_CAINVOICE_CASTATUSID]
+    ON [dbo].[CAINVOICE]([CASTATUSID] ASC)
+    INCLUDE([CAINVOICEID]);
+
+
+GO
+CREATE NONCLUSTERED INDEX [IX_CAINVOICE_GLOBENTTITY]
+    ON [dbo].[CAINVOICE]([GLOBALENTITYID] ASC);
+
+
+GO
+CREATE NONCLUSTERED INDEX [IX_CAINVOICE_NUMBER]
+    ON [dbo].[CAINVOICE]([INVOICENUMBER] ASC);
+
+
+GO
+
+CREATE TRIGGER [TG_CAINVOICE_UPDATE_ELASTIC] ON  CAINVOICE
+   AFTER UPDATE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+
+    INSERT INTO [ELASTICSEARCHOBJECT]
+    ( [ELASTICSEARCHOBJECTID] ,
+        [OBJECTID] ,
+        [OBJECTCLASSNAME] ,
+        [ROWVERSION] ,
+        [CREATEDATE] ,
+        [PROCESSEDDATE] ,
+        [OBJECTACTION] ,
+        [INDEXNAME]
+    )
+	SELECT
+		NEWID() ,
+		[Inserted].[CAINVOICEID] ,
+        'EnerGovBusiness.Cashier.CAInvoice' ,
+        [Inserted].[ROWVERSION] ,
+        GETDATE() ,
+        NULL ,
+        2 ,
+        (SELECT STRINGVALUE FROM SETTINGS WITH (NOLOCK) WHERE NAME = 'ServiceBusTenant')
+	FROM [Inserted];
+
+	INSERT INTO [ELASTICSEARCHOBJECT]
+    ( [ELASTICSEARCHOBJECTID] ,
+        [OBJECTID] ,
+        [OBJECTCLASSNAME] ,
+        [ROWVERSION] ,
+        [CREATEDATE] ,
+        [PROCESSEDDATE] ,
+        [OBJECTACTION] ,
+        [INDEXNAME]
+    )
+	SELECT
+		NEWID() ,
+		[Inserted].[CAINVOICEID] ,
+        'EnerGovBusiness.Cashier.CashieringInvoice' ,
+        [Inserted].[ROWVERSION] ,
+        GETDATE() ,
+        NULL ,
+        2 ,
+        (SELECT STRINGVALUE FROM SETTINGS WITH (NOLOCK) WHERE NAME = 'ServiceBusTenant')
+	FROM [Inserted];
+
+END
+GO
+
+CREATE TRIGGER [TG_CAINVOICE_INSERT_ELASTIC] ON  CAINVOICE
+   AFTER INSERT
+AS 
+BEGIN
+	SET NOCOUNT ON;
+
+    INSERT INTO [ELASTICSEARCHOBJECT]
+    ( [ELASTICSEARCHOBJECTID] ,
+        [OBJECTID] ,
+        [OBJECTCLASSNAME] ,
+        [ROWVERSION] ,
+        [CREATEDATE] ,
+        [PROCESSEDDATE] ,
+        [OBJECTACTION] ,
+        [INDEXNAME]
+    )
+	SELECT
+		NEWID() ,
+		[Inserted].[CAINVOICEID] ,
+        'EnerGovBusiness.Cashier.CAInvoice' ,
+        [Inserted].[ROWVERSION] ,
+        GETDATE() ,
+        NULL ,
+        1 ,
+        (SELECT STRINGVALUE FROM SETTINGS WITH (NOLOCK) WHERE NAME = 'ServiceBusTenant')
+	FROM [Inserted];
+
+	INSERT INTO [ELASTICSEARCHOBJECT]
+    ( [ELASTICSEARCHOBJECTID] ,
+        [OBJECTID] ,
+        [OBJECTCLASSNAME] ,
+        [ROWVERSION] ,
+        [CREATEDATE] ,
+        [PROCESSEDDATE] ,
+        [OBJECTACTION] ,
+        [INDEXNAME]
+    )
+	SELECT
+		NEWID() ,
+		[Inserted].[CAINVOICEID] ,
+        'EnerGovBusiness.Cashier.CashieringInvoice' ,
+        [Inserted].[ROWVERSION] ,
+        GETDATE() ,
+        NULL ,
+        1 ,
+        (SELECT STRINGVALUE FROM SETTINGS WITH (NOLOCK) WHERE NAME = 'ServiceBusTenant')
+	FROM [Inserted];
+
+END
+GO
+
+CREATE TRIGGER [TG_CAINVOICE_DELETE_ELASTIC] ON  CAINVOICE
+   AFTER DELETE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+
+    INSERT INTO [ELASTICSEARCHOBJECT]
+    ( [ELASTICSEARCHOBJECTID] ,
+        [OBJECTID] ,
+        [OBJECTCLASSNAME] ,
+        [ROWVERSION] ,
+        [CREATEDATE] ,
+        [PROCESSEDDATE] ,
+        [OBJECTACTION] ,
+        [INDEXNAME]
+    )
+	SELECT
+		NEWID() ,
+		[Deleted].[CAINVOICEID] ,
+        'EnerGovBusiness.Cashier.CAInvoice' ,
+        [Deleted].[ROWVERSION] ,
+        GETDATE() ,
+        NULL ,
+        3 ,
+        (SELECT STRINGVALUE FROM SETTINGS WITH (NOLOCK) WHERE NAME = 'ServiceBusTenant')
+	FROM [Deleted];
+
+	INSERT INTO [ELASTICSEARCHOBJECT]
+    ( [ELASTICSEARCHOBJECTID] ,
+        [OBJECTID] ,
+        [OBJECTCLASSNAME] ,
+        [ROWVERSION] ,
+        [CREATEDATE] ,
+        [PROCESSEDDATE] ,
+        [OBJECTACTION] ,
+        [INDEXNAME]
+    )
+	SELECT
+		NEWID() ,
+		[Deleted].[CAINVOICEID] ,
+        'EnerGovBusiness.Cashier.CashieringInvoice' ,
+        [Deleted].[ROWVERSION] ,
+        GETDATE() ,
+        NULL ,
+        3 ,
+        (SELECT STRINGVALUE FROM SETTINGS WITH (NOLOCK) WHERE NAME = 'ServiceBusTenant')
+	FROM [Deleted];
+
+END
+GO
+	
+CREATE TRIGGER [TG_CAINVOICE_UPDATE_EVENT_QUEUE_VOIDED] ON CAINVOICE
+   AFTER UPDATE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+		INSERT INTO [INVOICEEVENTQUEUE]
+			( 
+				[CAINVOICEID],
+                [INVOICENUMBER],
+				[INVOICEEVENTTYPEID],
+				[EVENTSTATUSID],
+				[CREATEDDATE],
+				[LASTCHANGEDBY]
+			)
+		-- insert using a SELECT query (do not use IF EXISTS SELECT or SELECT into variables/use the variables) so that if a bulk update of Invoice is made 
+		--then we pick the correct Invoice record to check the previous and new status
+		SELECT 
+			[INSERTED].CAINVOICEID,
+            [INSERTED].INVOICENUMBER,
+			2, -- ID for 'Invoice Voided' Invoice event Type 
+			1, -- ID for 'Pending' event Status
+			GETUTCDATE(),
+			[INSERTED].LASTCHANGEDBY
+		FROM [INSERTED]
+		JOIN [DELETED] ON [DELETED].[CAINVOICEID] = [INSERTED].[CAINVOICEID]
+		WHERE 	
+		    -- check if the new status has voided flag
+			[INSERTED].[CASTATUSID] = 5
+			-- check if the old status of the invoice has voided flag, 
+			--if it's already a voided flag then DO NOT insert a new record in the Invoice Event Queue table
+		AND [DELETED].[CASTATUSID] <> 5
+END
+GO
+DISABLE TRIGGER [dbo].[TG_CAINVOICE_UPDATE_EVENT_QUEUE_VOIDED]
+    ON [dbo].[CAINVOICE];
+
+
+GO
+
+CREATE TRIGGER [TG_CAINVOICE_INSERT_EVENT_QUEUE_CREATED] ON CAINVOICE
+   AFTER INSERT
+AS 
+BEGIN
+	SET NOCOUNT ON;
+	BEGIN
+			INSERT INTO [INVOICEEVENTQUEUE]
+			( 
+				[CAINVOICEID],
+                [INVOICENUMBER],
+				[INVOICEEVENTTYPEID],
+				[EVENTSTATUSID],
+				[CREATEDDATE],
+				[LASTCHANGEDBY]
+			)
+				SELECT [INSERTED].CAINVOICEID,
+                   [INSERTED].INVOICENUMBER,
+				   1, -- ID for 'Invoice Created' Invoice event Type 
+				   1, -- ID for 'Pending' event Status
+				   GETUTCDATE(),
+				   [INSERTED].LASTCHANGEDBY
+			FROM [INSERTED]
+	END
+END
+GO
+DISABLE TRIGGER [dbo].[TG_CAINVOICE_INSERT_EVENT_QUEUE_CREATED]
+    ON [dbo].[CAINVOICE];
+

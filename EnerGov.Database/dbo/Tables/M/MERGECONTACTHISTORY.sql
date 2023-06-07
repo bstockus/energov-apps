@@ -1,0 +1,8 @@
+﻿CREATE TABLE [dbo].[MERGECONTACTHISTORY] (
+    [MERGECONTACTHISTORYID] CHAR (36)     NULL,
+    [TABLEUPDATED]          VARCHAR (150) NULL,
+    [RECORDID]              VARCHAR (36)  NULL,
+    [OLD_ID]                VARCHAR (36)  NULL,
+    [NEW_ID]                VARCHAR (36)  NULL
+);
+

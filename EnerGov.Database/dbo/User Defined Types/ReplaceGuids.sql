@@ -1,0 +1,3 @@
+﻿CREATE TYPE [dbo].[ReplaceGuids] AS TABLE (
+    [GLOBALENTITYID] VARCHAR (36) NULL);
+

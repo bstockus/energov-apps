@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Autofac" Version="6.3.0" />
+    <PackageReference Include="Dapper" Version="2.0.123" />
+    <PackageReference Include="Lax.Business.Authorization.Abstractions" Version="8.1.0" />
+
+    <PackageReference Include="Lax.Business.Bus.Authorization" Version="8.1.0" />
+    <PackageReference Include="Lax.Business.Bus.Logging" Version="8.1.0" />
+    <PackageReference Include="Lax.Business.Bus.UnitOfWork" Version="8.1.0" />
+    <PackageReference Include="Lax.Business.Bus.Validation" Version="8.1.0" />
+
+    <PackageReference Include="Lax.AutoFac.AutoMapper" Version="8.1.0" />
+    <PackageReference Include="Lax.AutoFac.FluentValidation" Version="8.1.0" />
+    <PackageReference Include="Lax.AutoFac.MediatR" Version="8.1.0" />
+    <PackageReference Include="Lax.AutoFac.NodaTime" Version="8.1.0" />
+
+    <PackageReference Include="Lax.Cli.Common" Version="8.1.0" />
+
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EnerGov.Business.Abstractions\EnerGov.Business.Abstractions.csproj" />
+    <ProjectReference Include="..\EnerGov.Data.EnerGov\EnerGov.Data.EnerGov.csproj" />
+    <ProjectReference Include="..\EnerGov.Security\EnerGov.Security.csproj" />
+  </ItemGroup>
+
+</Project>

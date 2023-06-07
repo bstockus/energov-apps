@@ -1,0 +1,23 @@
+﻿  
+CREATE  PROCEDURE [systemsettingsmanager].[USP_TEAMRESOURCE_INSERT]    
+-- Add the parameters for the stored procedure here    
+@TEAMRESOURCEID CHAR(36),  
+@TEAMID CHAR(36),  
+@USERID CHAR(36),  
+@RESOURCETYPEID CHAR(36)  
+AS    
+BEGIN      
+ INSERT INTO [dbo].[TEAMRESOURCE]      
+ (    
+[TEAMRESOURCE].[TEAMRESOURCEID],  
+[TEAMRESOURCE].[TEAMID],  
+[TEAMRESOURCE].[USERID],  
+[TEAMRESOURCE].[RESOURCETYPEID]  
+ )    
+ VALUES(    
+@TEAMRESOURCEID,  
+@TEAMID,  
+@USERID,  
+@RESOURCETYPEID  
+ )      
+END

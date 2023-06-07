@@ -1,0 +1,23 @@
+﻿--=================================================================
+--=================================================================
+-- SP FOR CHECKING IF BUSINESS HAVE ANY TAX REMITTANCE ACCOUNTS TAGGED TO IT
+-- INPUT : BUSINESS IDS
+-- OUTPUT : BUSINESS IDS WITH HAVE TAX ACCOUNT TRUE/FALSE STATUS
+--=================================================================
+--=================================================================
+
+CREATE PROCEDURE [globalsearch].[USP_BUSINESS_LINKED_TAXREMITTANCE_ACCOUNTS_STATUS]
+	-- BUSINESSIDS
+	@BUSINESSIDS RECORDIDS READONLY
+AS
+BEGIN
+
+	SELECT DISTINCT RECORDID,
+			(CASE 
+				WHEN BLGLOBALENTITYEXTENSIONID IS NOT NULL THEN CAST(1 AS BIT) 
+				ELSE CAST(0 AS BIT) 
+			 END) AS HAVETAXREMACCOUNTS
+	FROM @BUSINESSIDS LEFT JOIN TXREMITTANCEACCOUNT 
+	ON RECORDID = BLGLOBALENTITYEXTENSIONID
+
+END

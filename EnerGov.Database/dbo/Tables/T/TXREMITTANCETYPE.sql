@@ -1,0 +1,411 @@
+﻿CREATE TABLE [dbo].[TXREMITTANCETYPE] (
+    [TXREMITTANCETYPEID]        CHAR (36)      NOT NULL,
+    [NAME]                      NVARCHAR (50)  NOT NULL,
+    [DESCRIPTION]               NVARCHAR (250) NULL,
+    [ACTIVE]                    BIT            NOT NULL,
+    [DEFAULTSTATUSID]           CHAR (36)      NULL,
+    [PREFIX]                    NVARCHAR (20)  NULL,
+    [MULTIPLIERRATE]            DECIMAL (18)   NULL,
+    [CAFEETEMPLATEID]           CHAR (36)      NULL,
+    [CUSTOMFIELDLAYOUTID]       CHAR (36)      NULL,
+    [ONLINECUSTOMFIELDLAYOUTID] CHAR (36)      NULL,
+    [INTERNETFLAG]              BIT            NOT NULL,
+    [INTERNETAPPLYTYPE]         INT            NULL,
+    [DEFAULTGENERATEDATE]       DATETIME       NULL,
+    [FRIENDLYNAME]              NVARCHAR (50)  NULL,
+    [ENABLEEXEMPTIONS]          BIT            DEFAULT ((0)) NOT NULL,
+    [LASTCHANGEDBY]             CHAR (36)      NULL,
+    [LASTCHANGEDON]             DATETIME       CONSTRAINT [DF_TXREMITTANCETYPE_LastChangedOn] DEFAULT (getutcdate()) NOT NULL,
+    [ROWVERSION]                INT            CONSTRAINT [DF_TXREMITTANCETYPE_RowVersion] DEFAULT ((1)) NOT NULL,
+    PRIMARY KEY CLUSTERED ([TXREMITTANCETYPEID] ASC) WITH (FILLFACTOR = 90),
+    CONSTRAINT [FK_CAFEETEMPLATEID] FOREIGN KEY ([CAFEETEMPLATEID]) REFERENCES [dbo].[CAFEETEMPLATE] ([CAFEETEMPLATEID]),
+    CONSTRAINT [FK_CUSTOMFIELDLAYOUTID] FOREIGN KEY ([CUSTOMFIELDLAYOUTID]) REFERENCES [dbo].[CUSTOMFIELDLAYOUT] ([GCUSTOMFIELDLAYOUTS]),
+    CONSTRAINT [FK_INTERNETAPPLYTYPE] FOREIGN KEY ([INTERNETAPPLYTYPE]) REFERENCES [dbo].[BLLICENSECAPAPPLICATIONTYPE] ([BLLICENSECAPAPPLICATIONTYPEID]),
+    CONSTRAINT [FK_ONLINECUSTOMFIELDLAYOUTID] FOREIGN KEY ([ONLINECUSTOMFIELDLAYOUTID]) REFERENCES [dbo].[CUSTOMFIELDLAYOUT] ([GCUSTOMFIELDLAYOUTS]),
+    CONSTRAINT [FK_TXREMITANCESTATUSID] FOREIGN KEY ([DEFAULTSTATUSID]) REFERENCES [dbo].[TXREMITSTATUS] ([TXREMITSTATUSID])
+);
+
+
+GO
+CREATE NONCLUSTERED INDEX [TXREMITTANCETYPE_IX_QUERY]
+    ON [dbo].[TXREMITTANCETYPE]([TXREMITTANCETYPEID] ASC, [NAME] ASC);
+
+
+GO
+
+CREATE TRIGGER [dbo].[TG_TXREMITTANCETYPE_UPDATE] ON [dbo].[TXREMITTANCETYPE] 
+	AFTER UPDATE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+		
+	-- Check if LASTCHANGEDBY contains VALID User Id and it Exists in USERS table, this is in replacement to foreign key reference of TXREMITTANCETYPE table with USERS table.
+	IF EXISTS (SELECT * FROM inserted 
+		LEFT OUTER JOIN USERS WITH (NOLOCK) ON USERS.SUSERGUID = inserted.LASTCHANGEDBY
+		WHERE inserted.LASTCHANGEDBY IS NOT NULL AND USERS.SUSERGUID IS NULL)
+	BEGIN		
+		RAISERROR ('The INSERT or UPDATE statement conflicted with the FOREIGN KEY to table USERS', 16, 0);
+		ROLLBACK;
+		RETURN;
+	END	
+
+    INSERT INTO [HISTORYSYSTEMSETUP]
+    (	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT
+			[inserted].[TXREMITTANCETYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Remittance Name',
+			[deleted].[NAME],
+			[inserted].[NAME],
+			'Tax Remittance Type (' + [inserted].[NAME] + ')',
+			'41E1FC7D-1D43-499B-B40B-7AE70E72A922',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[TXREMITTANCETYPEID] = [inserted].[TXREMITTANCETYPEID]
+	WHERE	[deleted].[NAME] <> [inserted].[NAME]
+	UNION ALL			
+
+	SELECT
+			[inserted].[TXREMITTANCETYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Description',
+			ISNULL([deleted].[DESCRIPTION],'[none]'),		
+			ISNULL([inserted].[DESCRIPTION],'[none]'),
+			'Tax Remittance Type (' + [inserted].[NAME] + ')',
+			'41E1FC7D-1D43-499B-B40B-7AE70E72A922',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[TXREMITTANCETYPEID] = [inserted].[TXREMITTANCETYPEID]
+	WHERE	ISNULL([deleted].[DESCRIPTION],'') <> ISNULL([inserted].[DESCRIPTION],'')
+	UNION ALL
+
+	SELECT
+			[inserted].[TXREMITTANCETYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Active Flag',
+			CASE [deleted].[ACTIVE] WHEN 1 THEN 'Yes' ELSE 'No' END,
+			CASE [inserted].[ACTIVE] WHEN 1 THEN 'Yes' ELSE 'No' END,
+			'Tax Remittance Type (' + [inserted].[NAME] + ')',
+			'41E1FC7D-1D43-499B-B40B-7AE70E72A922',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[TXREMITTANCETYPEID] = [inserted].[TXREMITTANCETYPEID]
+	WHERE	[deleted].[ACTIVE] <> [inserted].[ACTIVE]
+	UNION ALL
+
+	SELECT
+			[inserted].[TXREMITTANCETYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Default Status',
+			ISNULL([TXREMITSTATUS_DELETED].[NAME], '[none]'),
+			ISNULL([TXREMITSTATUS_INSERTED].[NAME], '[none]'),
+			'Tax Remittance Type (' + [inserted].[NAME] + ')',
+			'41E1FC7D-1D43-499B-B40B-7AE70E72A922',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[TXREMITTANCETYPEID] = [inserted].[TXREMITTANCETYPEID]
+			LEFT JOIN [TXREMITSTATUS] TXREMITSTATUS_DELETED WITH (NOLOCK) ON [deleted].[DEFAULTSTATUSID] = [TXREMITSTATUS_DELETED].[TXREMITSTATUSID]
+			LEFT JOIN [TXREMITSTATUS] TXREMITSTATUS_INSERTED WITH (NOLOCK) ON [inserted].[DEFAULTSTATUSID] = [TXREMITSTATUS_INSERTED].[TXREMITSTATUSID]
+	WHERE	ISNULL([deleted].[DEFAULTSTATUSID], '') <> ISNULL([inserted].[DEFAULTSTATUSID], '')	
+	UNION ALL
+
+	SELECT
+			[inserted].[TXREMITTANCETYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Prefix',
+			ISNULL([deleted].[PREFIX],'[none]'),		
+			ISNULL([inserted].[PREFIX],'[none]'),
+			'Tax Remittance Type (' + [inserted].[NAME] + ')',
+			'41E1FC7D-1D43-499B-B40B-7AE70E72A922',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[TXREMITTANCETYPEID] = [inserted].[TXREMITTANCETYPEID]
+	WHERE	ISNULL([deleted].[PREFIX],'') <> ISNULL([inserted].[PREFIX],'')
+	UNION ALL
+
+	SELECT
+			[inserted].[TXREMITTANCETYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Multiple Rate',			
+			ISNULL(CONVERT(NVARCHAR(MAX), [deleted].[MULTIPLIERRATE]),'[none]'),		
+			ISNULL(CONVERT(NVARCHAR(MAX), [inserted].[MULTIPLIERRATE]),'[none]'),
+			'Tax Remittance Type (' + [inserted].[NAME] + ')',
+			'41E1FC7D-1D43-499B-B40B-7AE70E72A922',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[TXREMITTANCETYPEID] = [inserted].[TXREMITTANCETYPEID]
+	WHERE	[deleted].[MULTIPLIERRATE] <> [inserted].[MULTIPLIERRATE]
+			OR ([deleted].[MULTIPLIERRATE] IS NULL AND [inserted].[MULTIPLIERRATE] IS NOT NULL)
+			OR ([deleted].[MULTIPLIERRATE] IS NOT NULL AND [inserted].[MULTIPLIERRATE] IS NULL)
+	UNION ALL
+
+	SELECT
+			[inserted].[TXREMITTANCETYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Fee Template',
+			ISNULL([CAFEETEMPLATE_DELETED].[CAFEETEMPLATENAME], '[none]'),
+			ISNULL([CAFEETEMPLATE_INSERTED].[CAFEETEMPLATENAME], '[none]'),
+			'Tax Remittance Type (' + [inserted].[NAME] + ')',
+			'41E1FC7D-1D43-499B-B40B-7AE70E72A922',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[TXREMITTANCETYPEID] = [inserted].[TXREMITTANCETYPEID]
+			LEFT JOIN [CAFEETEMPLATE] CAFEETEMPLATE_DELETED WITH (NOLOCK) ON [deleted].[CAFEETEMPLATEID] = [CAFEETEMPLATE_DELETED].[CAFEETEMPLATEID]
+			LEFT JOIN [CAFEETEMPLATE] CAFEETEMPLATE_INSERTED WITH (NOLOCK) ON [inserted].[CAFEETEMPLATEID] = [CAFEETEMPLATE_INSERTED].[CAFEETEMPLATEID]
+	WHERE	ISNULL([deleted].[CAFEETEMPLATEID], '') <> ISNULL([inserted].[CAFEETEMPLATEID], '')	
+	UNION ALL
+
+	SELECT
+			[inserted].[TXREMITTANCETYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Custom Field Layout',
+			ISNULL([CUSTOMFIELDLAYOUT_DELETED].[SNAME], '[none]'),
+			ISNULL([CUSTOMFIELDLAYOUT_INSERTED].[SNAME], '[none]'),
+			'Tax Remittance Type (' + [inserted].[NAME] + ')',
+			'41E1FC7D-1D43-499B-B40B-7AE70E72A922',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[TXREMITTANCETYPEID] = [inserted].[TXREMITTANCETYPEID]
+			LEFT JOIN [CUSTOMFIELDLAYOUT] CUSTOMFIELDLAYOUT_DELETED WITH (NOLOCK) ON [deleted].[CUSTOMFIELDLAYOUTID] = [CUSTOMFIELDLAYOUT_DELETED].[GCUSTOMFIELDLAYOUTS]
+			LEFT JOIN [CUSTOMFIELDLAYOUT] CUSTOMFIELDLAYOUT_INSERTED WITH (NOLOCK) ON [inserted].[CUSTOMFIELDLAYOUTID] = [CUSTOMFIELDLAYOUT_INSERTED].[GCUSTOMFIELDLAYOUTS]
+	WHERE	ISNULL([deleted].[CUSTOMFIELDLAYOUTID], '') <> ISNULL([inserted].[CUSTOMFIELDLAYOUTID], '')	
+	UNION ALL
+
+	SELECT
+			[inserted].[TXREMITTANCETYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Online Custom Field Layout',
+			ISNULL([CUSTOMFIELDLAYOUT_DELETED].[SNAME], '[none]'),
+			ISNULL([CUSTOMFIELDLAYOUT_INSERTED].[SNAME], '[none]'),
+			'Tax Remittance Type (' + [inserted].[NAME] + ')',
+			'41E1FC7D-1D43-499B-B40B-7AE70E72A922',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[TXREMITTANCETYPEID] = [inserted].[TXREMITTANCETYPEID]
+			LEFT JOIN [CUSTOMFIELDLAYOUT] CUSTOMFIELDLAYOUT_DELETED WITH (NOLOCK) ON [deleted].[ONLINECUSTOMFIELDLAYOUTID] = [CUSTOMFIELDLAYOUT_DELETED].[GCUSTOMFIELDLAYOUTS]
+			LEFT JOIN [CUSTOMFIELDLAYOUT] CUSTOMFIELDLAYOUT_INSERTED WITH (NOLOCK) ON [inserted].[ONLINECUSTOMFIELDLAYOUTID] = [CUSTOMFIELDLAYOUT_INSERTED].[GCUSTOMFIELDLAYOUTS]
+	WHERE	ISNULL([deleted].[ONLINECUSTOMFIELDLAYOUTID], '') <> ISNULL([inserted].[ONLINECUSTOMFIELDLAYOUTID], '')	
+	UNION ALL
+
+	SELECT
+			[inserted].[TXREMITTANCETYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Allow Online Reporting Flag',
+			CASE [deleted].[INTERNETFLAG] WHEN 1 THEN 'Yes' ELSE 'No' END,
+			CASE [inserted].[INTERNETFLAG] WHEN 1 THEN 'Yes' ELSE 'No' END,
+			'Tax Remittance Type (' + [inserted].[NAME] + ')',
+			'41E1FC7D-1D43-499B-B40B-7AE70E72A922',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[TXREMITTANCETYPEID] = [inserted].[TXREMITTANCETYPEID]
+	WHERE	[deleted].[INTERNETFLAG] <> [inserted].[INTERNETFLAG]
+	UNION ALL
+
+	SELECT
+			[inserted].[TXREMITTANCETYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Internet Apply Type',
+			ISNULL([BLLICENSECAPAPPLICATIONTYPE_DELETED].[NAME], '[none]'),
+			ISNULL([BLLICENSECAPAPPLICATIONTYPE_INSERTED].[NAME], '[none]'),
+			'Tax Remittance Type (' + [inserted].[NAME] + ')',
+			'41E1FC7D-1D43-499B-B40B-7AE70E72A922',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[TXREMITTANCETYPEID] = [inserted].[TXREMITTANCETYPEID]
+			LEFT JOIN [BLLICENSECAPAPPLICATIONTYPE] BLLICENSECAPAPPLICATIONTYPE_DELETED WITH (NOLOCK) ON [deleted].[INTERNETAPPLYTYPE] = [BLLICENSECAPAPPLICATIONTYPE_DELETED].[BLLICENSECAPAPPLICATIONTYPEID]
+			LEFT JOIN [BLLICENSECAPAPPLICATIONTYPE] BLLICENSECAPAPPLICATIONTYPE_INSERTED WITH (NOLOCK) ON [inserted].[INTERNETAPPLYTYPE] = [BLLICENSECAPAPPLICATIONTYPE_INSERTED].[BLLICENSECAPAPPLICATIONTYPEID]
+	WHERE	ISNULL([deleted].[INTERNETAPPLYTYPE], '') <> ISNULL([inserted].[INTERNETAPPLYTYPE], '')	
+	UNION ALL
+
+	SELECT
+			[inserted].[TXREMITTANCETYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Default Generated Date',
+			ISNULL(CONVERT(NVARCHAR(MAX), [deleted].[DEFAULTGENERATEDATE], 121),'[none]'),
+			ISNULL(CONVERT(NVARCHAR(MAX), [inserted].[DEFAULTGENERATEDATE], 121),'[none]'),
+			'Tax Remittance Type (' + [inserted].[NAME] + ')',
+			'41E1FC7D-1D43-499B-B40B-7AE70E72A922',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[TXREMITTANCETYPEID] = [inserted].[TXREMITTANCETYPEID]
+	WHERE	ISNULL([deleted].[DEFAULTGENERATEDATE],'') <> ISNULL([inserted].[DEFAULTGENERATEDATE],'')
+	UNION ALL
+
+	SELECT
+			[inserted].[TXREMITTANCETYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Friendly Name',
+			ISNULL([deleted].[FRIENDLYNAME],'[none]'),		
+			ISNULL([inserted].[FRIENDLYNAME],'[none]'),
+			'Tax Remittance Type (' + [inserted].[NAME] + ')',
+			'41E1FC7D-1D43-499B-B40B-7AE70E72A922',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[TXREMITTANCETYPEID] = [inserted].[TXREMITTANCETYPEID]
+	WHERE	ISNULL([deleted].[FRIENDLYNAME],'') <> ISNULL([inserted].[FRIENDLYNAME],'')
+	UNION ALL
+
+	SELECT
+			[inserted].[TXREMITTANCETYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Enable Exemptions Flag',
+			CASE [deleted].[ENABLEEXEMPTIONS] WHEN 1 THEN 'Yes' ELSE 'No' END,
+			CASE [inserted].[ENABLEEXEMPTIONS] WHEN 1 THEN 'Yes' ELSE 'No' END,
+			'Tax Remittance Type (' + [inserted].[NAME] + ')',
+			'41E1FC7D-1D43-499B-B40B-7AE70E72A922',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[TXREMITTANCETYPEID] = [inserted].[TXREMITTANCETYPEID]
+	WHERE	[deleted].[ENABLEEXEMPTIONS] <> [inserted].[ENABLEEXEMPTIONS]
+END
+GO
+
+CREATE TRIGGER [dbo].[TG_TXREMITTANCETYPE_INSERT] ON [dbo].[TXREMITTANCETYPE]   
+   FOR INSERT
+AS 
+BEGIN	
+	SET NOCOUNT ON;
+	-- Check if LASTCHANGEDBY contains VALID User Id and it Exists in USERS table, this is in replacement to foreign key reference of TXREMITTANCETYPE table with USERS table.
+    	IF EXISTS (SELECT * FROM inserted 
+		LEFT OUTER JOIN USERS WITH (NOLOCK) ON USERS.SUSERGUID = inserted.LASTCHANGEDBY
+		WHERE inserted.LASTCHANGEDBY IS NOT NULL AND USERS.SUSERGUID IS NULL)
+	BEGIN		
+		RAISERROR ('The INSERT or UPDATE statement conflicted with the FOREIGN KEY to table USERS', 16, 0);
+		ROLLBACK;
+		RETURN;
+	END
+	    INSERT INTO [HISTORYSYSTEMSETUP]
+    (	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT
+			[inserted].[TXREMITTANCETYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Tax Remittance Type Added',
+			'',
+			'',
+			'Tax Remittance Type (' + [inserted].[NAME] + ')',
+			'41E1FC7D-1D43-499B-B40B-7AE70E72A922',
+			1,
+			1,
+			[inserted].[NAME]
+	FROM	[inserted]	
+END
+GO
+
+CREATE TRIGGER [dbo].[TG_TXREMITTANCETYPE_DELETE] ON [dbo].[TXREMITTANCETYPE]
+   AFTER DELETE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+
+    INSERT INTO [HISTORYSYSTEMSETUP]
+    (	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+
+	SELECT
+			[deleted].[TXREMITTANCETYPEID],
+			[deleted].[ROWVERSION],
+			GETUTCDATE(),
+			(SELECT dbo.UFN_GET_USERID_FROM_CONTEXT_INFO()),
+			'Tax Remittance Type Deleted',
+			'',
+			'',
+			'Tax Remittance Type (' + [deleted].[NAME] + ')',
+			'41E1FC7D-1D43-499B-B40B-7AE70E72A922',
+			3,
+			1,
+			[deleted].[NAME]
+	FROM	[deleted]
+END

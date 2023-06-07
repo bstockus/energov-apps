@@ -1,0 +1,13 @@
+﻿CREATE FUNCTION [dbo].[UFN_GET_CASE_FROM_CONTEXT_INFO] ()
+RETURNS VARCHAR(50)
+
+AS
+BEGIN
+  DECLARE @ContextInfo VARBINARY(128) = CONTEXT_INFO()
+  DECLARE @CaseTypeText VARCHAR(50) = NULL
+  IF CHARINDEX('_', @ContextInfo) > 0
+  BEGIN
+	SET @CaseTypeText= RTRIM(REPLACE(CONVERT(VARCHAR(50), REPLACE(SUBSTRING(@ContextInfo, CHARINDEX('_', @ContextInfo), LEN(@ContextInfo)), '_', '')), CHAR(0), CHAR(32) ));
+  END  
+    RETURN @CaseTypeText
+END

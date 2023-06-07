@@ -1,0 +1,191 @@
+﻿CREATE TABLE [dbo].[TXREMITSTATUS] (
+    [TXREMITSTATUSID]       CHAR (36)      NOT NULL,
+    [NAME]                  NVARCHAR (50)  NOT NULL,
+    [DESCRIPTION]           NVARCHAR (MAX) NULL,
+    [TXREMITSTATUSSYSTEMID] INT            NOT NULL,
+    [LASTCHANGEDBY]         CHAR (36)      NULL,
+    [LASTCHANGEDON]         DATETIME       CONSTRAINT [DF_TXREMITSTATUS_LastChangedOn] DEFAULT (getutcdate()) NOT NULL,
+    [ROWVERSION]            INT            CONSTRAINT [DF_TXREMITSTATUS_RowVersion] DEFAULT ((1)) NOT NULL,
+    CONSTRAINT [PK_TXREMITSTATUS] PRIMARY KEY CLUSTERED ([TXREMITSTATUSID] ASC) WITH (FILLFACTOR = 90),
+    CONSTRAINT [FK_TXREMITSTATUSSYSTEMID] FOREIGN KEY ([TXREMITSTATUSSYSTEMID]) REFERENCES [dbo].[TXREMITSTATUSSYSTEM] ([TXREMITSTATUSSYSTEMID])
+);
+
+
+GO
+CREATE NONCLUSTERED INDEX [TXREMITSTATUS_IX_QUERY]
+    ON [dbo].[TXREMITSTATUS]([TXREMITSTATUSID] ASC, [NAME] ASC);
+
+
+GO
+
+
+CREATE TRIGGER [dbo].[TG_TXREMITSTATUS_UPDATE] ON  [dbo].[TXREMITSTATUS]
+	AFTER UPDATE
+AS 
+BEGIN	
+	SET NOCOUNT ON;
+
+	-- Check if LASTCHANGEDBY contains VALID User Id and it Exists in USERS table, this is in replacement to foreign key reference of TXREMITSTATUS table with USERS table.
+	IF EXISTS (SELECT * FROM inserted 
+		LEFT OUTER JOIN USERS WITH (NOLOCK) ON USERS.SUSERGUID = inserted.LASTCHANGEDBY
+		WHERE inserted.LASTCHANGEDBY IS NOT NULL AND USERS.SUSERGUID IS NULL)
+	BEGIN		
+		RAISERROR ('The INSERT or UPDATE statement conflicted with the FOREIGN KEY to table USERS', 16, 0);
+		ROLLBACK;
+		RETURN;
+	END
+
+	INSERT INTO [HISTORYSYSTEMSETUP]
+		(	[ID],
+			[ROWVERSION],
+			[CHANGEDON],
+			[CHANGEDBY],
+			[FIELDNAME],
+			[OLDVALUE],
+			[NEWVALUE],
+			[ADDITIONALINFO],
+			[FORMID],
+			[ACTION],
+			[ISROOT],
+			[RECORDNAME]
+		)
+	SELECT 
+			[inserted].[TXREMITSTATUSID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Name',
+			[deleted].[NAME],
+			[inserted].[NAME],
+			'Tax Remittance Status (' + [inserted].[NAME] + ')',
+			'4370912C-684B-486A-BBED-CE954691F186',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[TXREMITSTATUSID] = [inserted].[TXREMITSTATUSID]
+	WHERE	[deleted].[NAME] <> [inserted].[NAME]
+	UNION ALL
+	SELECT 
+			[inserted].[TXREMITSTATUSID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Description',
+			ISNULL([deleted].[DESCRIPTION],'[none]'),
+			ISNULL([inserted].[DESCRIPTION],'[none]'),
+			'Tax Remittance Status (' + [inserted].[NAME] + ')',
+			'4370912C-684B-486A-BBED-CE954691F186',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[TXREMITSTATUSID] = [inserted].[TXREMITSTATUSID]
+	WHERE	ISNULL([deleted].[DESCRIPTION], '') <> ISNULL([inserted].[DESCRIPTION], '')
+	UNION ALL
+	SELECT
+			[inserted].[TXREMITSTATUSID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'System Status',
+			[TXREMITSTATUSSYSTEM_DELETED].[NAME],
+			[TXREMITSTATUSSYSTEM_INSERTED].[NAME],
+			'Tax Remittance Status (' + [inserted].[NAME] + ')',
+			'4370912C-684B-486A-BBED-CE954691F186',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[TXREMITSTATUSID] = [inserted].[TXREMITSTATUSID]
+			JOIN TXREMITSTATUSSYSTEM TXREMITSTATUSSYSTEM_DELETED WITH (NOLOCK) ON [deleted].[TXREMITSTATUSSYSTEMID] = [TXREMITSTATUSSYSTEM_DELETED].[TXREMITSTATUSSYSTEMID]
+			JOIN TXREMITSTATUSSYSTEM TXREMITSTATUSSYSTEM_INSERTED WITH (NOLOCK) ON [inserted].[TXREMITSTATUSSYSTEMID] = [TXREMITSTATUSSYSTEM_INSERTED].[TXREMITSTATUSSYSTEMID]
+	WHERE	[deleted].[TXREMITSTATUSSYSTEMID] <> [inserted].[TXREMITSTATUSSYSTEMID]
+
+END
+GO
+
+
+CREATE TRIGGER [dbo].[TG_TXREMITSTATUS_INSERT] ON [dbo].[TXREMITSTATUS]
+   AFTER INSERT
+AS 
+BEGIN
+	SET NOCOUNT ON;
+
+	-- Check if LASTCHANGEDBY contains VALID User Id and it Exists in USERS table, this is in replacement to foreign key reference of TXREMITSTATUS table with USERS table.
+	IF EXISTS (SELECT * FROM inserted 
+		LEFT OUTER JOIN USERS WITH (NOLOCK) ON USERS.SUSERGUID = inserted.LASTCHANGEDBY
+		WHERE inserted.LASTCHANGEDBY IS NOT NULL AND USERS.SUSERGUID IS NULL)
+	BEGIN		
+		RAISERROR ('The INSERT or UPDATE statement conflicted with the FOREIGN KEY to table USERS', 16, 0);
+		ROLLBACK;
+		RETURN;
+	END
+
+	INSERT INTO [HISTORYSYSTEMSETUP]
+		(
+			[ID],
+			[ROWVERSION],
+			[CHANGEDON],
+			[CHANGEDBY],
+			[FIELDNAME],
+			[OLDVALUE],
+			[NEWVALUE],
+			[ADDITIONALINFO],
+			[FORMID],
+			[ACTION],
+			[ISROOT],
+			[RECORDNAME]
+		)
+	SELECT 
+			[inserted].[TXREMITSTATUSID], 
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Tax Remittance Status Added',
+			'',
+			'',
+			'Tax Remittance Status (' + [inserted].[NAME] + ')',
+			'4370912C-684B-486A-BBED-CE954691F186',
+			1,
+			1,
+			[inserted].[NAME]
+    FROM	[inserted] 
+END
+GO
+
+
+CREATE TRIGGER [dbo].[TG_TXREMITSTATUS_DELETE] ON  [dbo].[TXREMITSTATUS]
+	AFTER DELETE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+	INSERT INTO [HISTORYSYSTEMSETUP]
+		(	[ID],
+			[ROWVERSION],
+			[CHANGEDON],
+			[CHANGEDBY],
+			[FIELDNAME],
+			[OLDVALUE],
+			[NEWVALUE],
+			[ADDITIONALINFO],
+			[FORMID],
+			[ACTION],
+			[ISROOT],
+			[RECORDNAME]
+		)
+	SELECT
+			[deleted].[TXREMITSTATUSID],
+			[deleted].[ROWVERSION],
+			GETUTCDATE(),
+			(SELECT dbo.UFN_GET_USERID_FROM_CONTEXT_INFO()),
+			'Tax Remittance Status Deleted',
+			'',
+			'',
+			'Tax Remittance Status (' + [deleted].[NAME] + ')',
+			'4370912C-684B-486A-BBED-CE954691F186',
+			3,
+			1,
+			[deleted].[NAME]
+	FROM	[deleted]
+END

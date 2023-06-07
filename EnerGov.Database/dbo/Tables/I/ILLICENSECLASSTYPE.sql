@@ -1,0 +1,191 @@
+﻿CREATE TABLE [dbo].[ILLICENSECLASSTYPE] (
+    [ILLICENSECLASSTYPEID]         CHAR (36)      NOT NULL,
+    [NAME]                         NVARCHAR (50)  NOT NULL,
+    [DESCRIPTION]                  NVARCHAR (MAX) NULL,
+    [ILLICENSECLASSTYPECATEGORYID] CHAR (36)      NOT NULL,
+    [LASTCHANGEDBY]                CHAR (36)      NULL,
+    [LASTCHANGEDON]                DATETIME       CONSTRAINT [DF_ILLICENSECLASSTYPE_LastChangedOn] DEFAULT (getutcdate()) NOT NULL,
+    [ROWVERSION]                   INT            CONSTRAINT [DF_ILLICENSECLASSTYPE_RowVersion] DEFAULT ((1)) NOT NULL,
+    CONSTRAINT [PK_ILLICENSECLASSTYPE] PRIMARY KEY CLUSTERED ([ILLICENSECLASSTYPEID] ASC) WITH (FILLFACTOR = 90),
+    CONSTRAINT [FK_ILLICCLASSTYP_CLASSTYPCAT] FOREIGN KEY ([ILLICENSECLASSTYPECATEGORYID]) REFERENCES [dbo].[ILLICENSECLASSTYPECATEGORY] ([ILLICENSECLASSTYPECATEGORYID])
+);
+
+
+GO
+CREATE NONCLUSTERED INDEX [ILLICENSECLASSTYPE_IX_QUERY]
+    ON [dbo].[ILLICENSECLASSTYPE]([ILLICENSECLASSTYPEID] ASC, [NAME] ASC);
+
+
+GO
+
+
+CREATE TRIGGER [dbo].[TG_ILLICENSECLASSTYPE_DELETE] ON  [dbo].[ILLICENSECLASSTYPE]
+   AFTER DELETE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+	INSERT INTO [HISTORYSYSTEMSETUP]
+	(	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT
+			[deleted].[ILLICENSECLASSTYPEID],
+			[deleted].[ROWVERSION],
+			GETUTCDATE(),
+			(SELECT dbo.UFN_GET_USERID_FROM_CONTEXT_INFO()),
+			'Professional License Classification Type Deleted',
+			'',
+			'',
+			'Professional License Classification Type (' + [deleted].[NAME] + ')',
+			'DB84E545-E25E-416B-B241-61ACFAC85E72',
+			3,
+			1,
+			[deleted].[NAME]
+	FROM	[deleted]
+END
+GO
+
+
+CREATE TRIGGER [dbo].[TG_ILLICENSECLASSTYPE_INSERT] ON [dbo].[ILLICENSECLASSTYPE]
+   AFTER INSERT
+AS 
+BEGIN
+	SET NOCOUNT ON;
+
+	-- Check if LASTCHANGEDBY contains VALID User Id and it Exists in USERS table, this is in replacement to foreign key reference of ILLICENSECLASSTYPE table with USERS table.
+	IF EXISTS (SELECT * FROM inserted 
+		LEFT OUTER JOIN USERS WITH (NOLOCK) ON USERS.SUSERGUID = inserted.LASTCHANGEDBY
+		WHERE inserted.LASTCHANGEDBY IS NOT NULL AND USERS.SUSERGUID IS NULL)
+	BEGIN		
+		RAISERROR ('The INSERT or UPDATE statement conflicted with the FOREIGN KEY to table USERS', 16, 0);
+		ROLLBACK;
+		RETURN;
+	END
+
+	INSERT INTO [HISTORYSYSTEMSETUP]
+    (
+        [ID],
+        [ROWVERSION],
+        [CHANGEDON],
+        [CHANGEDBY],
+        [FIELDNAME],
+        [OLDVALUE],
+        [NEWVALUE],
+        [ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT 
+        [inserted].[ILLICENSECLASSTYPEID], 
+        [inserted].[ROWVERSION],
+        GETUTCDATE(),
+        [inserted].[LASTCHANGEDBY],
+        'Professional License Classification Type Added',
+        '',
+        '',
+        'Professional License Classification Type (' + [inserted].[NAME] + ')',
+		'DB84E545-E25E-416B-B241-61ACFAC85E72',
+		1,
+		1,
+		[inserted].[NAME]
+    FROM [inserted] 
+END
+GO
+
+
+CREATE TRIGGER [dbo].[TG_ILLICENSECLASSTYPE_UPDATE] ON  [dbo].[ILLICENSECLASSTYPE]
+   AFTER UPDATE
+AS 
+BEGIN	
+	SET NOCOUNT ON;
+
+	-- Check if LASTCHANGEDBY contains VALID User Id and it Exists in USERS table, this is in replacement to foreign key reference of ILLICENSECLASSTYPE table with USERS table.
+	IF EXISTS (SELECT * FROM inserted 
+		LEFT OUTER JOIN USERS WITH (NOLOCK) ON USERS.SUSERGUID = inserted.LASTCHANGEDBY
+		WHERE inserted.LASTCHANGEDBY IS NOT NULL AND USERS.SUSERGUID IS NULL)
+	BEGIN		
+		RAISERROR ('The INSERT or UPDATE statement conflicted with the FOREIGN KEY to table USERS', 16, 0);
+		ROLLBACK;
+		RETURN;
+	END
+
+
+	INSERT INTO [HISTORYSYSTEMSETUP]
+    (	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT 
+			[inserted].[ILLICENSECLASSTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Name',
+			[deleted].[NAME],
+			[inserted].[NAME],
+			'Professional License Classification Type (' + [inserted].[NAME] + ')',
+			'DB84E545-E25E-416B-B241-61ACFAC85E72',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[ILLICENSECLASSTYPEID] = [inserted].[ILLICENSECLASSTYPEID]
+	WHERE	[deleted].[NAME] <> [inserted].[NAME]
+	UNION ALL
+	SELECT
+			[inserted].[ILLICENSECLASSTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Description',
+			ISNULL([deleted].[DESCRIPTION],'[none]'),
+			ISNULL([inserted].[DESCRIPTION],'[none]'),
+			'Professional License Classification Type (' + [inserted].[NAME] + ')',
+			'DB84E545-E25E-416B-B241-61ACFAC85E72',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[ILLICENSECLASSTYPEID] = [inserted].[ILLICENSECLASSTYPEID]
+	WHERE	ISNULL([deleted].[DESCRIPTION],'') <> ISNULL([inserted].[DESCRIPTION],'')
+	UNION ALL
+	SELECT
+			[inserted].[ILLICENSECLASSTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Category',
+			[ILLICENSECLASSTYPECATEGORY_DELETED].[NAME],
+			[ILLICENSECLASSTYPECATEGORY_INSERTED].[NAME],
+			'Professional License Classification Type (' + [inserted].[NAME] + ')',
+			'DB84E545-E25E-416B-B241-61ACFAC85E72',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[ILLICENSECLASSTYPEID] = [inserted].[ILLICENSECLASSTYPEID]
+			INNER JOIN [ILLICENSECLASSTYPECATEGORY] ILLICENSECLASSTYPECATEGORY_INSERTED WITH (NOLOCK) ON [ILLICENSECLASSTYPECATEGORY_INSERTED].[ILLICENSECLASSTYPECATEGORYID] = [inserted].[ILLICENSECLASSTYPECATEGORYID]
+			INNER JOIN [ILLICENSECLASSTYPECATEGORY] ILLICENSECLASSTYPECATEGORY_DELETED WITH (NOLOCK) ON [ILLICENSECLASSTYPECATEGORY_DELETED].[ILLICENSECLASSTYPECATEGORYID] = [deleted].[ILLICENSECLASSTYPECATEGORYID]
+	WHERE	[deleted].[ILLICENSECLASSTYPECATEGORYID] <> [inserted].[ILLICENSECLASSTYPECATEGORYID]
+END

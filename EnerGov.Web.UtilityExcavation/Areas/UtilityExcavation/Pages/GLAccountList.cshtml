@@ -1,0 +1,75 @@
+﻿@page
+@using EnerGov.Web.Common.Infrastructure
+@using EnerGov.Web.UtilityExcavation.Helpers
+@model GLAccountListModel
+
+@{
+    this.UseLayout("GL Accounts List");
+}
+
+@section Header {
+    GL Accounts List
+}
+
+@section Breadcrumbs {
+    <li>GL Accounts</li>
+    <li class="active">List</li>
+}
+
+<lte-box>
+    <lte-box-header>
+        <lte-box-title>GL Accounts</lte-box-title>
+        <lte-box-tools>
+            <datatable-search table-id="accounts"></datatable-search>
+        </lte-box-tools>
+    </lte-box-header>
+
+    <lte-box-body padding="false">
+
+        <datatable table-id="accounts" table-type="Normal">
+
+            <datatable-headers>
+
+                <datatable-header>Type of Work</datatable-header>
+                <datatable-header>Type of Fee</datatable-header>
+                <datatable-header>Revenue Account</datatable-header>
+                <datatable-header>Expense Account</datatable-header>
+
+            </datatable-headers>
+
+            <datatable-body>
+
+                @foreach (var account in Model.AccountInfo.OrderBy(_ => _.WorkType.WorkTypeName).ThenBy(_ => _.Fee.FeeName)) {
+
+                    <datatable-row>
+
+                        <datatable-cell>
+                            @account.WorkType.WorkTypeName
+                        </datatable-cell>
+
+                        <datatable-cell>
+                            @account.Fee.FeeName
+                        </datatable-cell>
+
+                        <datatable-cell>
+                            @account.RevenueAccount.ToMunisAccountDisplayBlock()
+                            <br/>
+                            @account.RevenueCashAccount.ToMunisAccountDisplayBlock()
+                        </datatable-cell>
+
+                        <datatable-cell>
+                            @account.ExpenseAccount.ToMunisAccountDisplayBlock()
+                            <br/>
+                            @account.ExpenseCashAccount.ToMunisAccountDisplayBlock()
+                        </datatable-cell>
+
+                    </datatable-row>
+
+                }
+
+            </datatable-body>
+
+        </datatable>
+
+    </lte-box-body>
+</lte-box>

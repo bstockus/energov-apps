@@ -1,0 +1,3 @@
+﻿CREATE TYPE [reviewcoordinator].[SYSTEM_TASK_TYPES] AS TABLE (
+    [SYSTEMTASKTYPEID] INT NULL);
+

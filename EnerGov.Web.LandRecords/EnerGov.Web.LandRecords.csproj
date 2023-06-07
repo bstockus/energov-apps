@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
+    <CopyRefAssembliesToPublishDirectory>true</CopyRefAssembliesToPublishDirectory>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Lax.Business.Authorization.HttpContext" Version="8.1.0" />
+    <PackageReference Include="AutoFac.Extensions.DependencyInjection" Version="7.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EnerGov.Business.Abstractions\EnerGov.Business.Abstractions.csproj" />
+    <ProjectReference Include="..\EnerGov.Business.Identity\EnerGov.Business.Identity.csproj" />
+    <ProjectReference Include="..\EnerGov.Business.LandRecords\EnerGov.Business.LandRecords.csproj" />
+    <ProjectReference Include="..\EnerGov.Business\EnerGov.Business.csproj" />
+    <ProjectReference Include="..\EnerGov.Security\EnerGov.Security.csproj" />
+    <ProjectReference Include="..\EnerGov.Web.Common\EnerGov.Web.Common.csproj" />
+  </ItemGroup>
+
+</Project>

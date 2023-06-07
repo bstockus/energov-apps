@@ -1,0 +1,19 @@
+﻿CREATE TABLE [dbo].[COMPANY] (
+    [COMPANYID]     CHAR (36)       NOT NULL,
+    [COMPANYNAME]   NVARCHAR (100)  NOT NULL,
+    [MANUFACTURER]  BIT             CONSTRAINT [DF_Company_Manufacturer] DEFAULT ((0)) NOT NULL,
+    [VENDOR]        BIT             NOT NULL,
+    [SHIPPER]       BIT             CONSTRAINT [DF_Company_Shipper] DEFAULT ((0)) NOT NULL,
+    [EMAIL]         NVARCHAR (250)  NULL,
+    [WEBSITE]       NVARCHAR (100)  NULL,
+    [PHONE]         NVARCHAR (50)   NULL,
+    [FAX]           NVARCHAR (50)   NULL,
+    [PHONE2]        NVARCHAR (50)   NULL,
+    [LOGO]          VARBINARY (MAX) NULL,
+    [LASTCHANGEDON] DATETIME        NULL,
+    [LASTCHANGEDBY] CHAR (36)       NULL,
+    [ROWVERSION]    INT             CONSTRAINT [DF_Company_RowVersion] DEFAULT ((0)) NOT NULL,
+    CONSTRAINT [PK_AMCompany] PRIMARY KEY CLUSTERED ([COMPANYID] ASC) WITH (FILLFACTOR = 90),
+    CONSTRAINT [FK_Company_Users] FOREIGN KEY ([LASTCHANGEDBY]) REFERENCES [dbo].[USERS] ([SUSERGUID])
+);
+

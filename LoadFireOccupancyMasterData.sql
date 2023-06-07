@@ -1,0 +1,83 @@
+DELETE FROM [FireOccupancy].[InspectionZones];
+GO
+
+INSERT INTO [FireOccupancy].[InspectionZones] ([ZoneAbbreviation],[InspectionZoneId],[ZoneName],[IsZoneEscalatable],[ZoneEscalationContactEmail])
+VALUES 
+('1A','30cc8899-e0e2-4627-97be-d2524cc671d9','Station 1 - A Shift',0,''),
+('1B','408cdf8a-8ad6-4e72-93cc-a93fe4207690','Station 1 - B Shift',0,''),
+('1C','3a8732ab-d9c2-4d95-b11d-63fe660ef12b','Station 1 - C Shift',0,''),
+('1D','e81e9e57-7aac-4736-9bb6-6a1671114ed3','Station 1 - A Shift',0,''),
+('1E','3e38bc7c-63aa-478c-bd20-a589366ff4cf','Station 1 - B Shift',0,''),
+('1F','92eb6104-0355-43dd-aa12-73ad4ad6b7f4','Station 1 - C Shift',0,''),
+('1G','fee697bf-015e-4497-8a9c-3ffd8a191037','Station 1 - A Shift',0,''),
+('1H','cf87443d-7587-43c6-8705-377b194db482','Station 1 - B Shift',0,''),
+('1I','7b5e2335-dcd6-4fe9-8c27-19eaa18a83f3','Station 1 - C Shift',0,''),
+('2A','41b30376-9afe-43a3-a9d2-f0539c56b2c6','Station 2 - A Shift',0,''),
+('2B','0746e9f7-f702-4518-8423-aeaaa562a5f8','Station 2 - B Shift',0,''),
+('2C','b8a9b64e-2fbd-47b4-81a1-8259720aee70','Station 2 - C Shift',0,''),
+('2D','f5074e76-4e25-4f76-90d4-75d2e780a720','Station 2 - A Shift',0,''),
+('2E','39189982-a103-4fa4-bea7-7a216997b054','Station 2 - B Shift',0,''),
+('2F','653ae849-295e-4503-8564-a5bf5881b867','Station 2 - C Shift',0,''),
+('3A','4f0d0fc7-4d21-48dc-b535-a4de21ab5d7e','Station 3 - A Shift',0,''),
+('3B','99dd6e99-7804-4b47-af9a-45e0f6bd8c5d','Station 3 - B Shift',0,''),
+('3C','0c4428d8-afca-4e78-ad5d-111001a8a857','Station 3 - C Shift',0,''),
+('3D','47775c14-990a-4a1d-b080-41918c95f0d3','Station 3 - A Shift',0,''),
+('3E','23b678a5-e585-4abb-9937-a9f215fa08fb','Station 3 - B Shift',0,''),
+('3F','a29aac79-d7d7-4d61-a082-a7aad331c430','Station 3 - C Shift',0,''),
+('4A','8422a84d-1126-48ab-92d7-05912c729689','Station 4 - A Shift',0,''),
+('4B','e8c80f6f-8de1-4dd5-92c8-a8ec00b6c5db','Station 4 - B Shift',0,''),
+('4C','a7bb4986-2629-4982-8acb-9818df41013a','Station 4 - C Shift',0,''),
+('F1','113aae72-32f6-435a-ae33-296b788db851','F1',0,''),
+('F2','16961407-31c6-4f4f-be3d-b4200d21f38e','F2',0,''),
+('F3','2e611341-794f-41f0-a830-ff714db2a2db','F3',0,''),
+('F4','9dca7aa0-14c3-457a-b930-3a1cabd3396e','F4',0,''),
+('F5','86e9f8e0-466b-45b8-a1b5-f70e6fbaba72','F5',0,''),
+('F6','ab8bb1ec-6e0d-4e41-b03b-4cdde7b0fddf','F6',0,''),
+('F7','5a376fbd-9b4a-43d7-b107-ee5e9e64359c','F7',0,''),
+('A1','c7efe372-6297-4c54-9093-beccb8546f72','Airport Station',0,''),
+('T1','22976bb4-c78b-4255-b35f-3e4eeafe769f','T1',0,''),
+('M1','6480d091-db37-411e-8bf3-c891b9d81a9f','M1',0,''),
+('WU','7cb09d9f-6811-43af-bc0e-7386e510b0d5','WU',0,''),
+('PR','c16399f3-6ab3-4089-993c-090e9e3d2a25','PR',0,''),
+('LC','ef4db7a8-0951-4d15-8038-7f978f98ef88','LC',0,''),
+('MD','f8c1ddbf-e669-41f4-bbda-02042226ff51','MD',0,'');
+GO
+
+DELETE FROM [FireOccupancy].[Inspectors];
+GO
+
+INSERT INTO [FireOccupancy].[Inspectors] ([CustomFieldPickListItemId],[EmailAddress])
+VALUES
+('539254af-6f9c-4cd0-8dcf-f0167f172299','bayerj@cityoflacrosse.org'),
+('46bb7a83-e482-46e5-8a6d-9f999dba46b5','bolstada@cityoflacrosse.org'),
+('b42650b8-2112-4646-b453-75bacd2dc4cd','buleym@cityoflacrosse.org'),
+('ad0d78ee-244b-4507-b07a-588eeeaa291f','cashs@cityoflacrosse.org'),
+('defa2c5f-6c44-4174-a427-40ca52314b3a','duchrowd@cityoflacrosse.org'),
+('3c49c88c-5185-4515-8575-dae4962a954e','Elsenb@cityoflacrosse.org'),
+('09f17994-9ccd-4e44-989c-ce7ab30949ef','foleya@cityoflacrosse.org'),
+('b7f9b470-c63c-41d5-bab4-939b7b889d83','Formaneka@cityoflacrosse.org'),
+('d3bc1d61-50d6-4d98-95f7-e5cee6c36099','Georget@cityoflacrosse.org'),
+('03a60a38-e75c-4f24-ba15-d281fb682291','Griffitht@cityoflacrosse.org'),
+('fa869434-70a6-4d0d-a6a0-75a2583d0783','Hansonm@cityoflacrosse.org'),
+('97493182-b191-4499-b697-762e9f13b153','Hillcoatj@cityoflacrosse.org'),
+('9696e380-47e0-4344-bcd9-84f025e967de','Knudsent@cityoflacrosse.org'),
+('7a6709ab-b06b-4e13-8ead-50e26fbe9713','Markerta@cityoflacrosse.org'),
+('09e2f56f-4faf-4576-ad6e-7b2de55620a1','Meinertzn@cityoflacrosse.org'),
+('7ccacaa6-bb62-4c58-a4cd-6b726c07b2e5','Neherb@cityoflacrosse.org'),
+('c17a5a62-7467-445a-9b61-f48731916b91','PlacekR@cityoflacrosse.org'),
+('509253b6-e525-45a8-bfde-8574e2d21e10','SchneiderD@cityoflacrosse.org'),
+('b8645a58-0fa9-4f28-98d2-0fc811dfd92b','SchottJ@cityoflacrosse.org'),
+('c37e0945-123c-4215-890f-0ab295d3ac13','SnyderC@cityoflacrosse.org'),
+('d45c306e-27a5-4744-a2b3-25a72ba60d5b','SodenK@cityoflacrosse.org'),
+('8fd94b4f-012a-4eb6-af71-32f440b056c4','TempG@cityoflacrosse.org'),
+('c544470f-92d0-41fe-ac6f-4a8bf0c1e0eb','TrussoniS@cityoflacrosse.org'),
+('76ff01d8-6f71-47db-962e-1fd41ef38cdf','TryggestadL@cityoflacrosse.org'),
+('f3542ded-9764-47af-a38e-5cacacaacf27','WaltersJ@cityoflacrosse.org'),
+('8e65bc3b-fcdb-4339-96c5-3d6d25e38ea8','WestpfahlC@cityoflacrosse.org'),
+('851224cb-83ef-417a-8e6e-d30d5c318e3f','XiongB@cityoflacrosse.org'),
+('e800af99-dc34-4005-be51-88f3958c1784','kochiej@cityoflacrosse.org'),
+('a15587ea-3a52-4893-ae48-19f3869d2790','millerm@cityoflacrosse.org'),
+('b7bd1538-c76c-4266-b763-3c9b31faa07b','shackletonj@cityoflacrosse.org'),
+('52dbc2cd-5864-4051-8a47-2ed2d912fc45','hundtb@cityoflacrosse.org'),
+('867A8F4C-D926-4E28-92D5-78AECC2E8938','grittb@cityoflacrosse.org');
+GO

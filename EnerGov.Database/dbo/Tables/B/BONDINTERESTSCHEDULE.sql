@@ -1,0 +1,250 @@
+﻿CREATE TABLE [dbo].[BONDINTERESTSCHEDULE] (
+    [BONDINTERESTSCHEDULEID] CHAR (36)      NOT NULL,
+    [NAME]                   NVARCHAR (100) NOT NULL,
+    [DESCRIPTION]            NVARCHAR (500) NULL,
+    [ISCOMPOUNDINTEREST]     BIT            DEFAULT ((0)) NOT NULL,
+    [INTERESTMETHODID]       INT            NULL,
+    [CAFEEID]                CHAR (36)      NULL,
+    [CHARGECODE]             NVARCHAR (100) NULL,
+    [LASTCHANGEDBY]          CHAR (36)      NULL,
+    [LASTCHANGEDON]          DATETIME       CONSTRAINT [DF_BONDINTERESTSCHEDULE_LastChangedOn] DEFAULT (getutcdate()) NOT NULL,
+    [ROWVERSION]             INT            CONSTRAINT [DF_BONDINTERESTSCHEDULE_RowVersion] DEFAULT ((1)) NOT NULL,
+    [JURISDICTIONID]         CHAR (36)      NULL,
+    CONSTRAINT [PK_BONDINTERESTSCHEDULE] PRIMARY KEY NONCLUSTERED ([BONDINTERESTSCHEDULEID] ASC) WITH (FILLFACTOR = 90),
+    CONSTRAINT [FK_BOND_INTMETHOD] FOREIGN KEY ([INTERESTMETHODID]) REFERENCES [dbo].[INTERESTMETHOD] ([INTERESTMETHODID]),
+    CONSTRAINT [FK_BONDINTSCH_FEEID] FOREIGN KEY ([CAFEEID]) REFERENCES [dbo].[CAFEE] ([CAFEEID]),
+    CONSTRAINT [FK_BONDINTSCHED_JURISDICTIONID] FOREIGN KEY ([JURISDICTIONID]) REFERENCES [dbo].[JURISDICTION] ([JURISDICTIONID])
+);
+
+
+GO
+CREATE NONCLUSTERED INDEX [BONDINTERESTSCHEDULE_IX_QUERY]
+    ON [dbo].[BONDINTERESTSCHEDULE]([BONDINTERESTSCHEDULEID] ASC, [NAME] ASC);
+
+
+GO
+
+CREATE TRIGGER [dbo].[TG_BONDINTERESTSCHEDULE_UPDATE] ON [dbo].[BONDINTERESTSCHEDULE] 
+	AFTER UPDATE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+		
+	-- Check if LASTCHANGEDBY contains VALID User Id and it Exists in USERS table, this is in replacement to foreign key reference of BONDINTERESTSCHEDULE table with USERS table.
+	IF EXISTS (SELECT * FROM inserted 
+		LEFT OUTER JOIN USERS WITH (NOLOCK) ON USERS.SUSERGUID = inserted.LASTCHANGEDBY
+		WHERE inserted.LASTCHANGEDBY IS NOT NULL AND USERS.SUSERGUID IS NULL)
+	BEGIN		
+		RAISERROR ('The INSERT or UPDATE statement conflicted with the FOREIGN KEY to table USERS', 16, 0);
+		ROLLBACK;
+		RETURN;
+	END	
+
+    INSERT INTO [HISTORYSYSTEMSETUP]
+		(	[ID],
+			[ROWVERSION],
+			[CHANGEDON],
+			[CHANGEDBY],
+			[FIELDNAME],
+			[OLDVALUE],
+			[NEWVALUE],
+			[ADDITIONALINFO],
+			[FORMID],
+			[ACTION],
+			[ISROOT],
+			[RECORDNAME]
+		)
+	SELECT
+			[inserted].[BONDINTERESTSCHEDULEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Name',
+			[deleted].[NAME],
+			[inserted].[NAME],
+			'Bond Interest Schedule (' + [inserted].[NAME] + ')',
+			'B13CA7AB-136B-4286-BFF6-223B71BE732E',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[BONDINTERESTSCHEDULEID] = [inserted].[BONDINTERESTSCHEDULEID]
+	WHERE	[deleted].[NAME] <> [inserted].[NAME]
+	
+	UNION ALL
+	SELECT
+			[inserted].[BONDINTERESTSCHEDULEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Description',
+			ISNULL([deleted].[DESCRIPTION],'[none]'),
+			ISNULL([inserted].[DESCRIPTION],'[none]'),
+			'Bond Interest Schedule (' + [inserted].[NAME] + ')',
+			'B13CA7AB-136B-4286-BFF6-223B71BE732E',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[BONDINTERESTSCHEDULEID] = [inserted].[BONDINTERESTSCHEDULEID]
+	WHERE	ISNULL([deleted].[DESCRIPTION], '') <> ISNULL([inserted].[DESCRIPTION], '')	
+	
+	UNION ALL
+	SELECT
+			[inserted].[BONDINTERESTSCHEDULEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Is Compound Interest Flag',
+			CASE [deleted].[ISCOMPOUNDINTEREST] WHEN 1 THEN 'Yes' WHEN 0 THEN 'No' END,
+			CASE [inserted].[ISCOMPOUNDINTEREST] WHEN 1 THEN 'Yes' WHEN 0 THEN 'No' END,
+			'Bond Interest Schedule (' + [inserted].[NAME] + ')',
+			'B13CA7AB-136B-4286-BFF6-223B71BE732E',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[BONDINTERESTSCHEDULEID] = [inserted].[BONDINTERESTSCHEDULEID]
+	WHERE	[deleted].[ISCOMPOUNDINTEREST] <> [inserted].[ISCOMPOUNDINTEREST]
+	
+	UNION ALL
+	SELECT
+			[inserted].[BONDINTERESTSCHEDULEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Interest Method',
+			ISNULL([INTERESTMETHOD_DELETED].[NAME], '[none]'),
+			ISNULL([INTERESTMETHOD_INSERTED].[NAME], '[none]'),
+			'Bond Interest Schedule (' + [inserted].[NAME] + ')',
+			'B13CA7AB-136B-4286-BFF6-223B71BE732E',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[BONDINTERESTSCHEDULEID] = [inserted].[BONDINTERESTSCHEDULEID]
+			LEFT JOIN INTERESTMETHOD INTERESTMETHOD_DELETED WITH (NOLOCK) ON [deleted].[INTERESTMETHODID] = [INTERESTMETHOD_DELETED].[INTERESTMETHODID]
+			LEFT JOIN INTERESTMETHOD INTERESTMETHOD_INSERTED WITH (NOLOCK) ON [inserted].[INTERESTMETHODID] = [INTERESTMETHOD_INSERTED].[INTERESTMETHODID]
+	WHERE	ISNULL([deleted].[INTERESTMETHODID], '') <> ISNULL([inserted].[INTERESTMETHODID], '')	
+	
+	UNION ALL
+	SELECT
+			[inserted].[BONDINTERESTSCHEDULEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'CAFEE',
+			ISNULL([CAFEE_DELETED].[NAME], '[none]'),
+			ISNULL([CAFEE_INSERTED].[NAME], '[none]'),
+			'Bond Interest Schedule (' + [inserted].[NAME] + ')',
+			'B13CA7AB-136B-4286-BFF6-223B71BE732E',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[BONDINTERESTSCHEDULEID] = [inserted].[BONDINTERESTSCHEDULEID]
+			LEFT JOIN CAFEE CAFEE_DELETED WITH (NOLOCK) ON [deleted].[CAFEEID] = [CAFEE_DELETED].[CAFEEID]
+			LEFT JOIN CAFEE CAFEE_INSERTED WITH (NOLOCK) ON [inserted].[CAFEEID] = [CAFEE_INSERTED].[CAFEEID]
+	WHERE	ISNULL([deleted].[CAFEEID], '') <> ISNULL([inserted].[CAFEEID], '')	
+	
+	UNION ALL
+	SELECT
+			[inserted].[BONDINTERESTSCHEDULEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'New World Charge Code',
+			ISNULL([deleted].[CHARGECODE],'[none]'),
+			ISNULL([inserted].[CHARGECODE],'[none]'),
+			'Bond Interest Schedule (' + [inserted].[NAME] + ')',
+			'B13CA7AB-136B-4286-BFF6-223B71BE732E',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[BONDINTERESTSCHEDULEID] = [inserted].[BONDINTERESTSCHEDULEID]
+	WHERE	ISNULL([deleted].[CHARGECODE], '') <> ISNULL([inserted].[CHARGECODE], '')		
+END
+GO
+
+CREATE TRIGGER [dbo].[TG_BONDINTERESTSCHEDULE_INSERT] ON [dbo].[BONDINTERESTSCHEDULE]
+   FOR INSERT
+AS 
+BEGIN
+	SET NOCOUNT ON;
+	-- Check if LASTCHANGEDBY contains VALID User Id and it Exists in USERS table, this is in replacement to foreign key reference of BONDINTERESTSCHEDULE table with USERS table.
+	IF EXISTS (SELECT * FROM inserted 
+		LEFT OUTER JOIN USERS WITH (NOLOCK) ON USERS.SUSERGUID = inserted.LASTCHANGEDBY
+		WHERE inserted.LASTCHANGEDBY IS NOT NULL AND USERS.SUSERGUID IS NULL)
+	BEGIN		
+		RAISERROR ('The INSERT or UPDATE statement conflicted with the FOREIGN KEY to table USERS', 16, 0);
+		ROLLBACK;
+		RETURN;
+	END
+
+    INSERT INTO [HISTORYSYSTEMSETUP]
+    (	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT
+			[inserted].[BONDINTERESTSCHEDULEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Bond Interest Schedule Added',
+			'',
+			'',
+			'Bond Interest Schedule (' + [inserted].[NAME] + ')',
+			'B13CA7AB-136B-4286-BFF6-223B71BE732E',
+			1,
+			1,
+			[inserted].[NAME]
+	FROM	[inserted]	
+END
+GO
+
+CREATE TRIGGER [dbo].[TG_BONDINTERESTSCHEDULE_DELETE] ON [dbo].[BONDINTERESTSCHEDULE]
+   AFTER DELETE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+
+    INSERT INTO [HISTORYSYSTEMSETUP]
+		(	[ID],
+			[ROWVERSION],
+			[CHANGEDON],
+			[CHANGEDBY],
+			[FIELDNAME],
+			[OLDVALUE],
+			[NEWVALUE],
+			[ADDITIONALINFO],
+			[FORMID],
+			[ACTION],
+			[ISROOT],
+			[RECORDNAME]
+		)
+	SELECT
+			[deleted].[BONDINTERESTSCHEDULEID],
+			[deleted].[ROWVERSION],
+			GETUTCDATE(),
+			(SELECT dbo.UFN_GET_USERID_FROM_CONTEXT_INFO()),
+			'Bond Interest Schedule Deleted',
+			'',
+			'',
+			'Bond Interest Schedule (' + [deleted].[NAME] + ')',
+			'B13CA7AB-136B-4286-BFF6-223B71BE732E',
+			3,
+			1,
+			[deleted].[NAME]
+	FROM	[deleted]
+END

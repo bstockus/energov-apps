@@ -1,0 +1,560 @@
+﻿CREATE TABLE [dbo].[PMPERMIT] (
+    [PMPERMITID]                CHAR (36)       NOT NULL,
+    [PMPERMITSTATUSID]          CHAR (36)       NOT NULL,
+    [PMPERMITTYPEID]            CHAR (36)       NOT NULL,
+    [APPLYDATE]                 DATETIME        NOT NULL,
+    [EXPIREDATE]                DATETIME        NULL,
+    [PERMITNUMBER]              NVARCHAR (50)   NOT NULL,
+    [MAINPERMIT]                BIT             NOT NULL,
+    [ISSUEDATE]                 DATETIME        NULL,
+    [DISTRICTID]                CHAR (36)       NOT NULL,
+    [PMPERMITWORKCLASSID]       CHAR (36)       NULL,
+    [IVRNUMBER]                 INT             NOT NULL,
+    [INTERNALPERMIT]            BIT             NOT NULL,
+    [KIOSKPERMIT]               BIT             NOT NULL,
+    [REVIEW]                    BIT             NOT NULL,
+    [CONUMBER]                  NVARCHAR (50)   NULL,
+    [COISSUEDATE]               DATETIME        NULL,
+    [FINALIZEDATE]              DATETIME        NULL,
+    [LASTINSPECTIONDATE]        DATETIME        NULL,
+    [PLPLANID]                  CHAR (36)       NULL,
+    [STOPWORKORDER]             BIT             NOT NULL,
+    [USEINSPECTIONPROJECTS]     BIT             NOT NULL,
+    [NUMBERDWELLINGUNITS]       INT             NULL,
+    [SPACIALASSETID]            CHAR (36)       NULL,
+    [ROWVERSION]                INT             NOT NULL,
+    [LASTCHANGEDON]             DATETIME        NULL,
+    [LASTCHANGEDBY]             CHAR (36)       NULL,
+    [ASSETGEOMETRYCOLLECTIONID] CHAR (36)       NULL,
+    [PMPERMITPARENTID]          CHAR (36)       NULL,
+    [IMPORTCUSTOMFIELDLAYOUTID] CHAR (36)       NULL,
+    [VALUE]                     MONEY           NULL,
+    [SQUAREFEET]                DECIMAL (15, 2) NULL,
+    [DESCRIPTION]               VARCHAR (MAX)   NULL,
+    [CALENDARDUEDATE]           DATETIME        NULL,
+    [ISAPPLIEDONLINE]           BIT             CONSTRAINT [DF_PMPERMIT_ISAPPLIEDONLINE] DEFAULT ((0)) NOT NULL,
+    [CPIVESTEDMAPDATE]          DATETIME        NULL,
+    [OVERRIDEFEEDATE]           DATETIME        NULL,
+    [ASSIGNEDTO]                CHAR (36)       NULL,
+    CONSTRAINT [PK_PMPermit] PRIMARY KEY CLUSTERED ([PMPERMITID] ASC) WITH (FILLFACTOR = 80),
+    CONSTRAINT [FK_Permit_AssetCollection] FOREIGN KEY ([ASSETGEOMETRYCOLLECTIONID]) REFERENCES [dbo].[ASSETGEOMETRYCOLLECTION] ([ASSETGEOMETRYCOLLECTIONID]),
+    CONSTRAINT [FK_Permit_PermitWorkClass] FOREIGN KEY ([PMPERMITWORKCLASSID]) REFERENCES [dbo].[PMPERMITWORKCLASS] ([PMPERMITWORKCLASSID]),
+    CONSTRAINT [FK_PMPermit_CustomField] FOREIGN KEY ([IMPORTCUSTOMFIELDLAYOUTID]) REFERENCES [dbo].[CUSTOMFIELDLAYOUT] ([GCUSTOMFIELDLAYOUTS]),
+    CONSTRAINT [FK_PMPermit_District] FOREIGN KEY ([DISTRICTID]) REFERENCES [dbo].[DISTRICT] ([DISTRICTID]),
+    CONSTRAINT [FK_PMPermit_PLPlan] FOREIGN KEY ([PLPLANID]) REFERENCES [dbo].[PLPLAN] ([PLPLANID]),
+    CONSTRAINT [FK_PMPermit_PMPermit] FOREIGN KEY ([PMPERMITPARENTID]) REFERENCES [dbo].[PMPERMIT] ([PMPERMITID]),
+    CONSTRAINT [FK_PMPermit_Status] FOREIGN KEY ([PMPERMITSTATUSID]) REFERENCES [dbo].[PMPERMITSTATUS] ([PMPERMITSTATUSID]),
+    CONSTRAINT [FK_PMPermit_Type] FOREIGN KEY ([PMPERMITTYPEID]) REFERENCES [dbo].[PMPERMITTYPE] ([PMPERMITTYPEID]),
+    CONSTRAINT [FK_PMPERMIT_USER1] FOREIGN KEY ([ASSIGNEDTO]) REFERENCES [dbo].[USERS] ([SUSERGUID]),
+    CONSTRAINT [FK_PMPermit_Users] FOREIGN KEY ([LASTCHANGEDBY]) REFERENCES [dbo].[USERS] ([SUSERGUID])
+);
+
+
+GO
+CREATE NONCLUSTERED INDEX [PMPERMIT_IX_QUICK_SEARCH]
+    ON [dbo].[PMPERMIT]([PERMITNUMBER] ASC, [PMPERMITTYPEID] ASC, [PMPERMITSTATUSID] ASC, [PMPERMITWORKCLASSID] ASC, [PMPERMITID] ASC, [EXPIREDATE] ASC, [ISSUEDATE] ASC, [IVRNUMBER] ASC, [FINALIZEDATE] ASC, [APPLYDATE] ASC) WITH (FILLFACTOR = 80);
+
+
+GO
+CREATE NONCLUSTERED INDEX [IMPORT1]
+    ON [dbo].[PMPERMIT]([PERMITNUMBER] ASC) WITH (FILLFACTOR = 80);
+
+
+GO
+CREATE NONCLUSTERED INDEX [IX_PMPERMIT_FINALIZEDATE_ASSIGNEDTO]
+    ON [dbo].[PMPERMIT]([FINALIZEDATE] ASC, [ASSIGNEDTO] ASC);
+
+
+GO
+CREATE NONCLUSTERED INDEX [IX_PMPERMIT_LASTCHANGEDON]
+    ON [dbo].[PMPERMIT]([LASTCHANGEDON] ASC)
+    INCLUDE([PMPERMITID]);
+
+
+GO
+CREATE NONCLUSTERED INDEX [IX_PMPERMIT_ASSIGNEDTO]
+    ON [dbo].[PMPERMIT]([ASSIGNEDTO] ASC)
+    INCLUDE([PMPERMITTYPEID], [PERMITNUMBER]);
+
+
+GO
+
+CREATE TRIGGER [TG_PMPERMIT_UPDATE_EVENT_QUEUE_COMPLETE] ON PMPERMIT
+   AFTER UPDATE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+
+	INSERT INTO [PERMITEVENTQUEUE]
+		( 
+			[PMPERMITID],
+			[PERMITNUMBER],
+			[PERMITEVENTTYPEID],
+			[EVENTSTATUSID],
+			[CREATEDDATE],
+			[PERMITLASTCHANGEDBY]
+		)
+		-- insert using a SELECT query (do not use IF EXISTS SELECT or SELECT into variables/use the variables) so that if a bulk update of Permit is made 
+		--then we pick the correct permit record to check the previous and new status
+		SELECT 
+			[INSERTED].PMPERMITID,
+			[INSERTED].PERMITNUMBER,
+			3, -- ID for 'Permit Finaled' Permit event Type 
+			1, -- ID for 'Pending' Event Status
+			GETUTCDATE(),
+			[INSERTED].LASTCHANGEDBY
+		FROM [INSERTED]
+		JOIN [PMPERMITSTATUS] AS [NEWSTATUS] WITH(NOLOCK) ON [NEWSTATUS].[PMPERMITSTATUSID] = [INSERTED].[PMPERMITSTATUSID]
+		JOIN [DELETED] ON [DELETED].[PMPERMITID] = [INSERTED].[PMPERMITID]
+		JOIN [PMPERMITSTATUS] AS [OLDSTATUS] WITH(NOLOCK) ON [OLDSTATUS].[PMPERMITSTATUSID] = [DELETED].[PMPERMITSTATUSID]
+		WHERE 	
+			-- check if the new status has no other flag other than the complete flag
+			[NEWSTATUS].[COMPLETEDFLAG] = 1 AND ISNULL([NEWSTATUS].[HOLDFLAG], 0) = 0 AND [NEWSTATUS].[ISSUEDFLAG] = 0 AND [NEWSTATUS].[FAILUREFLAG] = 0 AND [NEWSTATUS].[CANCELLEDFLAG] = 0
+			-- check if the old status of the permit does not have ONLY the complete flag, if it's already complete ONLY then do not insert a new record in the Permit Event Queue table
+		AND NOT ([OLDSTATUS].[COMPLETEDFLAG] = 1 AND ISNULL([OLDSTATUS].[HOLDFLAG], 0) = 0 AND [OLDSTATUS].[ISSUEDFLAG] = 0 AND [OLDSTATUS].[FAILUREFLAG] = 0 AND [OLDSTATUS].[CANCELLEDFLAG] = 0) 
+ 
+END
+GO
+DISABLE TRIGGER [dbo].[TG_PMPERMIT_UPDATE_EVENT_QUEUE_COMPLETE]
+    ON [dbo].[PMPERMIT];
+
+
+GO
+
+CREATE TRIGGER [TG_PMPERMIT_UPDATE_EVENT_QUEUE_HOLD] ON PMPERMIT
+   AFTER UPDATE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+
+	INSERT INTO [PERMITEVENTQUEUE]
+		( 
+			[PMPERMITID],
+			[PERMITNUMBER],
+			[PERMITEVENTTYPEID],
+			[EVENTSTATUSID],
+			[CREATEDDATE],
+			[PERMITLASTCHANGEDBY]
+		)
+		-- insert using a SELECT query (do not use IF EXISTS SELECT or SELECT into variables/use the variables) so that if a bulk update of Permit is made 
+		--then we pick the correct permit record to check the previous and new status
+		SELECT 
+			[INSERTED].PMPERMITID,
+			[INSERTED].PERMITNUMBER,
+			4, -- ID for 'Permit OnHold' Permit event Type 
+			1, -- ID for 'Pending' Event Status
+			GETUTCDATE(),
+			[INSERTED].LASTCHANGEDBY
+		FROM [INSERTED]
+		JOIN [PMPERMITSTATUS] AS [NEWSTATUS] WITH(NOLOCK) ON [NEWSTATUS].[PMPERMITSTATUSID] = [INSERTED].[PMPERMITSTATUSID]
+		JOIN [DELETED] ON [DELETED].[PMPERMITID] = [INSERTED].[PMPERMITID]
+		JOIN [PMPERMITSTATUS] AS [OLDSTATUS] WITH(NOLOCK) ON [OLDSTATUS].[PMPERMITSTATUSID] = [DELETED].[PMPERMITSTATUSID]
+			-- check if the new status has HOLD flag(it can also have any other flags set to 'true')
+		WHERE ISNULL([NEWSTATUS].[HOLDFLAG], 0) = 1
+			-- check if the old status of the permit has HOLD flag(it can also have any other flags set to 'true'), if it's already a HOLD flag then DO NOT insert a new record in the Permit Event Queue table
+		AND ISNULL([OLDSTATUS].[HOLDFLAG], 0) = 0 
+ 
+END
+GO
+DISABLE TRIGGER [dbo].[TG_PMPERMIT_UPDATE_EVENT_QUEUE_HOLD]
+    ON [dbo].[PMPERMIT];
+
+
+GO
+
+
+CREATE TRIGGER [TG_PMPERMIT_UPDATE_EVENT_QUEUE_ISSUED] ON PMPERMIT
+   AFTER UPDATE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+
+	INSERT INTO [PERMITEVENTQUEUE]
+		( 
+			[PMPERMITID],
+			[PERMITNUMBER],
+			[PERMITEVENTTYPEID],
+			[EVENTSTATUSID],
+			[CREATEDDATE],
+			[PERMITLASTCHANGEDBY]
+		)
+		-- insert using a SELECT query (do not use IF EXISTS SELECT or SELECT into variables/use the variables) so that if a bulk update of Permit is made 
+		--then we pick the correct permit record to check the previous and new status
+		SELECT 
+			[INSERTED].PMPERMITID,
+			[INSERTED].PERMITNUMBER,
+			2, -- ID for 'Permit Issued' Permit event Type 
+			1, -- ID for 'Pending' Event Status
+			GETUTCDATE(),
+			[INSERTED].LASTCHANGEDBY
+		FROM [INSERTED]
+		JOIN [PMPERMITSTATUS] AS [NEWSTATUS] WITH(NOLOCK) ON [NEWSTATUS].[PMPERMITSTATUSID] = [INSERTED].[PMPERMITSTATUSID]
+		JOIN [DELETED] ON [DELETED].[PMPERMITID] = [INSERTED].[PMPERMITID]
+		JOIN [PMPERMITSTATUS] AS [OLDSTATUS] WITH(NOLOCK) ON [OLDSTATUS].[PMPERMITSTATUSID] = [DELETED].[PMPERMITSTATUSID]
+		WHERE
+			-- check if the new status has no other flag other than the issued flag
+			[NEWSTATUS].[ISSUEDFLAG] = 1 AND [NEWSTATUS].[COMPLETEDFLAG] = 0 AND ISNULL([NEWSTATUS].[HOLDFLAG], 0) = 0 AND [NEWSTATUS].[FAILUREFLAG] = 0 AND [NEWSTATUS].[CANCELLEDFLAG] = 0
+			-- check if the old status of the permit does not have ONLY the issued flag, if it's already issued ONLY then do not insert a new record in the Permit Event Queue table
+		AND NOT ([OLDSTATUS].[ISSUEDFLAG] = 1 AND [OLDSTATUS].[COMPLETEDFLAG] = 0 AND ISNULL([OLDSTATUS].[HOLDFLAG], 0) = 0 AND [OLDSTATUS].[FAILUREFLAG] = 0 AND [OLDSTATUS].[CANCELLEDFLAG] = 0) 
+ 
+END
+GO
+DISABLE TRIGGER [dbo].[TG_PMPERMIT_UPDATE_EVENT_QUEUE_ISSUED]
+    ON [dbo].[PMPERMIT];
+
+
+GO
+
+
+CREATE TRIGGER [TG_PMPERMIT_INSERT_EVENT_QUEUE_ISSUED] ON PMPERMIT
+   AFTER INSERT
+AS 
+BEGIN
+
+	SET NOCOUNT ON;
+
+	BEGIN
+		INSERT INTO [PERMITEVENTQUEUE]
+			( 
+				[PMPERMITID],
+				[PERMITNUMBER],
+				[PERMITEVENTTYPEID],
+				[EVENTSTATUSID],
+				[CREATEDDATE],
+				[PERMITLASTCHANGEDBY]
+			)
+			-- check if the status of the permit has no other flag other than the issued flag, if this coniditon is met then insert a new record in the Permit Event Queue table
+			SELECT
+				[INSERTED].PMPERMITID,
+				[INSERTED].PERMITNUMBER,
+				2, -- ID for 'Permit Issued' Permit event Type 
+				1, -- ID for 'Pending' Event Status
+				GETUTCDATE(),
+				[INSERTED].LASTCHANGEDBY
+			FROM [INSERTED]
+			JOIN PMPERMITSTATUS WITH(NOLOCK) ON	[INSERTED].PMPERMITSTATUSID = PMPERMITSTATUS.PMPERMITSTATUSID
+			WHERE 
+				ISSUEDFLAG = 1 AND COMPLETEDFLAG = 0 AND ISNULL(HOLDFLAG,0) = 0 AND FAILUREFLAG = 0 AND CANCELLEDFLAG = 0
+	END
+END
+GO
+DISABLE TRIGGER [dbo].[TG_PMPERMIT_INSERT_EVENT_QUEUE_ISSUED]
+    ON [dbo].[PMPERMIT];
+
+
+GO
+
+CREATE TRIGGER [TG_PMPERMIT_UPDATE_EVENT_QUEUE_CANCELLED] ON PMPERMIT
+   AFTER UPDATE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+
+	INSERT INTO [PERMITEVENTQUEUE]
+		( 
+			[PMPERMITID],
+			[PERMITNUMBER],
+			[PERMITEVENTTYPEID],
+			[EVENTSTATUSID],
+			[CREATEDDATE],
+			[PERMITLASTCHANGEDBY]
+		)
+		-- insert using a SELECT query (do not use IF EXISTS SELECT or SELECT into variables/use the variables) so that if a bulk update of Permit is made 
+		--then we pick the correct permit record to check the previous and new status
+		SELECT 
+			[INSERTED].PMPERMITID,
+			[INSERTED].PERMITNUMBER,
+			6, -- ID for 'Permit Cancelled' Permit event Type 
+			1, -- ID for 'Pending' Event Status
+			GETUTCDATE(),
+			[INSERTED].LASTCHANGEDBY
+		FROM [INSERTED]
+		JOIN [PMPERMITSTATUS] AS [NEWSTATUS] WITH(NOLOCK) ON [NEWSTATUS].[PMPERMITSTATUSID] = [INSERTED].[PMPERMITSTATUSID]
+		JOIN [DELETED] ON [DELETED].[PMPERMITID] = [INSERTED].[PMPERMITID]
+		JOIN [PMPERMITSTATUS] AS [OLDSTATUS] WITH(NOLOCK) ON [OLDSTATUS].[PMPERMITSTATUSID] = [DELETED].[PMPERMITSTATUSID]
+		WHERE 	
+		    -- check if the new status has CANCELLED flag(it can also have any other flags set to 'true')
+			[NEWSTATUS].[CANCELLEDFLAG] = 1 
+			-- check if the old status of the permit has CANCELLED flag(it can also have any other flags set to 'true'), 
+			--if it's already a CANCELLED flag then DO NOT insert a new record in the Permit Event Queue table
+		AND [OLDSTATUS].[CANCELLEDFLAG] = 0
+ 
+END
+GO
+DISABLE TRIGGER [dbo].[TG_PMPERMIT_UPDATE_EVENT_QUEUE_CANCELLED]
+    ON [dbo].[PMPERMIT];
+
+
+GO
+
+CREATE TRIGGER [TG_PMPERMIT_INSERT_EVENT_QUEUE_HOLD] ON PMPERMIT
+   AFTER INSERT
+AS 
+BEGIN
+
+	SET NOCOUNT ON;
+
+	BEGIN
+		INSERT INTO [PERMITEVENTQUEUE]
+			( 
+				[PMPERMITID],
+				[PERMITNUMBER],
+				[PERMITEVENTTYPEID],
+				[EVENTSTATUSID],
+				[CREATEDDATE],
+				[PERMITLASTCHANGEDBY]
+			)
+			-- check if the status of the permit has hold flag(it can have other flags set to 'true'), if this condition is met then insert a new record in the Permit Event Queue table
+			SELECT
+				[INSERTED].PMPERMITID,
+				[INSERTED].PERMITNUMBER,
+				4, -- ID for 'Permit OnHold' Permit event Type 
+				1, -- ID for 'Pending' Event Status
+				GETUTCDATE(),
+				[INSERTED].LASTCHANGEDBY
+			FROM
+				[INSERTED]
+			JOIN 
+				PMPERMITSTATUS WITH(NOLOCK)
+			ON
+				[INSERTED].PMPERMITSTATUSID = PMPERMITSTATUS.PMPERMITSTATUSID
+			WHERE
+				ISNULL(HOLDFLAG,0) = 1	
+	END
+END
+GO
+DISABLE TRIGGER [dbo].[TG_PMPERMIT_INSERT_EVENT_QUEUE_HOLD]
+    ON [dbo].[PMPERMIT];
+
+
+GO
+
+CREATE TRIGGER [TG_PMPERMIT_INSERT_EVENT_QUEUE_COMPLETE] ON PMPERMIT
+   AFTER INSERT
+AS 
+BEGIN
+
+	SET NOCOUNT ON;
+
+	BEGIN
+		INSERT INTO [PERMITEVENTQUEUE]
+			( 
+				[PMPERMITID],
+				[PERMITNUMBER],
+				[PERMITEVENTTYPEID],
+				[EVENTSTATUSID],
+				[CREATEDDATE],
+				[PERMITLASTCHANGEDBY]
+			)
+			-- check if the status of the permit has no other flag other than the complete flag, if this coniditon is met then insert a new record in the Permit Event Queue table
+			SELECT
+				[INSERTED].PMPERMITID,
+				[INSERTED].PERMITNUMBER,
+				3, -- ID for 'Permit Finaled' Permit event Type 
+				1, -- ID for 'Pending' Event Status
+				GETUTCDATE(),
+				[INSERTED].LASTCHANGEDBY
+			FROM [INSERTED]
+			JOIN PMPERMITSTATUS WITH(NOLOCK) ON	[INSERTED].PMPERMITSTATUSID = PMPERMITSTATUS.PMPERMITSTATUSID
+			WHERE
+				COMPLETEDFLAG = 1 AND ISNULL(HOLDFLAG,0) = 0 AND ISSUEDFLAG = 0 AND FAILUREFLAG = 0 AND CANCELLEDFLAG = 0
+	END
+END
+GO
+DISABLE TRIGGER [dbo].[TG_PMPERMIT_INSERT_EVENT_QUEUE_COMPLETE]
+    ON [dbo].[PMPERMIT];
+
+
+GO
+
+CREATE TRIGGER [TG_PMPERMIT_INSERT_EVENT_QUEUE_CREATED] ON PMPERMIT
+   AFTER INSERT
+AS 
+BEGIN
+
+	SET NOCOUNT ON;
+
+	BEGIN
+		INSERT INTO [PERMITEVENTQUEUE]
+			( 
+				[PMPERMITID],
+				[PERMITNUMBER],
+				[PERMITEVENTTYPEID],
+				[EVENTSTATUSID],
+				[CREATEDDATE],
+				[PERMITLASTCHANGEDBY]
+			)
+			-- Insert a new record in the Permit Event Queue table anytime a permit is created (don't need to check the permit status)
+			SELECT
+				[INSERTED].PMPERMITID,
+				[INSERTED].PERMITNUMBER,
+				1, -- ID for 'Permit Created' Permit event Type 
+				1, -- ID for 'Pending' Event Status
+				GETUTCDATE(),
+				[INSERTED].LASTCHANGEDBY
+			FROM [INSERTED]		
+	END
+END
+GO
+DISABLE TRIGGER [dbo].[TG_PMPERMIT_INSERT_EVENT_QUEUE_CREATED]
+    ON [dbo].[PMPERMIT];
+
+
+GO
+
+CREATE TRIGGER [TG_PMPERMIT_INSERT_EVENT_QUEUE_DELETED] ON PMPERMIT
+   AFTER DELETE
+AS 
+BEGIN
+
+	SET NOCOUNT ON;
+
+	BEGIN
+		INSERT INTO [PERMITEVENTQUEUE]
+			( 
+				[PMPERMITID],
+				[PERMITNUMBER],
+				[PERMITEVENTTYPEID],
+				[EVENTSTATUSID],
+				[CREATEDDATE],
+				[PERMITLASTCHANGEDBY]
+			)
+			-- Insert a new record in the Permit Event Queue table anytime a permit is deleted (don't need to check the permit status)
+			SELECT
+				[DELETED].PMPERMITID,
+				[DELETED].PERMITNUMBER,
+				5, -- ID for 'Permit Deleted' Permit event Type 
+				1, -- ID for 'Pending' Event Status
+				GETUTCDATE(),
+				[DELETED].LASTCHANGEDBY
+			FROM [DELETED]	
+	END
+END
+GO
+
+CREATE TRIGGER [TG_PMPERMIT_INSERT_EVENT_QUEUE_CANCELLED] ON PMPERMIT
+   AFTER INSERT
+AS 
+BEGIN
+	SET NOCOUNT ON;
+
+	BEGIN
+		INSERT INTO [PERMITEVENTQUEUE]
+			( 
+				[PMPERMITID],
+				[PERMITNUMBER],
+				[PERMITEVENTTYPEID],
+				[EVENTSTATUSID],
+				[CREATEDDATE],
+				[PERMITLASTCHANGEDBY]
+			)
+			-- check if the status of the permit has cancelled flag(it can have other flags set to 'true'), 
+			--if this condition is met then insert a new record in the Permit Event Queue table
+			SELECT
+				[INSERTED].PMPERMITID,
+				[INSERTED].PERMITNUMBER,
+				6, -- ID for 'Permit Cancelled' Permit event Type 
+				1, -- ID for 'Pending' Event Status
+				GETUTCDATE(),
+				[INSERTED].LASTCHANGEDBY
+			FROM [INSERTED]
+			JOIN PMPERMITSTATUS WITH(NOLOCK) ON	[INSERTED].PMPERMITSTATUSID = PMPERMITSTATUS.PMPERMITSTATUSID
+			WHERE
+				CANCELLEDFLAG = 1
+	END
+END
+GO
+DISABLE TRIGGER [dbo].[TG_PMPERMIT_INSERT_EVENT_QUEUE_CANCELLED]
+    ON [dbo].[PMPERMIT];
+
+
+GO
+
+CREATE TRIGGER [TG_PMPERMIT_DELETE_ELASTIC] ON  PMPERMIT
+   AFTER DELETE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+
+    INSERT INTO [ELASTICSEARCHOBJECT]
+    ( [ELASTICSEARCHOBJECTID] ,
+        [OBJECTID] ,
+        [OBJECTCLASSNAME] ,
+        [ROWVERSION] ,
+        [CREATEDATE] ,
+        [PROCESSEDDATE] ,
+        [OBJECTACTION] ,
+        [INDEXNAME]
+    )
+	SELECT
+		NEWID() ,
+		[Deleted].[PMPERMITID] ,
+        'EnerGovBusiness.PermitManagement.Permit' ,
+        [Deleted].[ROWVERSION] ,
+        GETDATE() ,
+        NULL ,
+        3 ,
+        (SELECT STRINGVALUE FROM SETTINGS WITH (NOLOCK) WHERE NAME = 'ServiceBusTenant')
+	FROM [Deleted];
+
+END
+GO
+
+CREATE TRIGGER [TG_PMPERMIT_UPDATE_ELASTIC] ON  PMPERMIT
+   AFTER UPDATE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+
+    INSERT INTO [ELASTICSEARCHOBJECT]
+    ( [ELASTICSEARCHOBJECTID] ,
+        [OBJECTID] ,
+        [OBJECTCLASSNAME] ,
+        [ROWVERSION] ,
+        [CREATEDATE] ,
+        [PROCESSEDDATE] ,
+        [OBJECTACTION] ,
+        [INDEXNAME]
+    )
+	SELECT
+		NEWID() ,
+		[Inserted].[PMPERMITID] ,
+        'EnerGovBusiness.PermitManagement.Permit' ,
+        [Inserted].[ROWVERSION] ,
+        GETDATE() ,
+        NULL ,
+        2 ,
+        (SELECT STRINGVALUE FROM SETTINGS WITH (NOLOCK) WHERE NAME = 'ServiceBusTenant')
+	FROM [Inserted];
+
+END
+GO
+
+CREATE TRIGGER [TG_PMPERMIT_INSERT_ELASTIC] ON  PMPERMIT
+   AFTER INSERT
+AS 
+BEGIN
+	SET NOCOUNT ON;
+
+    INSERT INTO [ELASTICSEARCHOBJECT]
+    ( [ELASTICSEARCHOBJECTID] ,
+        [OBJECTID] ,
+        [OBJECTCLASSNAME] ,
+        [ROWVERSION] ,
+        [CREATEDATE] ,
+        [PROCESSEDDATE] ,
+        [OBJECTACTION] ,
+        [INDEXNAME]
+    )
+	SELECT
+		NEWID() ,
+		[Inserted].[PMPERMITID] ,
+        'EnerGovBusiness.PermitManagement.Permit' ,
+        [Inserted].[ROWVERSION] ,
+        GETDATE() ,
+        NULL ,
+        1 ,
+        (SELECT STRINGVALUE FROM SETTINGS WITH (NOLOCK) WHERE NAME = 'ServiceBusTenant')
+	FROM [Inserted];
+
+END

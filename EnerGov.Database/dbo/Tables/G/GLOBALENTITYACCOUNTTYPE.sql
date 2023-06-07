@@ -1,0 +1,306 @@
+﻿CREATE TABLE [dbo].[GLOBALENTITYACCOUNTTYPE] (
+    [GLOBALENTITYACCOUNTTYPEID] CHAR (36)      NOT NULL,
+    [TYPENAME]                  NVARCHAR (30)  NOT NULL,
+    [ISBONDTYPE]                BIT            NOT NULL,
+    [ISLICENSETYPE]             BIT            NULL,
+    [ISAUTONUMBER]              BIT            NULL,
+    [PREFIX]                    NVARCHAR (10)  NULL,
+    [DESCRIPTION]               NVARCHAR (MAX) NULL,
+    [CHARGECODE]                NVARCHAR (100) NULL,
+    [ISFEEWAIVERACCOUNT]        BIT            CONSTRAINT [DF_GLOBALENTITYACCOUNTTYPE_ISFEEWAIVERACCOUNT] DEFAULT ((0)) NOT NULL,
+    [JURISDICTIONID]            CHAR (36)      NULL,
+    [LASTCHANGEDBY]             CHAR (36)      NULL,
+    [LASTCHANGEDON]             DATETIME       CONSTRAINT [DF_GLOBALENTITYACCOUNTTYPE_LastChangedOn] DEFAULT (getutcdate()) NOT NULL,
+    [ROWVERSION]                INT            CONSTRAINT [DF_GLOBALENTITYACCOUNTTYPE_RowVersion] DEFAULT ((1)) NOT NULL,
+    CONSTRAINT [PK_GlobalEntityAccountType] PRIMARY KEY CLUSTERED ([GLOBALENTITYACCOUNTTYPEID] ASC) WITH (FILLFACTOR = 90),
+    CONSTRAINT [FK_JURISDICTION_GLOBALENTITYACCOUNTTYPE] FOREIGN KEY ([JURISDICTIONID]) REFERENCES [dbo].[JURISDICTION] ([JURISDICTIONID])
+);
+
+
+GO
+CREATE NONCLUSTERED INDEX [GLOBALENTITYACCOUNTTYPE_IX_QUERY]
+    ON [dbo].[GLOBALENTITYACCOUNTTYPE]([GLOBALENTITYACCOUNTTYPEID] ASC, [TYPENAME] ASC);
+
+
+GO
+
+CREATE TRIGGER [TG_GLOBALENTITYACCOUNTTYPE_UPDATE] ON GLOBALENTITYACCOUNTTYPE
+   AFTER UPDATE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+	-- Check if LASTCHANGEDBY contains VALID User Id and it Exists in USERS table, this is in replacement to foreign key reference of GLOBALENTITYACCOUNTTYPE table with USERS table.
+	IF EXISTS (SELECT * FROM inserted 
+		LEFT OUTER JOIN USERS WITH (NOLOCK) ON USERS.SUSERGUID = inserted.LASTCHANGEDBY
+		WHERE inserted.LASTCHANGEDBY IS NOT NULL AND USERS.SUSERGUID IS NULL)
+	BEGIN		
+		RAISERROR ('The INSERT or UPDATE statement conflicted with the FOREIGN KEY to table USERS', 16, 0);
+		ROLLBACK;
+		RETURN;
+	END	
+
+    INSERT INTO [HISTORYSYSTEMSETUP]
+    (	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+
+	SELECT
+			[inserted].[GLOBALENTITYACCOUNTTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Account Name',
+			[deleted].[TYPENAME],
+			[inserted].[TYPENAME],
+			'Account Type (' + [inserted].[TYPENAME] + ')',
+			'32ADEB1A-A625-41A7-A886-EFCD45A878ED',
+			2,
+			1,
+			[inserted].[TYPENAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[GLOBALENTITYACCOUNTTYPEID] = [inserted].[GLOBALENTITYACCOUNTTYPEID]
+	WHERE	[deleted].[TYPENAME] <> [inserted].[TYPENAME]	
+	
+	UNION ALL
+	SELECT
+			[inserted].[GLOBALENTITYACCOUNTTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'An account marked as Bond Account is required Flag',
+			CASE WHEN [deleted].[ISBONDTYPE] = 1 THEN 'Yes' ELSE 'No' END,
+			CASE WHEN [inserted].[ISBONDTYPE] = 1 THEN 'Yes' ELSE 'No' END,
+			'Account Type (' + [inserted].[TYPENAME] + ')',
+			'32ADEB1A-A625-41A7-A886-EFCD45A878ED',
+			2,
+			1,
+			[inserted].[TYPENAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[GLOBALENTITYACCOUNTTYPEID] = [inserted].[GLOBALENTITYACCOUNTTYPEID]
+	WHERE	[deleted].[ISBONDTYPE] <> [inserted].[ISBONDTYPE]
+	
+	UNION ALL
+	SELECT
+			[inserted].[GLOBALENTITYACCOUNTTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'License Account Flag',
+			CASE [deleted].[ISLICENSETYPE] WHEN 1 THEN 'Yes' WHEN 0 THEN 'No'  ELSE '[none]' END,
+			CASE [inserted].[ISLICENSETYPE] WHEN 1 THEN 'Yes' WHEN 0 THEN 'No'  ELSE '[none]' END,
+			'Account Type (' + [inserted].[TYPENAME] + ')',
+			'32ADEB1A-A625-41A7-A886-EFCD45A878ED',
+			2,
+			1,
+			[inserted].[TYPENAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[GLOBALENTITYACCOUNTTYPEID] = [inserted].[GLOBALENTITYACCOUNTTYPEID]
+	WHERE	([deleted].[ISLICENSETYPE] <> [inserted].[ISLICENSETYPE]) OR ([deleted].[ISLICENSETYPE] IS NULL AND [inserted].[ISLICENSETYPE] IS NOT NULL)
+			OR ([deleted].[ISLICENSETYPE] IS NOT NULL AND [inserted].[ISLICENSETYPE] IS NULL)			
+	
+	UNION ALL
+	SELECT
+			[inserted].[GLOBALENTITYACCOUNTTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Auto Create Account Number Flag',
+			CASE [deleted].[ISAUTONUMBER] WHEN 1 THEN 'Yes' WHEN 0 THEN 'No'  ELSE '[none]' END,
+			CASE [inserted].[ISAUTONUMBER] WHEN 1 THEN 'Yes' WHEN 0 THEN 'No'  ELSE '[none]' END,
+			'Account Type (' + [inserted].[TYPENAME] + ')',
+			'32ADEB1A-A625-41A7-A886-EFCD45A878ED',
+			2,
+			1,
+			[inserted].[TYPENAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[GLOBALENTITYACCOUNTTYPEID] = [inserted].[GLOBALENTITYACCOUNTTYPEID]
+	WHERE	([deleted].[ISAUTONUMBER] <> [inserted].[ISAUTONUMBER]) OR ([deleted].[ISAUTONUMBER] IS NULL AND [inserted].[ISAUTONUMBER] IS NOT NULL)
+			OR ([deleted].[ISAUTONUMBER] IS NOT NULL AND [inserted].[ISAUTONUMBER] IS NULL)			
+	
+	UNION ALL
+	SELECT
+			[inserted].[GLOBALENTITYACCOUNTTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Prefix',
+			ISNULL([deleted].[PREFIX],'[none]'),
+			ISNULL([inserted].[PREFIX],'[none]'),
+			'Account Type (' + [inserted].[TYPENAME] + ')',
+			'32ADEB1A-A625-41A7-A886-EFCD45A878ED',
+			2,
+			1,
+			[inserted].[TYPENAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[GLOBALENTITYACCOUNTTYPEID] = [inserted].[GLOBALENTITYACCOUNTTYPEID]
+	WHERE	ISNULL([deleted].[PREFIX], '') <> ISNULL([inserted].[PREFIX], '')	
+	
+	UNION ALL
+	SELECT
+			[inserted].[GLOBALENTITYACCOUNTTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Description',
+			ISNULL([deleted].[DESCRIPTION],'[none]'),
+			ISNULL([inserted].[DESCRIPTION],'[none]'),
+			'Account Type (' + [inserted].[TYPENAME] + ')',
+			'32ADEB1A-A625-41A7-A886-EFCD45A878ED',
+			2,
+			1,
+			[inserted].[TYPENAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[GLOBALENTITYACCOUNTTYPEID] = [inserted].[GLOBALENTITYACCOUNTTYPEID]
+	WHERE	ISNULL([deleted].[DESCRIPTION], '') <> ISNULL([inserted].[DESCRIPTION], '')			
+	
+	UNION ALL
+	SELECT
+			[inserted].[GLOBALENTITYACCOUNTTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Charge Code',
+			ISNULL([deleted].[CHARGECODE],'[none]'),
+			ISNULL([inserted].[CHARGECODE],'[none]'),
+			'Account Type (' + [inserted].[TYPENAME] + ')',
+			'32ADEB1A-A625-41A7-A886-EFCD45A878ED',
+			2,
+			1,
+			[inserted].[TYPENAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[GLOBALENTITYACCOUNTTYPEID] = [inserted].[GLOBALENTITYACCOUNTTYPEID]
+	WHERE	ISNULL([deleted].[CHARGECODE], '') <> ISNULL([inserted].[CHARGECODE], '')
+	
+	UNION ALL
+	SELECT
+			[inserted].[GLOBALENTITYACCOUNTTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Fee Waiver Account Flag',
+			CASE WHEN [deleted].[ISFEEWAIVERACCOUNT] = 1 THEN 'Yes' ELSE 'No' END,
+			CASE WHEN [inserted].[ISFEEWAIVERACCOUNT] = 1 THEN 'Yes' ELSE 'No' END,
+			'Account Type (' + [inserted].[TYPENAME] + ')',
+			'32ADEB1A-A625-41A7-A886-EFCD45A878ED',
+			2,
+			1,
+			[inserted].[TYPENAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[GLOBALENTITYACCOUNTTYPEID] = [inserted].[GLOBALENTITYACCOUNTTYPEID]
+	WHERE	[deleted].[ISFEEWAIVERACCOUNT] <> [inserted].[ISFEEWAIVERACCOUNT]
+	
+	UNION ALL
+	SELECT
+			[inserted].[GLOBALENTITYACCOUNTTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Jurisdiction',
+			ISNULL([JURISDICTION_DELETED].[NAME],'[none]'),
+			ISNULL([JURISDICTION_INSERTED].[NAME],'[none]'),
+			'Account Type (' + [inserted].[TYPENAME] + ')',
+			'32ADEB1A-A625-41A7-A886-EFCD45A878ED',
+			2,
+			1,
+			[inserted].[TYPENAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[GLOBALENTITYACCOUNTTYPEID] = [inserted].[GLOBALENTITYACCOUNTTYPEID]
+			LEFT JOIN JURISDICTION JURISDICTION_DELETED WITH (NOLOCK) ON [deleted].[JURISDICTIONID] = [JURISDICTION_DELETED].[JURISDICTIONID]
+			LEFT JOIN JURISDICTION JURISDICTION_INSERTED WITH (NOLOCK) ON [inserted].[JURISDICTIONID] = [JURISDICTION_INSERTED].[JURISDICTIONID]
+	WHERE	ISNULL([deleted].[JURISDICTIONID], '') <> ISNULL([inserted].[JURISDICTIONID], '')	
+END
+GO
+
+CREATE TRIGGER [TG_GLOBALENTITYACCOUNTTYPE_INSERT] ON GLOBALENTITYACCOUNTTYPE
+   FOR INSERT
+AS 
+BEGIN
+	SET NOCOUNT ON;
+	-- Check if LASTCHANGEDBY contains VALID User Id and it Exists in USERS table, this is in replacement to foreign key reference of GLOBALENTITYACCOUNTTYPE table with USERS table.
+	IF EXISTS (SELECT * FROM inserted 
+		LEFT OUTER JOIN USERS WITH (NOLOCK) ON USERS.SUSERGUID = inserted.LASTCHANGEDBY
+		WHERE inserted.LASTCHANGEDBY IS NOT NULL AND USERS.SUSERGUID IS NULL)
+	BEGIN		
+		RAISERROR ('The INSERT or UPDATE statement conflicted with the FOREIGN KEY to table USERS', 16, 0);
+		ROLLBACK;
+		RETURN;
+	END
+
+    INSERT INTO [HISTORYSYSTEMSETUP]
+    (	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+
+	SELECT
+			[inserted].[GLOBALENTITYACCOUNTTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Account Type Added',
+			'',
+			'',
+			'Account Type (' + [inserted].[TYPENAME] + ')',
+			'32ADEB1A-A625-41A7-A886-EFCD45A878ED',
+			1,
+			1,
+			[inserted].[TYPENAME]
+	FROM	[inserted]	
+END
+GO
+
+CREATE TRIGGER [TG_GLOBALENTITYACCOUNTTYPE_DELETE] ON GLOBALENTITYACCOUNTTYPE
+   AFTER DELETE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+
+    INSERT INTO [HISTORYSYSTEMSETUP]
+    (	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+
+	SELECT
+			[deleted].[GLOBALENTITYACCOUNTTYPEID],
+			[deleted].[ROWVERSION],
+			GETUTCDATE(),
+			(SELECT dbo.UFN_GET_USERID_FROM_CONTEXT_INFO()),
+			'Account Type Deleted',
+			'',
+			'',
+			'Account Type (' + [deleted].[TYPENAME] + ')',
+			'32ADEB1A-A625-41A7-A886-EFCD45A878ED',
+			3,
+			1,
+			[deleted].[TYPENAME]
+	FROM	[deleted]
+END

@@ -1,0 +1,8 @@
+﻿
+CREATE PROCEDURE [dbo].[DELETEERPROJECTFILEVERSION]
+-- Add the parameters for the stored procedure here
+@ERProjectFileVersionID char(36)	
+AS
+BEGIN		
+	DELETE FROM ERPROJECTFILEVERSION WHERE ERPROJECTFILEVERSIONID = @ERProjectFileVersionID
+END

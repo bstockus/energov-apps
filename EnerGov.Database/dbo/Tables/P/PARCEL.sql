@@ -1,0 +1,56 @@
+﻿CREATE TABLE [dbo].[PARCEL] (
+    [PARCELID]            CHAR (36)        NOT NULL,
+    [PARCELNUMBER]        NVARCHAR (50)    NOT NULL,
+    [ADDITION]            NVARCHAR (MAX)   NULL,
+    [BLOCK]               NVARCHAR (500)   NULL,
+    [LOT]                 NVARCHAR (500)   NULL,
+    [SECTION]             NVARCHAR (500)   NULL,
+    [TOWNSHIP]            NVARCHAR (500)   NULL,
+    [RANGE]               NVARCHAR (500)   NULL,
+    [LEGALDESCRIPTION]    NVARCHAR (MAX)   NULL,
+    [DIRECTIONS]          NVARCHAR (MAX)   NULL,
+    [GISX]                NUMERIC (29, 15) NULL,
+    [GISY]                NUMERIC (29, 15) NULL,
+    [TAXNUMBER]           NVARCHAR (50)    NULL,
+    [IMPNAMEKEY]          NVARCHAR (300)   NULL,
+    [IMPADDKEY]           NVARCHAR (300)   NULL,
+    [NAME1]               NVARCHAR (500)   NULL,
+    [NAME2]               NVARCHAR (500)   NULL,
+    [ADDRESSLINE1]        NVARCHAR (200)   NULL,
+    [ADDRESSLINE2]        NVARCHAR (200)   NULL,
+    [CITY]                NVARCHAR (50)    NULL,
+    [STATE]               NVARCHAR (20)    NULL,
+    [POSTALCODE]          NVARCHAR (10)    NULL,
+    [TRACT]               NVARCHAR (100)   NULL,
+    [SUBDIVISION]         NVARCHAR (500)   NULL,
+    [JURISDICTION]        NVARCHAR (100)   NULL,
+    [INSPECTIONZONEID]    CHAR (36)        NULL,
+    [STATUSID]            NVARCHAR (50)    NULL,
+    [ACTIVE]              BIT              CONSTRAINT [DF__Parcels__bActive__77AABCF8] DEFAULT ((1)) NOT NULL,
+    [ADDRESSLINE3]        NVARCHAR (200)   NULL,
+    [GCUSTOMFIELDLAYOUTS] CHAR (36)        NULL,
+    [PROVINCE]            NVARCHAR (50)    NULL,
+    [RURALROUTE]          NVARCHAR (50)    NULL,
+    [STATION]             NVARCHAR (50)    NULL,
+    [COMPSITE]            NVARCHAR (50)    NULL,
+    [POBOX]               NVARCHAR (50)    NULL,
+    [ATTN]                NVARCHAR (50)    NULL,
+    [GENERALDELIVERY]     BIT              NULL,
+    [LASTCHANGEDON]       DATETIME         CONSTRAINT [DF__PARCELS__LASTCHANGEDON] DEFAULT (getutcdate()) NOT NULL,
+    [LASTCHANGEDBY]       CHAR (36)        NULL,
+    [ROWVERSION]          INT              CONSTRAINT [DF_Parcel_RowVersion] DEFAULT ((1)) NOT NULL,
+    CONSTRAINT [PK_Parcels] PRIMARY KEY CLUSTERED ([PARCELID] ASC) WITH (FILLFACTOR = 80),
+    CONSTRAINT [FK_Parcel_CustomFieldLayout] FOREIGN KEY ([GCUSTOMFIELDLAYOUTS]) REFERENCES [dbo].[CUSTOMFIELDLAYOUT] ([GCUSTOMFIELDLAYOUTS]),
+    CONSTRAINT [FK_Parcel_Users] FOREIGN KEY ([LASTCHANGEDBY]) REFERENCES [dbo].[USERS] ([SUSERGUID])
+);
+
+
+GO
+CREATE UNIQUE NONCLUSTERED INDEX [IX_Parcel]
+    ON [dbo].[PARCEL]([PARCELNUMBER] ASC) WITH (FILLFACTOR = 80);
+
+
+GO
+CREATE NONCLUSTERED INDEX [IX_PARCEL_ID_NUM]
+    ON [dbo].[PARCEL]([PARCELID] ASC, [PARCELNUMBER] ASC) WITH (FILLFACTOR = 80);
+

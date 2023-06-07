@@ -1,0 +1,207 @@
+﻿CREATE TABLE [dbo].[TIMETRACKINGTYPE] (
+    [TIMETRACKINGTYPEID] CHAR (36)      NOT NULL,
+    [NAME]               NVARCHAR (150) NOT NULL,
+    [DESCRIPTION]        NVARCHAR (MAX) NULL,
+    [BILLABLE]           BIT            NOT NULL,
+    [MODULEID]           INT            NOT NULL,
+    [ACTIVE]             BIT            NOT NULL,
+    [LASTCHANGEDBY]      CHAR (36)      NULL,
+    [LASTCHANGEDON]      DATETIME       CONSTRAINT [DF_TimeTrackingType_LastChangedOn] DEFAULT (getutcdate()) NOT NULL,
+    [ROWVERSION]         INT            CONSTRAINT [DF_TimeTrackingType_RowVersion] DEFAULT ((1)) NOT NULL,
+    CONSTRAINT [PK_TimeTrackingType] PRIMARY KEY CLUSTERED ([TIMETRACKINGTYPEID] ASC) WITH (FILLFACTOR = 90),
+    CONSTRAINT [FK_TIMETRACKINGTYPE_USERS] FOREIGN KEY ([LASTCHANGEDBY]) REFERENCES [dbo].[USERS] ([SUSERGUID]),
+    CONSTRAINT [FK_TimeType_TimeModule] FOREIGN KEY ([MODULEID]) REFERENCES [dbo].[TIMETRACKINGMODULE] ([MODULEID])
+);
+
+
+GO
+CREATE NONCLUSTERED INDEX [TIMETRACKINGTYPE_IX_QUERY]
+    ON [dbo].[TIMETRACKINGTYPE]([TIMETRACKINGTYPEID] ASC, [NAME] ASC);
+
+
+GO
+
+CREATE TRIGGER [TG_TIMETRACKINGTYPE_UPDATE] ON TIMETRACKINGTYPE
+   AFTER UPDATE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+
+    INSERT INTO [HISTORYSYSTEMSETUP]
+    (	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+
+	SELECT
+			[inserted].[TIMETRACKINGTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Name',
+			[deleted].[NAME],
+			[inserted].[NAME],
+			'Time Type (' + [inserted].[NAME] + ')',
+			'A828EC66-5357-4005-A748-C2B3AE8FFBE3',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[TIMETRACKINGTYPEID] = [inserted].[TIMETRACKINGTYPEID]
+	WHERE	[deleted].[NAME] <> [inserted].[NAME]	
+	UNION ALL
+	SELECT
+			[inserted].[TIMETRACKINGTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Description',
+			ISNULL([deleted].[DESCRIPTION],'[none]'),
+			ISNULL([inserted].[DESCRIPTION],'[none]'),
+			'Time Type (' + [inserted].[NAME] + ')',
+			'A828EC66-5357-4005-A748-C2B3AE8FFBE3',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+	JOIN	[inserted] ON [deleted].[TIMETRACKINGTYPEID] = [inserted].[TIMETRACKINGTYPEID]
+	WHERE	ISNULL([deleted].[DESCRIPTION],'') <> ISNULL([inserted].[DESCRIPTION], '')
+	UNION ALL
+	SELECT
+			[inserted].[TIMETRACKINGTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Billable Flag',
+			CASE WHEN [deleted].[BILLABLE] = 1 THEN 'Yes' ELSE 'No' END,
+			CASE WHEN [inserted].[BILLABLE] = 1 THEN 'Yes' ELSE 'No' END,
+			'Time Type (' + [inserted].[NAME] + ')',
+			'A828EC66-5357-4005-A748-C2B3AE8FFBE3',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[TIMETRACKINGTYPEID] = [inserted].[TIMETRACKINGTYPEID]
+	WHERE	[deleted].[BILLABLE] <> [inserted].[BILLABLE]
+	UNION ALL
+	SELECT
+			[inserted].[TIMETRACKINGTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Module',
+			ISNULL([TIMETRACKINGMODULE_DELETED].[NAME], '[none]'),
+			ISNULL([TIMETRACKINGMODULE_INSERTED].[NAME], '[none]'),
+			'Time Type (' + [inserted].[NAME] + ')',
+			'A828EC66-5357-4005-A748-C2B3AE8FFBE3',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+	JOIN	[inserted] ON [deleted].[TIMETRACKINGTYPEID] = [inserted].[TIMETRACKINGTYPEID]
+	LEFT JOIN TIMETRACKINGMODULE TIMETRACKINGMODULE_DELETED WITH (NOLOCK) ON [deleted].[MODULEID] = [TIMETRACKINGMODULE_DELETED].[MODULEID]
+	LEFT JOIN TIMETRACKINGMODULE TIMETRACKINGMODULE_INSERTED WITH (NOLOCK) ON [inserted].[MODULEID] = [TIMETRACKINGMODULE_INSERTED].[MODULEID]
+	WHERE	ISNULL([deleted].[MODULEID], '') <> ISNULL([inserted].[MODULEID], '')
+	UNION ALL
+	SELECT
+			[inserted].[TIMETRACKINGTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Active Flag',
+			CASE WHEN [deleted].[ACTIVE] = 1 THEN 'Yes' ELSE 'No' END,
+			CASE WHEN [inserted].[ACTIVE] = 1 THEN 'Yes' ELSE 'No' END,
+			'Time Type (' + [inserted].[NAME] + ')',
+			'A828EC66-5357-4005-A748-C2B3AE8FFBE3',
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[TIMETRACKINGTYPEID] = [inserted].[TIMETRACKINGTYPEID]
+	WHERE	[deleted].[ACTIVE] <> [inserted].[ACTIVE]
+END
+GO
+
+CREATE TRIGGER [TG_TIMETRACKINGTYPE_INSERT] ON TIMETRACKINGTYPE
+   FOR INSERT
+AS 
+BEGIN
+	SET NOCOUNT ON;
+
+    INSERT INTO [HISTORYSYSTEMSETUP]
+    (	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+
+	SELECT
+			[inserted].[TIMETRACKINGTYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Time Type Added',
+			'',
+			'',
+			'Time Type (' + [inserted].[NAME] + ')',
+			'A828EC66-5357-4005-A748-C2B3AE8FFBE3',
+			1,
+			1,
+			[inserted].[NAME]
+	FROM	[inserted]	
+END
+GO
+
+CREATE TRIGGER [TG_TIMETRACKINGTYPE_DELETE] ON TIMETRACKINGTYPE
+   AFTER DELETE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+
+    INSERT INTO [HISTORYSYSTEMSETUP]
+    (	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+
+	SELECT
+			[deleted].[TIMETRACKINGTYPEID],
+			[deleted].[ROWVERSION],
+			GETUTCDATE(),
+			(SELECT dbo.UFN_GET_USERID_FROM_CONTEXT_INFO()),
+			'Time Type Deleted',
+			'',
+			'',
+			'Time Type (' + [deleted].[NAME] + ')',
+			'A828EC66-5357-4005-A748-C2B3AE8FFBE3',
+			3,
+			1,
+			[deleted].[NAME]
+	FROM	[deleted]
+END

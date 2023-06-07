@@ -1,0 +1,13 @@
+﻿CREATE PROCEDURE [gissetup].[USP_ZONE_SELECT_LOOKUP]
+AS
+BEGIN
+SET NOCOUNT ON;
+SELECT 
+	[dbo].[ZONE].[ZONEID],
+	[dbo].[ZONE].[NAME]
+FROM 
+	[dbo].[ZONE]
+ORDER BY 
+	[dbo].[ZONE].[NAME]
+
+END

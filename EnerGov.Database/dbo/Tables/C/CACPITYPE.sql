@@ -1,0 +1,184 @@
+﻿CREATE TABLE [dbo].[CACPITYPE] (
+    [CACPITYPEID]              CHAR (36)      NOT NULL,
+    [NAME]                     NVARCHAR (255) NOT NULL,
+    [DESCRIPTION]              NVARCHAR (500) NULL,
+    [CACPICALCULATIONTYPEID]   INT            DEFAULT ((1)) NOT NULL,
+    [LASTCHANGEDBY]            CHAR (36)      NULL,
+    [LASTCHANGEDON]            DATETIME       CONSTRAINT [DF_CACPIType_LastChangedOn] DEFAULT (getutcdate()) NOT NULL,
+    [ROWVERSION]               INT            CONSTRAINT [DF_CACPIType_RowVersion] DEFAULT ((1)) NOT NULL,
+    [ROUNDEVERYCPICALCULATION] BIT            DEFAULT ((0)) NOT NULL,
+    CONSTRAINT [PK_CACPITYPE] PRIMARY KEY CLUSTERED ([CACPITYPEID] ASC) WITH (FILLFACTOR = 90),
+    CONSTRAINT [FK_CACPITYPE_CACPICALCTYPE] FOREIGN KEY ([CACPICALCULATIONTYPEID]) REFERENCES [dbo].[CACPICALCULATIONTYPE] ([CACPICALCULATIONTYPEID]),
+    CONSTRAINT [FK_CACPITYPE_USERS] FOREIGN KEY ([LASTCHANGEDBY]) REFERENCES [dbo].[USERS] ([SUSERGUID])
+);
+
+
+GO
+
+CREATE TRIGGER [dbo].[TG_CACPITYPE_DELETE]
+   ON  [dbo].[CACPITYPE]
+   AFTER DELETE
+AS 
+BEGIN	
+	SET NOCOUNT ON;
+	INSERT INTO [HISTORYSYSTEMSETUP]
+	(	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT
+			[deleted].[CACPITYPEID],
+			[deleted].[ROWVERSION],
+			GETUTCDATE(),
+			(SELECT dbo.UFN_GET_USERID_FROM_CONTEXT_INFO()),
+			'CPI Type Deleted',
+			'',
+			'',
+			'CPI Type (' + [deleted].[NAME] + ')',
+			'0958A99F-2DEB-405C-9E51-147581B13B91',			
+			3,
+			1,
+			[deleted].[NAME]
+	FROM	[deleted]
+END
+GO
+
+CREATE TRIGGER [dbo].[TG_CACPITYPE_UPDATE] on [dbo].[CACPITYPE]   
+   AFTER UPDATE
+AS 
+BEGIN	
+	SET NOCOUNT ON;
+	INSERT INTO [HISTORYSYSTEMSETUP]
+    (	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT 
+			[inserted].[CACPITYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Name',
+			[deleted].[NAME],
+			[inserted].[NAME],
+			'CPI Type (' + [inserted].[NAME] + ')',
+			'0958A99F-2DEB-405C-9E51-147581B13B91',			
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].CACPITYPEID = [inserted].CACPITYPEID
+	WHERE	[deleted].[NAME] <> [inserted].[NAME]
+	UNION ALL
+
+	SELECT
+			[inserted].[CACPITYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Description',
+			ISNULL([deleted].[DESCRIPTION],'[none]'),
+			ISNULL([inserted].[DESCRIPTION],'[none]'),
+			'CPI Type (' + [inserted].[NAME] + ')',
+			'0958A99F-2DEB-405C-9E51-147581B13B91',			
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[CACPITYPEID] = [inserted].[CACPITYPEID]	
+	WHERE	ISNULL([deleted].[DESCRIPTION], '') <> ISNULL([inserted].[DESCRIPTION], '')
+	UNION ALL
+
+	SELECT
+			[inserted].[CACPITYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Round Every CPI Calculation Flag',
+			CASE WHEN [deleted].[ROUNDEVERYCPICALCULATION] = 1 THEN 'Yes' ELSE 'No' END,
+			CASE WHEN [inserted].[ROUNDEVERYCPICALCULATION] = 1 THEN 'Yes' ELSE 'No' END,
+			'CPI Type (' + [inserted].[NAME] + ')',
+			'0958A99F-2DEB-405C-9E51-147581B13B91',			
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[CACPITYPEID] = [inserted].[CACPITYPEID]	
+	WHERE	[deleted].[ROUNDEVERYCPICALCULATION] <> [inserted].[ROUNDEVERYCPICALCULATION]
+	UNION ALL
+	
+	SELECT
+			[inserted].[CACPITYPEID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Calculation Type',
+			[CALCULATIONTYPE_DELETED].[NAME],
+			[CALCULATIONTYPE_INSERTED].[NAME],
+			'CPI Type (' + [inserted].[NAME] + ')',
+			'0958A99F-2DEB-405C-9E51-147581B13B91',			
+			2,
+			1,
+			[inserted].[NAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[CACPITYPEID] = [inserted].[CACPITYPEID]
+			INNER JOIN CACPICALCULATIONTYPE CALCULATIONTYPE_DELETED WITH (NOLOCK) ON [deleted].CACPICALCULATIONTYPEID = [CALCULATIONTYPE_DELETED].CACPICALCULATIONTYPEID
+			INNER JOIN CACPICALCULATIONTYPE CALCULATIONTYPE_INSERTED WITH (NOLOCK) ON [inserted].CACPICALCULATIONTYPEID = [CALCULATIONTYPE_INSERTED].CACPICALCULATIONTYPEID
+	WHERE	[deleted].[CACPICALCULATIONTYPEID] <> [inserted].[CACPICALCULATIONTYPEID]
+END
+GO
+
+CREATE TRIGGER [dbo].[TG_CACPITYPE_INSERT]
+   ON  [dbo].[CACPITYPE]
+   AFTER INSERT
+AS 
+BEGIN	
+	SET NOCOUNT ON;
+	INSERT INTO [HISTORYSYSTEMSETUP]
+    (
+        [ID],
+        [ROWVERSION],
+        [CHANGEDON],
+        [CHANGEDBY],
+        [FIELDNAME],
+        [OLDVALUE],
+        [NEWVALUE],
+        [ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT 
+        [inserted].[CACPITYPEID], 
+        [inserted].[ROWVERSION],
+        GETUTCDATE(),
+        [inserted].[LASTCHANGEDBY],
+        'CPI Type Added',
+        '',
+        '',
+        'CPI Type (' + [inserted].[NAME] + ')',
+		'0958A99F-2DEB-405C-9E51-147581B13B91',			
+		1,
+		1,
+		[inserted].[NAME]
+    FROM [inserted]
+END

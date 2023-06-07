@@ -1,0 +1,13 @@
+﻿CREATE PROCEDURE [globalsetup].[USP_CACPI_GETALL]
+AS
+BEGIN 
+	SET NOCOUNT ON;
+	SELECT 
+		[dbo].[CACPI].[CACPIID],
+		[dbo].[CACPI].[NAME],
+		[dbo].[CACPI].[DESCRIPTION],
+		[dbo].[CACPI].[STARTDATE],
+		[dbo].[CACPI].[ENDDATE],
+		[dbo].[CACPI].[CPIVALUE]
+	 FROM [dbo].[CACPI] ORDER BY [dbo].[CACPI].[NAME] ASC
+END

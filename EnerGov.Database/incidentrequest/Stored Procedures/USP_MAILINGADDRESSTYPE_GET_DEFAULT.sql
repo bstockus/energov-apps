@@ -1,0 +1,26 @@
+﻿CREATE PROCEDURE [incidentrequest].[USP_MAILINGADDRESSTYPE_GET_DEFAULT]
+AS
+BEGIN
+	SET NOCOUNT ON;
+	DECLARE @isAddressTypeGisMappingEnabled BIT = 0;
+	DECLARE @addressTypeGisMappingId CHAR(36) = (SELECT TOP 1
+		GISLLMAPPINGID
+	FROM GISLLMAPPING
+	WHERE GISLLMAPPINGFIELD ='88ACC4F0-B547-44CC-8728-9592BD7E08D3')
+	-- (Address Type -> select * from GISLLMAPPINGFIELD where GISLLMAPPINGFIELDID ='88ACC4F0-B547-44CC-8728-9592BD7E08D3')
+
+	IF(@addressTypeGisMappingId IS NOT NULL) -- Select address type that has live link mapping.
+			BEGIN
+		SET @isAddressTypeGisMappingEnabled = 1
+		SELECT NULL AS MAILINGADDRESSTYPENAME,
+			@isAddressTypeGisMappingEnabled
+	END
+		ELSE 	-- Select address type with default flag. If no address type with default flag, use top 1 with system action of Location
+			SELECT TOP 1
+		MAILINGADDRESSTYPENAME,
+		@isAddressTypeGisMappingEnabled
+	FROM [MAILINGADDRESSTYPE]
+		INNER JOIN [SYSTEMACTION] ON [MAILINGADDRESSTYPE].[SYSTEMACTIONID] = [SYSTEMACTION].[SYSTEMACTIONID]
+	WHERE [MAILINGADDRESSTYPE].[ISDEFAULT] = 1 OR [SYSTEMACTION].[NAME] = 'Location'
+	ORDER BY  [MAILINGADDRESSTYPE].[ISDEFAULT] DESC
+END

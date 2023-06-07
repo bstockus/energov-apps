@@ -1,0 +1,11 @@
+﻿CREATE  PROCEDURE [systemsettingsmanager].[USP_RESOURCE_DELETE_BY_DATE]    
+-- Add the parameters for the stored procedure here    
+@USERID CHAR(36),  
+@STARTDATE DATETIME  
+AS    
+BEGIN      
+ DELETE FROM  [dbo].[RESOURCE]    
+ WHERE [RESOURCE].[USERID] = @USERID  
+ AND   [RESOURCE].[UNAVAILABLESTARTDATE] <= @STARTDATE  
+ AND   [RESOURCE].[UNAVAILABLEENDDATE] >= @STARTDATE  
+END

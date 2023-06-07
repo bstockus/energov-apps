@@ -1,0 +1,10 @@
+﻿CREATE TABLE [dbo].[MOBILEGOVNEWVIOLATIONS] (
+    [VIOLATIONID]        CHAR (36)       NOT NULL,
+    [CODECASEID]         CHAR (36)       NOT NULL,
+    [REQUESTID]          CHAR (36)       NOT NULL,
+    [UPDATETIME]         DATETIME        NULL,
+    [SENT]               BIT             DEFAULT ((0)) NULL,
+    [MOBIELGOVVIOLATION] VARBINARY (MAX) NOT NULL,
+    CONSTRAINT [PK_MobileGovNewViolations] PRIMARY KEY CLUSTERED ([VIOLATIONID] ASC) WITH (FILLFACTOR = 90)
+);
+

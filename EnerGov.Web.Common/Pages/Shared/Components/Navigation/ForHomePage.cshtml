@@ -1,0 +1,47 @@
+﻿@using EnerGov.Web.Common.Navigation
+@model IEnumerable<EnerGov.Web.Common.Navigation.NavigationSection>
+
+@foreach (var navigationSection in Model) {
+
+    <div class="col-xs-4">
+        <div class="box box-solid box-success">
+            <div class="box-header with-border">
+                <h3 class="box-title">@navigationSection.Title</h3>
+            </div>
+            <div class="box-body">
+
+                @if (navigationSection.NavigationItems != null) {
+                    @foreach (var navigationItem in navigationSection.NavigationItems) {
+
+                        if (navigationItem is RoutedNavigationItem routedNavigationItem) {
+                            <a type="button"
+                               class="btn btn-lg btn-info btn-block"
+                               asp-area="@routedNavigationItem.Area"
+                               asp-page="@routedNavigationItem.Page"
+                               asp-all-route-data="@routedNavigationItem.RouteValues">
+                                @routedNavigationItem.Title
+                            </a>
+
+                        } else if (navigationItem is UrlNavigationItem urlNavigationItem) {
+
+                            <a type="button"
+                               class="btn btn-lg btn-info btn-block"
+                               href="@urlNavigationItem.Url"
+                               target="_blank">
+                                @urlNavigationItem.Title
+                            </a>
+
+                        }
+
+
+
+                    }
+                }
+
+
+
+            </div>
+        </div>
+    </div>
+
+}

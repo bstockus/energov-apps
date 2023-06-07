@@ -1,0 +1,139 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <Name>LandRecords.Database</Name>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectVersion>4.1</ProjectVersion>
+    <ProjectGuid>{48d437fd-9393-4b79-ba86-634cf128bd2c}</ProjectGuid>
+    <DSP>Microsoft.Data.Tools.Schema.Sql.Sql130DatabaseSchemaProvider</DSP>
+    <OutputType>Database</OutputType>
+    <RootPath>
+    </RootPath>
+    <RootNamespace>LandRecords.Database</RootNamespace>
+    <AssemblyName>LandRecords.Database</AssemblyName>
+    <ModelCollation>1033, CI</ModelCollation>
+    <DefaultFileStructure>BySchemaAndSchemaType</DefaultFileStructure>
+    <DeployToDatabase>True</DeployToDatabase>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <TargetLanguage>CS</TargetLanguage>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <SqlServerVerification>False</SqlServerVerification>
+    <IncludeCompositeObjects>True</IncludeCompositeObjects>
+    <TargetDatabaseSet>True</TargetDatabaseSet>
+    <Recovery>SIMPLE</Recovery>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <OutputPath>bin\Release\</OutputPath>
+    <BuildScriptName>$(MSBuildProjectName).sql</BuildScriptName>
+    <TreatWarningsAsErrors>False</TreatWarningsAsErrors>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <DefineDebug>false</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <OutputPath>bin\Debug\</OutputPath>
+    <BuildScriptName>$(MSBuildProjectName).sql</BuildScriptName>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <DefineDebug>true</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">11.0</VisualStudioVersion>
+    <!-- Default to the v11.0 targets path if the targets file for the current VS version is not found -->
+    <SSDTExists Condition="Exists('$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\SSDT\Microsoft.Data.Tools.Schema.SqlTasks.targets')">True</SSDTExists>
+    <VisualStudioVersion Condition="'$(SSDTExists)' == ''">11.0</VisualStudioVersion>
+  </PropertyGroup>
+  <Import Condition="'$(SQLDBExtensionsRefPath)' != ''" Project="$(SQLDBExtensionsRefPath)\Microsoft.Data.Tools.Schema.SqlTasks.targets" />
+  <Import Condition="'$(SQLDBExtensionsRefPath)' == ''" Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\SSDT\Microsoft.Data.Tools.Schema.SqlTasks.targets" />
+  <ItemGroup>
+    <Folder Include="Properties" />
+    <Folder Include="Views" />
+    <Folder Include="Tables" />
+    <Folder Include="Tables\Districts" />
+    <Folder Include="Tables\Zones" />
+    <Folder Include="Tables\NameAddresses" />
+    <Folder Include="Tables\Taxation" />
+    <Folder Include="Tables\RealProperty" />
+    <Folder Include="Tables\SalesAreas" />
+    <Folder Include="Views\GisViews" />
+    <Folder Include="Tables\ChangeIndicators" />
+    <Folder Include="Tables\NuisanceProperties" />
+    <Folder Include="Tables\SpecialAssesments" />
+    <Folder Include="Tables\Municipalities" />
+  </ItemGroup>
+  <ItemGroup>
+    <Build Include="Views\ParcelAddresses.sql" />
+    <Build Include="Views\ParcelAddresses_EnerGovGISImport.sql" />
+    <Build Include="Views\ParcelDistricts.sql" />
+    <Build Include="Views\ParcelLegalDescriptions.sql" />
+    <Build Include="Views\ParcelOwners.sql" />
+    <Build Include="Views\ParcelZones.sql" />
+    <Build Include="Tables\Districts\DistrictCodes.sql" />
+    <Build Include="Tables\Districts\DistrictCodeTypes.sql" />
+    <Build Include="Tables\Zones\ZoneCodes.sql" />
+    <Build Include="Tables\Zones\ZoneCodeTypes.sql" />
+    <Build Include="Tables\NameAddresses\NameAddresses.sql" />
+    <Build Include="Tables\NameAddresses\NameTypes.sql" />
+    <Build Include="Tables\NameAddresses\PropertyAddresses.sql" />
+    <Build Include="Tables\Taxation\TaxAssessmentClassCodes.sql" />
+    <Build Include="Tables\RealProperty\RealProperties.sql" />
+    <Build Include="Tables\RealProperty\RealPropertyAddresses.sql" />
+    <Build Include="Tables\RealProperty\RealPropertyDistricts.sql" />
+    <Build Include="Tables\RealProperty\RealPropertyLegalDescriptions.sql" />
+    <Build Include="Tables\RealProperty\RealPropertyNameAddresses.sql" />
+    <Build Include="Tables\RealProperty\RealPropertyTaxAssessments.sql" />
+    <Build Include="Tables\RealProperty\RealPropertyZones.sql" />
+    <Build Include="Tables\SalesAreas\PropertySalesAreas.sql" />
+    <Build Include="Views\ParcelAssessmentClassAndSalesArea.sql" />
+    <Build Include="Views\ParcelMailingAddresses.sql" />
+    <Build Include="Views\ParcelOwners_ForEnerGovImport.sql" />
+    <Build Include="Views\ParcelOverview.sql" />
+    <Build Include="gisviews.sql" />
+    <Build Include="Tables\RealProperty\RealPropertySplitMergeHistory.sql" />
+    <Build Include="Tables\ChangeIndicators\ChangeIndicatorCodes.sql" />
+    <Build Include="Tables\NuisanceProperties\NuisanceProperties.sql" />
+    <Build Include="Tables\SpecialAssesments\CountySpecialAssessmentCategories.sql" />
+    <Build Include="Tables\SpecialAssesments\StateClassCodes.sql" />
+    <Build Include="Tables\SpecialAssesments\StateSpecialAssessmentCategories.sql" />
+    <Build Include="Tables\Municipalities\Referendums.sql" />
+    <Build Include="Tables\Municipalities\Municipalities.sql" />
+    <Build Include="Views\GisViews\EnerGovParcelManagerUrls.sql" />
+    <Build Include="Views\GisViews\NuisancePropertyListings.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <RefactorLog Include="LandRecords.Database.refactorlog" />
+  </ItemGroup>
+  <ItemGroup>
+    <ArtifactReference Include="..\EnerGov_Prod.dacpac">
+      <HintPath>..\EnerGov_Prod.dacpac</HintPath>
+      <SuppressMissingDependenciesErrors>False</SuppressMissingDependenciesErrors>
+      <DatabaseSqlCmdVariable>EnerGov_Prod</DatabaseSqlCmdVariable>
+      <ServerSqlCmdVariable>OtherServer</ServerSqlCmdVariable>
+    </ArtifactReference>
+  </ItemGroup>
+  <ItemGroup>
+    <SqlCmdVariable Include="EnerGov_Prod">
+      <DefaultValue>EnerGov_Prod</DefaultValue>
+      <Value>$(SqlCmdVar__1)</Value>
+    </SqlCmdVariable>
+    <SqlCmdVariable Include="OtherServer">
+      <DefaultValue>OtherServer</DefaultValue>
+      <Value>$(SqlCmdVar__2)</Value>
+    </SqlCmdVariable>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="LandRecords.Database.publish.xml" />
+  </ItemGroup>
+</Project>

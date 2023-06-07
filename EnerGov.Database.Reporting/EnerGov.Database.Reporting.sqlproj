@@ -1,0 +1,205 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <Name>EnerGov.Database.Reporting</Name>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectVersion>4.1</ProjectVersion>
+    <ProjectGuid>{2c69b479-c913-4a07-a13d-2236efa8f544}</ProjectGuid>
+    <DSP>Microsoft.Data.Tools.Schema.Sql.Sql130DatabaseSchemaProvider</DSP>
+    <OutputType>Database</OutputType>
+    <RootPath>
+    </RootPath>
+    <RootNamespace>EnerGov.Database.Reporting</RootNamespace>
+    <AssemblyName>EnerGov.Database.Reporting</AssemblyName>
+    <ModelCollation>1033, CI</ModelCollation>
+    <DefaultFileStructure>BySchemaAndSchemaType</DefaultFileStructure>
+    <DeployToDatabase>True</DeployToDatabase>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <TargetLanguage>CS</TargetLanguage>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <SqlServerVerification>False</SqlServerVerification>
+    <IncludeCompositeObjects>True</IncludeCompositeObjects>
+    <TargetDatabaseSet>True</TargetDatabaseSet>
+    <DefaultSchema>dbo</DefaultSchema>
+    <GenerateCreateScript>True</GenerateCreateScript>
+    <Recovery>SIMPLE</Recovery>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <OutputPath>bin\Release\</OutputPath>
+    <BuildScriptName>$(MSBuildProjectName).sql</BuildScriptName>
+    <TreatWarningsAsErrors>False</TreatWarningsAsErrors>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <DefineDebug>false</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <OutputPath>bin\Debug\</OutputPath>
+    <BuildScriptName>$(MSBuildProjectName).sql</BuildScriptName>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <DefineDebug>true</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">11.0</VisualStudioVersion>
+    <!-- Default to the v11.0 targets path if the targets file for the current VS version is not found -->
+    <SSDTExists Condition="Exists('$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\SSDT\Microsoft.Data.Tools.Schema.SqlTasks.targets')">True</SSDTExists>
+    <VisualStudioVersion Condition="'$(SSDTExists)' == ''">11.0</VisualStudioVersion>
+  </PropertyGroup>
+  <Import Condition="'$(SQLDBExtensionsRefPath)' != ''" Project="$(SQLDBExtensionsRefPath)\Microsoft.Data.Tools.Schema.SqlTasks.targets" />
+  <Import Condition="'$(SQLDBExtensionsRefPath)' == ''" Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\SSDT\Microsoft.Data.Tools.Schema.SqlTasks.targets" />
+  <ItemGroup>
+    <Folder Include="Properties" />
+    <Folder Include="Permits" />
+    <Folder Include="Reports" />
+    <Folder Include="Reports\Permits" />
+    <Folder Include="Reports\Permits\PermitPacket" />
+    <Folder Include="Setup" />
+    <Folder Include="Invoices" />
+    <Folder Include="Permits\CustomFields" />
+    <Folder Include="Data" />
+    <Folder Include="Reports\Permits\OccupancyCertificate" />
+    <Folder Include="Codes" />
+    <Folder Include="Reports\Codes" />
+    <Folder Include="Reports\Codes\OrderToCorrect" />
+    <Folder Include="Automation" />
+    <Folder Include="Reports\Invoices" />
+    <Folder Include="Reports\Codes\OfficialContactLetter" />
+    <Folder Include="Reports\Invoices\Invoice" />
+    <Folder Include="Data\InspectorSignatures" />
+    <Folder Include="MasterData" />
+    <Folder Include="Reporting" />
+    <Folder Include="Setup\SelectedInformation" />
+    <Folder Include="HelperFunctions" />
+    <Folder Include="Reporting\CodeEnforcement" />
+    <Folder Include="Reports\Licensing" />
+    <Folder Include="Reports\Plans" />
+    <Folder Include="Reports\Plans\Special Events" />
+  </ItemGroup>
+  <ItemGroup>
+    <Build Include="Permits\PermitDetailsForPermitId.sql" />
+    <Build Include="laxreports.sql" />
+    <Build Include="Permits\PermitContactsForPermitId.sql" />
+    <Build Include="Permits\PermitAddressesForPermitId.sql" />
+    <Build Include="Permits\PermitParcelsForPermitId.sql" />
+    <Build Include="Permits\PermitZonesForPermitId.sql" />
+    <Build Include="Reports\Permits\PermitPacket\rpt_PermitPacket.sql" />
+    <Build Include="Setup\PermitCustomFieldSections.sql" />
+    <Build Include="Setup\PermitPlanReviewComments.sql" />
+    <Build Include="Setup\PermitTypeDepartmentHeader.sql" />
+    <Build Include="Setup\DepartmentHeaders.sql" />
+    <Build Include="Permits\PermitSubPermitsForPermitId.sql" />
+    <Build Include="Invoices\InvoiceCompleteStandaloneForInvoiceId.sql" />
+    <Build Include="Invoices\InvoiceFeesForInvoiceId.sql" />
+    <Build Include="Setup\PermitTypeReleventContactClassification.sql" />
+    <Build Include="Setup\InspectorSignatures.sql" />
+    <Build Include="Permits\PermitSignatureSectionForPermitId.sql" />
+    <Build Include="Permits\PermitInspectionsForPermitId.sql" />
+    <Build Include="Permits\CustomFields\PermitLandDisturbanceCustomFields.sql" />
+    <Build Include="Setup\PermitZonesClassification.sql" />
+    <Build Include="Permits\PermitPlanReviewCommentsForPermitActivityId.sql" />
+    <Build Include="Permits\CustomFields\PermitAirportHeightCustomFields.sql" />
+    <Build Include="Reports\Permits\OccupancyCertificate\rpt_Permit_OccupancyCertificate.sql" />
+    <Build Include="Reports\Permits\OccupancyCertificate\rpt_Permit_TemporaryOccupancyCertificate.sql" />
+    <Build Include="Setup\ViolationLetterContents.sql" />
+    <Build Include="Reports\Codes\OrderToCorrect\rpt_Code_OrderToCorrect.sql" />
+    <Build Include="Permits\CustomFields\PermitExcavationCustomFields.sql" />
+    <Build Include="Codes\OwnerContactsForCodeCase.sql" />
+    <Build Include="Codes\AddressesForCodeCase.sql" />
+    <Build Include="Automation\lax_email_asignee_task_is_assigned.sql" />
+    <Build Include="Automation\lax_email_inspector_permit_task_is_completed.sql" />
+    <Build Include="Permits\CustomFields\PermitDumpsterCustomFields.sql" />
+    <Build Include="Reports\Codes\OfficialContactLetter\rpt_Code_OfficialContactLetter.sql" />
+    <Build Include="laxmasterdata.sql" />
+    <Build Include="MasterData\PermitTypeMasterData.sql" />
+    <Build Include="Reporting\PermittingStatsReporting.sql" />
+    <Build Include="Setup\PermitTypeWorkClassAdditionalInformation.sql" />
+    <Build Include="Permits\PermitAdditionalInformationForPermitId.sql" />
+    <Build Include="Permits\CustomFields\PermitFireCustomFields.sql" />
+    <Build Include="Permits\CustomFields\PermitMechanicalCustomFields.sql" />
+    <Build Include="Permits\CustomFields\PermitBuildingCustomFields.sql" />
+    <Build Include="Setup\SelectedInformation\PermitTypeInformationSelectors.sql" />
+    <Build Include="Setup\SelectedInformation\PermitTypeWorkClassInformationSelectors.sql" />
+    <Build Include="Setup\SelectedInformation\SelectedInformations.sql" />
+    <Build Include="HelperFunctions\HVACTableValues.sql" />
+    <Build Include="HelperFunctions\CustomFieldTableRowNumbers.sql" />
+    <Build Include="HelperFunctions\GetCustomFieldTableIntegerValue.sql" />
+    <Build Include="HelperFunctions\GetCustomFieldTableStringValue.sql" />
+    <Build Include="HelperFunctions\CustomFieldAllTableRowNumbers.sql" />
+    <Build Include="HelperFunctions\GetCustomFieldTableBooleanValue.sql" />
+    <Build Include="HelperFunctions\GetCustomFieldTableListItemValue.sql" />
+    <Build Include="HelperFunctions\HVACTableEquipmentDetailsColumnValues.sql" />
+    <Build Include="HelperFunctions\GetCustomFieldTableFloatValue.sql" />
+    <Build Include="laxanalytics.sql" />
+    <Build Include="Reporting\CodeEnforcement\OTCPerformanceByTypeForPeriod.sql" />
+    <Build Include="MasterData\Calendar.sql" />
+    <Build Include="Reports\Licensing\rpt_License_LicenseCertificate.sql" />
+    <Build Include="Setup\BusinessLicenseTypeClassInformation.sql" />
+    <Build Include="Invoices\InvoiceCompleteForInvoiceId.sql" />
+    <Build Include="Reports\Licensing\rpt_License_AllLicenseCertificates.sql" />
+    <Build Include="MasterData\FireOccupancyUserDistricts.sql" />
+    <Build Include="Setup\NuisanceAbatementPlanItems.sql" />
+    <Build Include="Reports\Plans\Special Events\rpt_SpecialEventPermit_Reviews.sql" />
+    <Build Include="Reports\Plans\Special Events\rpt_SpecialEventPermit.sql" />
+    <Build Include="Invoices\InvoiceCompleteForFireOccupancy.sql" />
+    <Build Include="Reports\Licensing\rpt_License_AllLicenseCertificates_LicenseTypes.sql" />
+    <Build Include="ReleventBuildingOTCs.sql" />
+    <Build Include="Reports\Licensing\rpt_License_AllLicenseCertificates_LicenseStatuses.sql" />
+    <Build Include="Setup\Inspectors.sql" />
+    <Build Include="Setup\InspectionZones.sql" />
+    <Build Include="Reports\Plans\Special Events\rpt_SpecialEventCertificate.sql" />
+    <Build Include="Setup\DepartmentHeaderImages.sql" />
+    <Build Include="Setup\DepartmentHeaderMappings.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <RefactorLog Include="EnerGov.Database.Reporting.refactorlog" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Data\LoadData.sql" />
+    <None Include="Data\InspectorSignatures\barbb.png" />
+    <None Include="Data\InspectorSignatures\barbg.png" />
+    <None Include="Data\InspectorSignatures\brent.png" />
+    <None Include="Data\InspectorSignatures\david.png" />
+    <None Include="Data\InspectorSignatures\eddie.png" />
+    <None Include="Data\InspectorSignatures\jason.png" />
+    <None Include="Data\InspectorSignatures\jerry.png" />
+    <None Include="Data\InspectorSignatures\jon.png" />
+    <None Include="Data\InspectorSignatures\mark.png" />
+    <None Include="Data\InspectorSignatures\pete.png" />
+    <None Include="Data\LoadMasterData.sql" />
+    <None Include="Data\InspectorSignatures\craigs.png" />
+    <None Include="Data\InspectorSignatures\kyles.png" />
+    <None Include="Data\InspectorSignatures\stevec.png" />
+    <None Include="Data\InspectorSignatures\matt.png" />
+    <None Include="Data\InspectorSignatures\holly.png" />
+    <None Include="Data\InspectorSignatures\kelsey.png" />
+    <None Include="energovtrain.publish.xml" />
+    <None Include="energovprod.publish.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\EnerGov.Database\EnerGov.Database.sqlproj">
+      <Name>EnerGov.Database</Name>
+      <Project>{6d9f0450-7481-4c0c-adc3-05c1bee11723}</Project>
+      <Private>True</Private>
+      <SuppressMissingDependenciesErrors>False</SuppressMissingDependenciesErrors>
+      <DatabaseSqlCmdVariable>EnerGovDatabase</DatabaseSqlCmdVariable>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <SqlCmdVariable Include="EnerGovDatabase">
+      <DefaultValue>EnerGov_Prod</DefaultValue>
+      <Value>$(SqlCmdVar__1)</Value>
+    </SqlCmdVariable>
+  </ItemGroup>
+</Project>

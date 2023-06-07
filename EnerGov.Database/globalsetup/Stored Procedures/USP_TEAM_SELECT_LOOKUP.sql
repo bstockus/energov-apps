@@ -1,0 +1,8 @@
+﻿CREATE PROCEDURE [globalsetup].[USP_TEAM_SELECT_LOOKUP]
+AS
+SET NOCOUNT ON;
+SELECT 
+	[dbo].[TEAM].[TEAMID],
+	[dbo].[TEAM].[NAME]
+FROM [dbo].[TEAM]
+ORDER BY [dbo].[TEAM].[NAME]

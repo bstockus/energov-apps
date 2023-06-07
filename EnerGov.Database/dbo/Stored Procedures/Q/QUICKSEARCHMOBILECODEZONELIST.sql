@@ -1,0 +1,10 @@
+﻿CREATE PROCEDURE QUICKSEARCHMOBILECODEZONELIST
+@SearchText varchar(500)
+AS
+BEGIN
+SELECT  [ZONEID]
+      ,[NAME]
+      ,[DESCRIPTION]
+      ,[ZONECODE]
+  FROM [ZONE] where NAME like @SearchText or ZONECODE like @SearchText
+END

@@ -1,0 +1,183 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<SharedDataSet xmlns="http://schemas.microsoft.com/sqlserver/reporting/2010/01/shareddatasetdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <DataSet Name="DataSet1">
+    <Query>
+      <DataSourceReference>EnerGov</DataSourceReference>
+      <DataSetParameters>
+        <DataSetParameter Name="@StartDate">
+          <ReadOnly>false</ReadOnly>
+          <Nullable>false</Nullable>
+          <OmitFromQuery>false</OmitFromQuery>
+          <rd:DbType>DateTime</rd:DbType>
+        </DataSetParameter>
+        <DataSetParameter Name="@EndDate">
+          <ReadOnly>false</ReadOnly>
+          <Nullable>false</Nullable>
+          <OmitFromQuery>false</OmitFromQuery>
+          <rd:DbType>DateTime</rd:DbType>
+        </DataSetParameter>
+        <DataSetParameter Name="@CodeCategory">
+          <ReadOnly>false</ReadOnly>
+          <Nullable>false</Nullable>
+          <OmitFromQuery>false</OmitFromQuery>
+          <rd:DbType>String</rd:DbType>
+        </DataSetParameter>
+      </DataSetParameters>
+      <CommandText>DECLARE @ReleventOTCs TABLE
+(
+  OTCType varchar(100),
+  OTCCategory varchar(100),
+  IsRental bit,
+  StartDate datetime,
+  EndDate datetime,
+  DaysToResolve int,
+  Age int,
+  IsStarting bit,
+  IsEnding bit,
+  IsOpened bit,
+  IsClosed bit,
+  IsCompliant bit
+);
+
+INSERT INTO @ReleventOTCs
+SELECT
+  c.DESCRIPTION AS "OTCType",
+  '' AS "OTCCategory",
+  CASE ISNULL(cscm.RentalProperty, 'efcca56d-724e-4f07-95e5-cf613c612adf') WHEN 'efcca56d-724e-4f07-95e5-cf613c612adf' THEN 1 ELSE 0 END AS "IsRental",
+  cc.OPENEDDATE AS "StartDate",
+  ISNULL(viol.RESOLVEDDATE, cc.CLOSEDDATE) AS "EndDate",
+  DATEDIFF(day, cc.OPENEDDATE, ISNULL(viol.RESOLVEDDATE, cc.CLOSEDDATE)) AS "DaysToResolve",
+  DATEDIFF(day, cc.OPENEDDATE, ISNULL(ISNULL(viol.RESOLVEDDATE, cc.CLOSEDDATE), @EndDate)) AS "Age",
+  CASE WHEN cc.OPENEDDATE &lt; @StartDate THEN 1 ELSE 0 END AS "IsStarting",
+  CASE WHEN (ISNULL(viol.RESOLVEDDATE, cc.CLOSEDDATE) IS NULL OR ISNULL(viol.RESOLVEDDATE, cc.CLOSEDDATE) &gt; @EndDate) THEN 1 ELSE 0 END AS "IsEnding",
+  CASE WHEN cc.OPENEDDATE BETWEEN @StartDate AND @EndDate THEN 1 ELSE 0 END AS "IsOpened",
+  CASE WHEN ISNULL(viol.RESOLVEDDATE, cc.CLOSEDDATE) BETWEEN @StartDate AND @EndDate THEN 1 ELSE 0 END AS "IsClosed",
+  CASE WHEN (ISNULL(viol.RESOLVEDDATE, cc.CLOSEDDATE) IS NULL OR ISNULL(viol.RESOLVEDDATE, cc.CLOSEDDATE) &gt; @EndDate) THEN 0 ELSE 1 END AS "IsCompliant"
+FROM dbo.CMCODECASE cc
+INNER JOIN dbo.CMCODEWFSTEP cwfs ON cc.CMCODECASEID = cwfs.CMCODECASEID
+INNER JOIN dbo.CMCODECASESTATUS ccs ON cc.CMCODECASESTATUSID = ccs.CMCODECASESTATUSID
+INNER JOIN dbo.CMCASETYPE ct ON cc.CMCASETYPEID = ct.CMCASETYPEID
+INNER JOIN dbo.CMCODEWFACTIONSTEP cwfas ON cwfs.CMCODEWFSTEPID = cwfas.CMCODEWFSTEPID
+INNER JOIN dbo.CMVIOLATION viol ON cwfas.CMCODEWFACTIONSTEPID = viol.CMCODEWFACTIONID
+INNER JOIN dbo.CMCODEREVISION cr ON viol.CMCODEREVISIONID = cr.CMCODEREVISIONID AND cr.[CURRENTREVISION] = 1
+INNER JOIN dbo.CMCODE c ON cr.CMCODEID = c.CMCODEID
+INNER JOIN dbo.CMVIOLATIONSTATUS violstat ON viol.CMVIOLATIONSTATUSID = violstat.CMVIOLATIONSTATUSID
+INNER JOIN dbo.CMCODECASEPARCEL ccp ON cc.CMCODECASEID = ccp.CMCODECASEID AND ccp.[PRIMARY] = 1
+LEFT OUTER JOIN dbo.CUSTOMSAVERCODEMANAGEMENT cscm ON cc.CMCODECASEID = cscm.ID
+WHERE
+  c.CMCODECATEGORYID = @CodeCategory AND
+  (cc.OPENEDDATE BETWEEN @StartDate AND @EndDate OR
+  ISNULL(viol.RESOLVEDDATE, cc.CLOSEDDATE) BETWEEN @StartDate AND @EndDate OR
+    (cc.OPENEDDATE &lt; @StartDate AND (ISNULL(viol.RESOLVEDDATE, cc.CLOSEDDATE) IS NULL OR ISNULL(viol.RESOLVEDDATE, cc.CLOSEDDATE) &gt; @EndDate))) AND
+  cc.CASENUMBER NOT LIKE 'CONV-%';
+
+DECLARE @ReleventTypes TABLE
+(
+  OTCType varchar(100),
+  OTCCategory varchar(100)
+);
+
+INSERT INTO @ReleventTypes
+SELECT
+  relevOTCs.OTCType AS "OTCType",
+  relevOTCs.OTCCategory AS "OTCCategory"
+FROM @ReleventOTCs relevOTCs
+GROUP BY relevOTCs.OTCCategory, relevOTCs.OTCType;
+
+SELECT
+  relevTypes.OTCType AS "OTCType",
+  relevTypes.OTCCategory AS "OTCCategory",
+  ISNULL((SELECT TOP 1 COUNT(*) FROM @ReleventOTCs relevOTCs WHERE relevOTCs.OTCType = relevTypes.OTCType), 0) AS "TotalCount",
+  ISNULL((SELECT TOP 1 COUNT(*) FROM @ReleventOTCs relevOTCs WHERE relevOTCs.OTCType = relevTypes.OTCType AND relevOTCs.IsRental = 1), 0) AS "RentalCount",
+  ISNULL((SELECT TOP 1 COUNT(*) FROM @ReleventOTCs relevOTCs WHERE relevOTCs.OTCType = relevTypes.OTCType AND relevOTCs.IsStarting = 1), 0) AS "Starting",
+  ISNULL((SELECT TOP 1 COUNT(*) FROM @ReleventOTCs relevOTCs WHERE relevOTCs.OTCType = relevTypes.OTCType AND relevOTCs.IsEnding = 1), 0) AS "Ending",
+  ISNULL((SELECT TOP 1 COUNT(*) FROM @ReleventOTCs relevOTCs WHERE relevOTCs.OTCType = relevTypes.OTCType AND relevOTCs.IsOpened = 1), 0) AS "Opened",
+  ISNULL((SELECT TOP 1 COUNT(*) FROM @ReleventOTCs relevOTCs WHERE relevOTCs.OTCType = relevTypes.OTCType AND relevOTCs.IsClosed = 1), 0) AS "Closed",
+  ISNULL((SELECT TOP 1 COUNT(*) FROM @ReleventOTCs relevOTCs WHERE relevOTCs.OTCType = relevTypes.OTCType AND relevOTCs.IsStarting = 1 AND relevOTCs.IsRental = 1), 0) AS "RentalStarting",
+  ISNULL((SELECT TOP 1 COUNT(*) FROM @ReleventOTCs relevOTCs WHERE relevOTCs.OTCType = relevTypes.OTCType AND relevOTCs.IsEnding = 1 AND relevOTCs.IsRental = 1), 0) AS "RentalEnding",
+  ISNULL((SELECT TOP 1 COUNT(*) FROM @ReleventOTCs relevOTCs WHERE relevOTCs.OTCType = relevTypes.OTCType AND relevOTCs.IsOpened = 1 AND relevOTCs.IsRental = 1), 0) AS "RentalOpened",
+  ISNULL((SELECT TOP 1 COUNT(*) FROM @ReleventOTCs relevOTCs WHERE relevOTCs.OTCType = relevTypes.OTCType AND relevOTCs.IsClosed = 1 AND relevOTCs.IsRental = 1), 0) AS "RentalClosed",
+  ISNULL((SELECT TOP 1 COUNT(*) FROM @ReleventOTCs relevOTCs WHERE relevOTCs.OTCType = relevTypes.OTCType AND relevOTCs.IsCompliant = 1 AND relevOTCs.IsOpened = 1), 0) AS "Compliant",
+  ISNULL((SELECT TOP 1 COUNT(*) FROM @ReleventOTCs relevOTCs WHERE relevOTCs.OTCType = relevTypes.OTCType AND relevOTCs.IsCompliant = 1 AND relevOTCs.IsRental = 1 AND relevOTCs.IsOpened = 1), 0) AS "RentalCompliant",
+  ISNULL((SELECT TOP 1 AVG(relevOTCs.DaysToResolve) FROM @ReleventOTCs relevOTCs WHERE relevOTCs.OTCType = relevTypes.OTCType AND relevOTCs.IsCompliant = 1), 0) AS "AverageDaysToResolve",
+  ISNULL((SELECT TOP 1 AVG(relevOTCs.DaysToResolve) FROM @ReleventOTCs relevOTCs WHERE relevOTCs.OTCType = relevTypes.OTCType AND relevOTCs.IsCompliant = 1 AND relevOTCs.IsRental = 1), 0) AS "RentalAverageDaysToResolve",
+  ISNULL((SELECT TOP 1 AVG(relevOTCs.Age) FROM @ReleventOTCs relevOTCs WHERE relevOTCs.OTCType = relevTypes.OTCType AND relevOTCs.IsCompliant = 0), 0) AS "AverageAgeOfOpen",
+  ISNULL((SELECT TOP 1 AVG(relevOTCs.Age) FROM @ReleventOTCs relevOTCs WHERE relevOTCs.OTCType = relevTypes.OTCType AND relevOTCs.IsCompliant = 0 AND relevOTCs.IsRental = 1), 0) AS "RentalAverageAgeOfOpen"
+FROM @ReleventTypes relevTypes;</CommandText>
+    </Query>
+    <Fields>
+      <Field Name="OTCType">
+        <DataField>OTCType</DataField>
+        <rd:TypeName>System.String</rd:TypeName>
+      </Field>
+      <Field Name="OTCCategory">
+        <DataField>OTCCategory</DataField>
+        <rd:TypeName>System.String</rd:TypeName>
+      </Field>
+      <Field Name="TotalCount">
+        <DataField>TotalCount</DataField>
+        <rd:TypeName>System.Int32</rd:TypeName>
+      </Field>
+      <Field Name="RentalCount">
+        <DataField>RentalCount</DataField>
+        <rd:TypeName>System.Int32</rd:TypeName>
+      </Field>
+      <Field Name="Starting">
+        <DataField>Starting</DataField>
+        <rd:TypeName>System.Int32</rd:TypeName>
+      </Field>
+      <Field Name="Ending">
+        <DataField>Ending</DataField>
+        <rd:TypeName>System.Int32</rd:TypeName>
+      </Field>
+      <Field Name="Opened">
+        <DataField>Opened</DataField>
+        <rd:TypeName>System.Int32</rd:TypeName>
+      </Field>
+      <Field Name="Closed">
+        <DataField>Closed</DataField>
+        <rd:TypeName>System.Int32</rd:TypeName>
+      </Field>
+      <Field Name="Compliant">
+        <DataField>Compliant</DataField>
+        <rd:TypeName>System.Int32</rd:TypeName>
+      </Field>
+      <Field Name="RentalStarting">
+        <DataField>RentalStarting</DataField>
+        <rd:TypeName>System.Int32</rd:TypeName>
+      </Field>
+      <Field Name="RentalCompliant">
+        <DataField>RentalCompliant</DataField>
+        <rd:TypeName>System.Int32</rd:TypeName>
+      </Field>
+      <Field Name="RentalEnding">
+        <DataField>RentalEnding</DataField>
+        <rd:TypeName>System.Int32</rd:TypeName>
+      </Field>
+      <Field Name="RentalOpened">
+        <DataField>RentalOpened</DataField>
+        <rd:TypeName>System.Int32</rd:TypeName>
+      </Field>
+      <Field Name="AverageDaysToResolve">
+        <DataField>AverageDaysToResolve</DataField>
+        <rd:TypeName>System.Int32</rd:TypeName>
+      </Field>
+      <Field Name="RentalClosed">
+        <DataField>RentalClosed</DataField>
+        <rd:TypeName>System.Int32</rd:TypeName>
+      </Field>
+      <Field Name="RentalAverageDaysToResolve">
+        <DataField>RentalAverageDaysToResolve</DataField>
+        <rd:TypeName>System.Int32</rd:TypeName>
+      </Field>
+      <Field Name="AverageAgeOfOpen">
+        <DataField>AverageAgeOfOpen</DataField>
+        <rd:TypeName>System.Int32</rd:TypeName>
+      </Field>
+      <Field Name="RentalAverageAgeOfOpen">
+        <DataField>RentalAverageAgeOfOpen</DataField>
+        <rd:TypeName>System.Int32</rd:TypeName>
+      </Field>
+    </Fields>
+  </DataSet>
+</SharedDataSet>

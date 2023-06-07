@@ -1,0 +1,147 @@
+﻿CREATE TABLE [dbo].[CAFEEDELETEREASON] (
+    [CAFEEDELETEREASONID] CHAR (36)     NOT NULL,
+    [REASONNAME]          NVARCHAR (20) NOT NULL,
+    [LASTCHANGEDBY]       CHAR (36)     NULL,
+    [LASTCHANGEDON]       DATETIME      CONSTRAINT [DF_CAFEEDELETEREASON_LastChangedOn] DEFAULT (getutcdate()) NOT NULL,
+    [ROWVERSION]          INT           CONSTRAINT [DF_CAFEEDELETEREASON_RowVersion] DEFAULT ((1)) NOT NULL,
+    CONSTRAINT [PK_CAFeeDeleteReason] PRIMARY KEY CLUSTERED ([CAFEEDELETEREASONID] ASC) WITH (FILLFACTOR = 90)
+);
+
+
+GO
+CREATE NONCLUSTERED INDEX [CAFEEDELETEREASON_IX_QUERY]
+    ON [dbo].[CAFEEDELETEREASON]([CAFEEDELETEREASONID] ASC, [REASONNAME] ASC);
+
+
+GO
+
+CREATE TRIGGER [dbo].[TG_CAFEEDELETEREASON_DELETE] ON  [dbo].[CAFEEDELETEREASON]
+   AFTER DELETE
+AS 
+BEGIN
+	SET NOCOUNT ON;
+	INSERT INTO [HISTORYSYSTEMSETUP]
+	(	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT
+			[deleted].[CAFEEDELETEREASONID],
+			[deleted].[ROWVERSION],
+			GETUTCDATE(),
+			(SELECT dbo.UFN_GET_USERID_FROM_CONTEXT_INFO()),
+			'Fee Deletion Reason Deleted',
+			'',
+			'',
+			'Fee Deletion Reason (' + [deleted].[REASONNAME] + ')',
+			'2A8A0A82-42EB-4904-838C-88B551791B72',
+			3,
+			1,
+			[deleted].[REASONNAME]
+	FROM	[deleted]
+END
+GO
+
+CREATE TRIGGER [dbo].[TG_CAFEEDELETEREASON_UPDATE] ON  [dbo].[CAFEEDELETEREASON]
+   AFTER UPDATE
+AS 
+BEGIN	
+	SET NOCOUNT ON;
+	-- Check if LASTCHANGEDBY contains VALID User Id and it Exists in USERS table, this is in replacement to foreign key reference of CAFEEDELETEREASON table with USERS table.
+	IF EXISTS (SELECT * FROM inserted 
+		LEFT OUTER JOIN USERS WITH (NOLOCK) ON USERS.SUSERGUID = inserted.LASTCHANGEDBY
+		WHERE inserted.LASTCHANGEDBY IS NOT NULL AND USERS.SUSERGUID IS NULL)
+	BEGIN		
+		RAISERROR ('The INSERT or UPDATE statement conflicted with the FOREIGN KEY to table USERS', 16, 0);
+		ROLLBACK;
+		RETURN;
+	END
+
+	INSERT INTO [HISTORYSYSTEMSETUP]
+    (	[ID],
+		[ROWVERSION],
+		[CHANGEDON],
+		[CHANGEDBY],
+		[FIELDNAME],
+		[OLDVALUE],
+		[NEWVALUE],
+		[ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT 
+			[inserted].[CAFEEDELETEREASONID],
+			[inserted].[ROWVERSION],
+			GETUTCDATE(),
+			[inserted].[LASTCHANGEDBY],
+			'Reason',
+			[deleted].[REASONNAME],
+			[inserted].[REASONNAME],
+			'Fee Deletion Reason (' + [inserted].[REASONNAME] + ')',
+			'2A8A0A82-42EB-4904-838C-88B551791B72',
+			2,
+			1,
+			[inserted].[REASONNAME]
+	FROM	[deleted]
+			JOIN [inserted] ON [deleted].[CAFEEDELETEREASONID] = [inserted].[CAFEEDELETEREASONID]
+	WHERE	[deleted].[REASONNAME] <> [inserted].[REASONNAME]	
+END
+GO
+
+CREATE TRIGGER [dbo].[TG_CAFEEDELETEREASON_INSERT] ON [dbo].[CAFEEDELETEREASON]
+   AFTER INSERT
+AS 
+BEGIN
+	SET NOCOUNT ON;
+		
+	-- Check if LASTCHANGEDBY contains VALID User Id and it Exists in USERS table, this is in replacement to foreign key reference of CAFEEDELETEREASON table with USERS table.
+	IF EXISTS (SELECT * FROM inserted 
+		LEFT OUTER JOIN USERS WITH (NOLOCK) ON USERS.SUSERGUID = inserted.LASTCHANGEDBY
+		WHERE inserted.LASTCHANGEDBY IS NOT NULL AND USERS.SUSERGUID IS NULL)
+	BEGIN		
+		RAISERROR ('The INSERT or UPDATE statement conflicted with the FOREIGN KEY to table USERS', 16, 0);
+		ROLLBACK;
+		RETURN;
+	END
+
+	INSERT INTO [HISTORYSYSTEMSETUP]
+    (
+        [ID],
+        [ROWVERSION],
+        [CHANGEDON],
+        [CHANGEDBY],
+        [FIELDNAME],
+        [OLDVALUE],
+        [NEWVALUE],
+        [ADDITIONALINFO],
+		[FORMID],
+		[ACTION],
+		[ISROOT],
+		[RECORDNAME]
+    )
+	SELECT 
+        [inserted].[CAFEEDELETEREASONID], 
+        [inserted].[ROWVERSION],
+        GETUTCDATE(),
+        [inserted].[LASTCHANGEDBY],
+        'Fee Deletion Reason Added',
+        '',
+        '',
+        'Fee Deletion Reason (' + [inserted].[REASONNAME] + ')',
+		'2A8A0A82-42EB-4904-838C-88B551791B72',
+		1,
+		1,
+		[inserted].[REASONNAME]
+    FROM [inserted] 
+END

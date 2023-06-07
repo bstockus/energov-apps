@@ -1,0 +1,83 @@
+﻿CREATE PROCEDURE [dbo].[InvoiceFeesForInvoiceId]
+	@INVOICEID AS varchar(36)
+AS
+
+SELECT
+	ftf.CAFEEID AS "FeeId",
+	'Permit' AS "CaseType",
+	p.PERMITNUMBER AS "CaseNumber",
+	pt.NAME AS "CaseTypeName",
+	pwc.NAME AS "CaseClassName",
+	inf.PAIDAMOUNT AS "PaidAmount",
+	cf.COMPUTEDAMOUNT AS "TotalAmount",
+	cf.DISPLAYINPUTVALUE AS "DisplayInputAmount",
+	inf.CAINVOICEID AS "InvoiceId",
+	cf.FEENAME AS "FeeName"
+FROM [$(EnerGovDatabase)].dbo.CAINVOICEFEE inf
+INNER JOIN [$(EnerGovDatabase)].dbo.CACOMPUTEDFEE cf ON inf.CACOMPUTEDFEEID = cf.CACOMPUTEDFEEID
+INNER JOIN [$(EnerGovDatabase)].dbo.PMPERMITFEE pf ON cf.CACOMPUTEDFEEID = pf.CACOMPUTEDFEEID
+INNER JOIN [$(EnerGovDatabase)].dbo.PMPERMIT p ON pf.PMPERMITID = p.PMPERMITID
+INNER JOIN [$(EnerGovDatabase)].dbo.PMPERMITTYPE pt ON p.PMPERMITTYPEID = pt.PMPERMITTYPEID
+INNER JOIN [$(EnerGovDatabase)].dbo.PMPERMITWORKCLASS pwc ON p.PMPERMITWORKCLASSID = pwc.PMPERMITWORKCLASSID
+INNER JOIN [$(EnerGovDatabase)].dbo.CAFEETEMPLATEFEE ftf ON cf.CAFEETEMPLATEFEEID = ftf.CAFEETEMPLATEFEEID
+WHERE inf.CAINVOICEID = @INVOICEID
+
+UNION
+
+SELECT
+	ftf.CAFEEID AS "FeeId",
+	'Plan' AS "CaseType",
+	p.PLANNUMBER AS "CaseNumber",
+	pt.PLANNAME AS "CaseTypeName",
+	pwc.NAME AS "CaseClassName",
+	inf.PAIDAMOUNT AS "PaidAmount",
+	cf.COMPUTEDAMOUNT AS "TotalAmount",
+	cf.DISPLAYINPUTVALUE AS "DisplayInputAmount",
+	inf.CAINVOICEID AS "InvoiceId",
+	cf.FEENAME AS "FeeName"
+FROM [$(EnerGovDatabase)].dbo.CAINVOICEFEE inf
+INNER JOIN [$(EnerGovDatabase)].dbo.CACOMPUTEDFEE cf ON inf.CACOMPUTEDFEEID = cf.CACOMPUTEDFEEID
+INNER JOIN [$(EnerGovDatabase)].dbo.PLPLANFEE pf ON cf.CACOMPUTEDFEEID = pf.CACOMPUTEDFEEID
+INNER JOIN [$(EnerGovDatabase)].dbo.PLPLAN p ON pf.PLPLANID = p.PLPLANID
+INNER JOIN [$(EnerGovDatabase)].dbo.PLPLANTYPE pt ON p.PLPLANTYPEID = pt.PLPLANTYPEID
+INNER JOIN [$(EnerGovDatabase)].dbo.PLPLANWORKCLASS pwc ON p.PLPLANWORKCLASSID = pwc.PLPLANWORKCLASSID
+INNER JOIN [$(EnerGovDatabase)].dbo.CAFEETEMPLATEFEE ftf ON cf.CAFEETEMPLATEFEEID = ftf.CAFEETEMPLATEFEEID
+WHERE inf.CAINVOICEID = @INVOICEID
+
+UNION
+
+SELECT
+		ftf.CAFEEID AS "FeeId",
+		'Code Enforcement' AS "CaseType",
+		p.CASENUMBER AS "CaseNumber",
+		pt.NAME AS "CaseTypeName",
+		'' AS "CaseClassName",
+		inf.PAIDAMOUNT AS "PaidAmount",
+		cf.COMPUTEDAMOUNT AS "TotalAmount",
+		cf.DISPLAYINPUTVALUE AS "DisplayInputAmount",
+		inf.CAINVOICEID AS "InvoiceId",
+		cf.FEENAME AS "FeeName"
+	FROM [$(EnerGovDatabase)].dbo.CAINVOICEFEE inf
+	INNER JOIN [$(EnerGovDatabase)].dbo.CACOMPUTEDFEE cf ON inf.CACOMPUTEDFEEID = cf.CACOMPUTEDFEEID
+	INNER JOIN [$(EnerGovDatabase)].dbo.CMCODECASEFEE pf ON cf.CACOMPUTEDFEEID = pf.CACOMPUTEDFEEID
+	INNER JOIN [$(EnerGovDatabase)].dbo.CMCODECASE p ON pf.CMCODECASEID = p.CMCODECASEID
+	INNER JOIN [$(EnerGovDatabase)].dbo.CMCASETYPE pt ON p.CMCASETYPEID = pt.CMCASETYPEID
+	INNER JOIN [$(EnerGovDatabase)].dbo.CAFEETEMPLATEFEE ftf ON cf.CAFEETEMPLATEFEEID = ftf.CAFEETEMPLATEFEEID
+	WHERE inf.CAINVOICEID = @INVOICEID
+
+	UNION
+
+SELECT
+	mf.CAFEEID AS "FeeId",
+	'Miscellaneous' AS "CaseType",
+	NULL AS "CaseNumber",
+	NULL AS "CaseTypeName",
+	NULL AS "CaseClassName",
+	mf.PAIDAMOUNT AS "PaidAmount",
+	mf.AMOUNT AS "TotalAmount",
+	mf.INPUTVALUE AS "DisplayInputAmount",
+	inmf.CAINVOICEID AS "InvoiceId",
+	mf.FEENAME AS "FeeName"
+FROM [$(EnerGovDatabase)].dbo.CAINVOICEMISCFEE inmf
+INNER JOIN [$(EnerGovDatabase)].dbo.CAMISCFEE mf ON inmf.CAMISCFEEID = mf.CAMISCFEEID
+WHERE inmf.CAINVOICEID = @INVOICEID

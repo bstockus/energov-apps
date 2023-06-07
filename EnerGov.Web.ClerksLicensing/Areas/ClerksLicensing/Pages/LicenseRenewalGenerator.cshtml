@@ -1,0 +1,301 @@
+﻿@page
+@using EnerGov.Web.Common.Infrastructure
+@using iText.Forms.Xfdf
+@model EnerGov.Web.ClerksLicensing.Areas.ClerksLicensing.Pages.LicenseRenewalGeneratorModel
+
+@{
+    this.UseLayout("License Packet Generator");
+}
+
+
+@section Header {
+    License Packet Generator
+}
+
+@section Breadcrumbs {
+    <li>
+        <i class="fa fa-home"></i>
+    </li>
+    <li>
+        Clerks Licenseing
+    </li>
+    <li class="active">
+        License Packet Generator
+    </li>
+}
+
+@section Scripts {
+    <script src="~/js/signalr.min.js"></script>
+    <script>
+        function tailScroll() {
+            var height = $("#tail").get(0).scrollHeight;
+            $("#tail").animate({
+                scrollTop: height
+            }, 100);
+        }
+
+        const jobId = @Html.Raw(Model.JobId == null ? "null" : $"'{Model.JobId}'");
+
+        if (jobId !== null) {
+
+            Object.defineProperty(WebSocket, 'OPEN', { value: 1, });
+
+            var connection = new signalR.HubConnectionBuilder()
+                .withUrl("/jobprogress")
+                .configureLogging(signalR.LogLevel.Information)
+                .build();
+
+            connection.on("progress",
+                (percent, message) => {
+                    $('#job-status').text(`${percent}%: ${message}`);
+                    $("<div />").text(message).appendTo('#tail');
+                    tailScroll();
+                    $('#job-progress').css('width', `${percent}%`);
+                });
+
+            connection.on("show-download",
+                () => {
+                    $('.download-buttons').removeClass("hidden");
+                    $('#job-progress').removeClass("progress-bar-warning").addClass("progress-bar-success");
+                    $('#job-progress-container').removeClass("active");
+                });
+
+            connection.start()
+                .then(_ => connection.invoke("AssociateJob", jobId))
+                .catch(err => console.error(err.toString()));
+
+        }
+    </script>
+}
+
+<form method="post">
+
+    @if (Model.JobId == null) {
+
+
+
+        <div class="box">
+
+            <div class="box-body">
+                <div class="form-group col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                    <label>Tax Year</label>
+                    <input type="number"
+                       class="form-control"
+                       required
+                       asp-for="TaxYear" />
+                    <help-block></help-block>
+                </div>
+
+                <div class="form-group col-md-6 col-lg-6 col-sm-6 col-xs-12">
+                    <label>Granted Date</label>
+                    <input type="text"
+                       class="form-control date-control"
+                       asp-for="GrantedDate"
+                       required
+                       value="@Model.GrantedDate.ToShortDateString()" />
+                    <help-block></help-block>
+                </div>
+
+                <div class="form-group col-md-12 col-lg-12 col-sm-12 col-xs-12">
+                    <label>License Type(s)</label>
+                    <select asp-for="LicenseTypesToInclude"
+                        asp-items="@Model.LicenseTypes"
+                        class="form-control select2"
+                        style="width: 100%:"></select>
+                    <help-block></help-block>
+                </div>
+
+                <div class="form-group col-md-12 col-lg-12 col-sm-12 col-xs-12">
+                    <label>License Status(es)</label>
+                    <select asp-for="LicenseStatusesToInclude"
+                        asp-items="@Model.LicenseStatuses"
+                        class="form-control select2"
+                        style="width: 100%:"></select>
+                    <help-block></help-block>
+                </div>
+            </div>
+
+            <div class="box-footer">
+                <button type="submit"
+                    bs-context="@ButtonContext.Primary"
+                    class="pull-right"
+                    asp-page-handler="FetchLicenses"
+                    style="margin-left: 5px; margin-right: 5px;">
+                    @if (Model.LicensePacketInfos.Any()) {
+                        @:Re-Fetch Licenses
+                    } else {
+                        @:Fetch Licenses
+                    }
+                </button>
+
+                @if (Model.LicensePacketInfos.Any()) {
+                    <button type="submit"
+                    bs-context="ButtonContext.Success"
+                    class="pull-right"
+                    asp-page-handler="Generate"
+                    style="margin-left: 5px; margin-right: 5px;">
+                        Generate
+                    </button>
+                }
+
+            </div>
+
+        </div>
+
+        @if (Model.LicensePacketInfos.Any()) {
+
+            var groupedLicensePacketInfos = Model.LicensePacketInfos.GroupBy(_ => _.BusinessId).OrderBy(_ => _.First().DBA);
+
+            foreach (var groupedLicensePacketInfo in groupedLicensePacketInfos) {
+
+                <div class="box box-default box-solid">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">
+                            <strong>@groupedLicensePacketInfo.First().CompanyName</strong>
+                            d/b/a
+                            <strong>@groupedLicensePacketInfo.First().DBA</strong>
+                        </h3>
+                        <div class="box-title pull-right">
+                            <span class="badge">@groupedLicensePacketInfo.Count()</span>
+                        </div>
+                    </div>
+                    <div class="box-body no-padding">
+
+                        <p style="margin-top: 0; padding-left: 5px; padding-right: 5px; padding-bottom: 0;">
+
+                            @if (!string.IsNullOrWhiteSpace(groupedLicensePacketInfo.First().BusinessNumber)) {
+                                <span class="label label-default label-pill" style="margin-right: 2px; margin-bottom: 2px;">
+                                    <span class="label-pill-title">
+                                        Buisness Number
+                                    </span>
+                                    <span class="label-pill-value">
+                                        @groupedLicensePacketInfo.First().BusinessNumber
+                                    </span>
+                                </span>
+                            }
+
+                            @if (!string.IsNullOrWhiteSpace(groupedLicensePacketInfo.First().CompanyNumber)) {
+                                <span class="label label-default label-pill" style="margin-right: 2px; margin-bottom: 2px;">
+                                    <span class="label-pill-title">
+                                        Company Number
+                                    </span>
+                                    <span class="label-pill-value">
+                                        @groupedLicensePacketInfo.First().CompanyNumber
+                                    </span>
+                                </span>
+                            }
+
+                        </p>
+
+                        <table class="table table-condensed table-responsive data-table"
+                   id="@groupedLicensePacketInfo.Key"
+                   data-type="basic"
+                   style="width: 100%">
+
+                            <thead>
+                                <tr class="datatable-header">
+                                    <th data-orderable="false">License Number</th>
+                                    <th data-orderable="false">Type</th>
+                                    <th data-orderable="false">Class</th>
+                                    <th data-orderable="false">Display Name</th>
+                                    <th data-orderable="false">Issued Date</th>
+                                    <th data-orderable="false">Expiration Date</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                @foreach (var licensePacketInfo in groupedLicensePacketInfo.OrderBy(_ => _.LicenseNumber)) {
+
+                                    <tr>
+
+                                        <td>
+                                            @licensePacketInfo.LicenseNumber
+                                        </td>
+
+                                        <td>
+                                            @licensePacketInfo.LicenseTypeName
+                                        </td>
+
+                                        <td>
+                                            @licensePacketInfo.LicenseClassName
+                                        </td>
+
+                                        <td>
+                                            <strong>
+                                                @licensePacketInfo.DisplayName
+                                            </strong>
+                                        </td>
+
+                                        <td>
+                                            @if (licensePacketInfo.IssuedDate.HasValue) {
+                                                @licensePacketInfo.IssuedDate.Value.ToShortDateString()
+                                            }
+                                        </td>
+
+                                        <td>
+                                            @if (licensePacketInfo.ExpirationDate.HasValue) {
+                                                @licensePacketInfo.ExpirationDate.Value.ToShortDateString()
+                                            }
+                                        </td>
+
+                                    </tr>
+
+                                }
+
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            }
+
+            <div class="row">
+                <button type="submit"
+                bs-context="@ButtonContext.Primary"
+                class="pull-right"
+                asp-page-handler="FetchLicenses"
+                style="margin-left: 5px; margin-right: 5px;">
+                    Re-Fetch Licenses
+                </button>
+
+                <button type="submit"
+                bs-context="ButtonContext.Success"
+                class="pull-right"
+                asp-page-handler="Generate"
+                style="margin-left: 5px; margin-right: 5px;">
+                    Generate
+                </button>
+
+            </div>
+
+        }
+
+
+    } else {
+
+        <div class="progress active" style="margin-bottom: 0;" id="job-progress-container">
+            <div class="progress-bar progress-bar-warning progress-bar-striped"
+             role="progressbar"
+             style="width: 0%"
+             id="job-progress"></div>
+        </div>
+
+        <p>Generator Status: <strong><span id="job-status">Waiting to start...</span></strong></p>
+
+
+
+        <div id="tail" class="scrolling-console col-sm-12" style="height: 400px;">
+        </div>
+
+        <a asp-controller="CachedDownloadsResult"
+       asp-action="Fetch"
+       asp-route-fileId="@Model.JobId"
+       asp-route-fileName="@Model.FileName"
+       class="btn btn-block btn-success hidden download-buttons col-sm-12">
+            <i class="fa fa-download"></i> Download File
+        </a>
+
+    }
+
+</form>
